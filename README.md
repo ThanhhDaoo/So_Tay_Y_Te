@@ -1,4 +1,4 @@
-# 🩺 Sổ Tay Y Tế (Personal Medical Record & Health Journal)
+# Sổ Tay Y Tế (Personal Medical Record & Health Journal)
 
 Ứng dụng di động quản lý sổ tay y tế, theo dõi lịch sử khám chữa bệnh, lưu trữ toa thuốc điện tử và cung cấp thẻ y tế cấp cứu khẩn cấp cho người dùng cá nhân và gia đình.
 
@@ -6,18 +6,18 @@ Dự án được xây dựng bằng **Flutter & Dart**, tuân thủ nghiêm ng�
 
 ---
 
-## 🌟 Tính Năng Nổi Bật
+## Tính Năng Nổi Bật
 
-- ⏱ **Dòng thời gian y tế (Medical Timeline)**: Ghi lại toàn bộ lịch sử các đợt khám tổng quát, tiêm chủng, phẫu thuật, ghi nhận triệu chứng theo trình tự thời gian.
-- 💊 **Quản lý đơn thuốc & liệu trình (Prescriptions & Medicines)**: Lưu chi tiết tên thuốc, liều lượng, tần suất uống, hướng dẫn sử dụng và ghi chú của bác sĩ.
-- 🚨 **Thẻ y tế cấp cứu khẩn cấp (Emergency Medical Card)**: Hiển thị nhanh các thông tin sinh tồn thiết yếu như nhóm máu, dị ứng thuốc, bệnh nền mạn tính và số liên hệ khẩn cấp ngay trên màn hình khóa hoặc truy cập nhanh.
-- 📄 **Xuất báo cáo y khoa (Export Health Report)**: Xuất toàn bộ hồ sơ hoặc chi tiết đợt khám ra định dạng tài liệu y khoa PDF chuẩn để chia sẻ với bác sĩ.
-- ☁️ **Đồng bộ hóa đám mây & Bản Pro (Sync & Pro Features)**: Hỗ trợ người dùng ẩn danh (Anonymous) nâng cấp liên kết tài khoản chính thức, sao lưu dữ liệu lên đám mây bảo mật.
-- 🔒 **Bảo mật & Hoạt động Offline (Offline-First & Security)**: Dữ liệu được mã hóa và lưu trữ an toàn trong SQLite nội bộ thiết bị mà không bắt buộc có kết nối Internet liên tục.
+- **Dòng thời gian y tế (Medical Timeline)**: Ghi lại toàn bộ lịch sử các đợt khám tổng quát, tiêm chủng, phẫu thuật, ghi nhận triệu chứng theo trình tự thời gian.
+- **Quản lý đơn thuốc & liệu trình (Prescriptions & Medicines)**: Lưu chi tiết tên thuốc, liều lượng, tần suất uống, hướng dẫn sử dụng và ghi chú của bác sĩ.
+- **Thẻ y tế cấp cứu khẩn cấp (Emergency Medical Card)**: Hiển thị nhanh các thông tin sinh tồn thiết yếu như nhóm máu, dị ứng thuốc, bệnh nền mạn tính và số liên hệ khẩn cấp ngay trên màn hình khóa hoặc truy cập nhanh.
+- **Xuất báo cáo y khoa (Export Health Report)**: Xuất toàn bộ hồ sơ hoặc chi tiết đợt khám ra định dạng tài liệu y khoa PDF chuẩn để chia sẻ với bác sĩ.
+- **Đồng bộ hóa đám mây & Bản Pro (Sync & Pro Features)**: Hỗ trợ người dùng ẩn danh (Anonymous) nâng cấp liên kết tài khoản chính thức, sao lưu dữ liệu lên đám mây bảo mật.
+- **Bảo mật & Hoạt động Offline (Offline-First & Security)**: Dữ liệu được mã hóa và lưu trữ an toàn trong SQLite nội bộ thiết bị mà không bắt buộc có kết nối Internet liên tục.
 
 ---
 
-## 🏛 Kiến Trúc Dự Án (Clean Architecture)
+## Kiến Trúc Dự Án (Clean Architecture)
 
 Dự án được phân tách thành 4 tầng rõ ràng nhằm đảm bảo tính độc lập, dễ kiểm thử (Testability), dễ bảo trì và dễ mở rộng:
 
@@ -90,7 +90,7 @@ lib/
 
 ---
 
-## 🛠 Công Nghệ & Thư Viện
+## Công Nghệ & Thư Viện
 
 - **Framework**: [Flutter](https://flutter.dev/) (SDK `>=3.13.4 <4.0.0`)
 - **Ngôn ngữ**: [Dart](https://dart.dev/) 3.x
@@ -98,13 +98,13 @@ lib/
 - **Dependency Injection**: [`get_it`](https://pub.dev/packages/get_it)
 - **Cơ sở dữ liệu Local**: [`sqflite`](https://pub.dev/packages/sqflite), [`path`](https://pub.dev/packages/path)
 - **Lưu trữ cấu hình**: [`shared_preferences`](https://pub.dev/packages/shared_preferences)
-- **Xử lý ngày tháng & tiền tệ**: [`intl`](https://pub.dev/packages/intl)
+- **Xử lý ngày tháng**: [`intl`](https://pub.dev/packages/intl)
 - **Tạo định danh duy nhất**: [`uuid`](https://pub.dev/packages/uuid)
 - **UI Design**: Material 3 Design với tông màu y tế chuẩn (Primary Teal `#007A78`).
 
 ---
 
-## 🚀 Hướng Dẫn Cài Đặt & Chạy Ứng Dụng
+## Hướng Dẫn Cài Đặt & Chạy Ứng Dụng
 
 ### 1. Yêu cầu môi trường
 - Đã cài đặt [Flutter SDK](https://docs.flutter.dev/get-started/install) (phiên bản `>= 3.13.0`).
@@ -138,7 +138,7 @@ flutter run -d macos
 
 ---
 
-## 📌 Lộ Trình Phát Triển (Roadmap)
+## Lộ Trình Phát Triển (Roadmap)
 
 - [x] Thiết lập cấu trúc thư mục chuẩn Clean Architecture.
 - [x] Tạo toàn bộ các Model, Entity, UseCase, Repository contracts.
@@ -151,8 +151,7 @@ flutter run -d macos
 
 ---
 
-## 👨‍💻 Tác Giả & Bản Quyền
+## Tác Giả & Bản Quyền
 
 - Tác giả: **ThanhhDaoo**
 - Repository: [https://github.com/ThanhhDaoo/So_Tay_Y_Te](https://github.com/ThanhhDaoo/So_Tay_Y_Te)
-- Giấy phép: [MIT License](LICENSE) (hoặc theo quy định phát triển nội bộ).
