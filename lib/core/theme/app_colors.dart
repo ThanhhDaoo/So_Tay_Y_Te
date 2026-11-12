@@ -44,4 +44,27 @@ class AppColors {
   static const Color error = Color(0xFFBA1A1A);
   static const Color success = Color(0xFF388E3C);
   static const Color warning = Color(0xFFFFA000);
+
+  // Emergency Card (ICE) Palette (Figma node 1:4)
+  static const Color iceBackground = Color(0xFFFAF8F5);
+  static const Color iceGlassSurface = Color(0xCCF8F9FF);
+  static const Color iceBannerStart = Color(0xFF4A5043);
+  static const Color iceBannerEnd = Color(0xFF3B4135);
+  static const Color icePrimaryCall = Color(0xFF3D4336);
+  static const Color iceOlive = Color(0xFF545B4D);
+  static const Color iceOliveDark = Color(0xFF2F332A);
+  static const Color iceAccentCream = Color(0xFFE8D2B5);
+  static const Color iceBorderCream = Color(0xFFD8C2A3);
+  static const Color iceSecondaryCard = Color(0xFFF1ECE3);
+  static const Color iceCardBorder = Color(0xFFE5DFD4);
+  static const Color iceMetricBox = Color(0xFFF7F4EE);
+  static const Color iceAllergyBg = Color(0xFFF7EFE4);
+  static const Color iceAllergyBorder = Color(0xFFE0CEB7);
+  static const Color iceCriticalBadge = Color(0xFF8C4736);
+  static const Color iceDangerBg = Color(0xFFFFDAD6);
+  static const Color iceDangerText = Color(0xFFBB0112);
+  static const Color iceTextNavy = Color(0xFF0B1C30);
+  static const Color iceTextSlate = Color(0xFF3D4947);
+  static const Color iceTextBrownDark = Color(0xFF433624);
+  static const Color iceTextMuted = Color(0xFF6D7A77);
 }

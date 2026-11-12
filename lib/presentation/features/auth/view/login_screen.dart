@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleLoginSuccess() async {
     if (!mounted) return;
-    Navigator.pushReplacementNamed(context, AppRoutes.timeline);
+    Navigator.pushReplacementNamed(context, AppRoutes.emergencyCard);
   }
 
   @override
@@ -93,6 +93,31 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 14),
                           _buildRememberAndForgot(state.rememberMe),
+                          if (state.errorMessage != null) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.iceDangerBg,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: AppColors.error.withValues(alpha: 0.35),
+                                ),
+                              ),
+                              child: Text(
+                                state.errorMessage!,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.error,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 18),
                           _buildPrimaryActionRow(state.isLoading),
                         ],
