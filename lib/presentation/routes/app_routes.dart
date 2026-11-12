@@ -4,9 +4,13 @@ import '../features/add_record/view/add_record_screen.dart';
 import '../features/record_detail/view/record_detail_screen.dart';
 import '../features/emergency_card/view/emergency_card_screen.dart';
 import '../features/paywall/view/paywall_screen.dart';
+import '../features/auth/view/login_screen.dart';
+import '../features/auth/view/register_screen.dart';
 
 class AppRoutes {
   static const String timeline = '/';
+  static const String login = '/login';
+  static const String register = '/register';
   static const String addRecord = '/add-record';
   static const String recordDetail = '/record-detail';
   static const String emergencyCard = '/emergency-card';
@@ -14,6 +18,10 @@ class AppRoutes {
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case login:
+        return MaterialPageRoute(builder: (_) => const LoginScreen());
+      case register:
+        return MaterialPageRoute(builder: (_) => const RegisterScreen());
       case timeline:
         return MaterialPageRoute(builder: (_) => const TimelineScreen());
       case addRecord:

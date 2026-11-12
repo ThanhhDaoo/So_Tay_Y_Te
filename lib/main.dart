@@ -24,7 +24,7 @@ class SoTayYTeApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      initialRoute: AppRoutes.timeline,
+      initialRoute: AppRoutes.login,
       onGenerateRoute: AppRoutes.onGenerateRoute,
     );
   }
