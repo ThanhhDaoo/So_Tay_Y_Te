@@ -3,6 +3,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../emergency_card/view/emergency_card_screen.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import '../../prescriptions/view/prescriptions_screen.dart';
+import '../../profile/view/profile_screen.dart';
 import '../../timeline/view/timeline_screen.dart';
 
 /// Màn hình khung chính giữ thanh điều hướng cố định và chuyển tab mượt bằng IndexedStack.
@@ -25,7 +26,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
   }
 
   void _onSelectTab(int index) {
-    if (index > 2) {
+    if (index > 3) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
@@ -53,6 +54,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
           TimelineScreen(showBottomNav: false),
           PrescriptionsScreen(showBottomNav: false),
           EmergencyCardScreen(showBottomNav: false),
+          ProfileScreen(showBottomNav: false),
         ],
       ),
       bottomNavigationBar: IceBottomNavBar(
