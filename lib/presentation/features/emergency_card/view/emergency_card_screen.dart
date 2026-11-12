@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../routes/app_routes.dart';
 import '../viewmodel/emergency_card_viewmodel.dart';
 import 'widgets/ice_allergy_warning_card.dart';
 import 'widgets/ice_bottom_nav_bar.dart';
@@ -138,7 +139,16 @@ class _EmergencyCardScreenState extends State<EmergencyCardScreen> {
                 right: 0,
                 child: IceBottomNavBar(
                   selectedIndex: state.selectedNavIndex,
-                  onSelectTab: _viewModel.selectNavIndex,
+                  onSelectTab: (index) {
+                    if (index == 0) {
+                      Navigator.pushReplacementNamed(
+                        context,
+                        AppRoutes.timeline,
+                      );
+                      return;
+                    }
+                    _viewModel.selectNavIndex(index);
+                  },
                 ),
               ),
             ],

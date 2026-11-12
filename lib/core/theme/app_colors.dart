@@ -67,4 +67,14 @@ class AppColors {
   static const Color iceTextSlate = Color(0xFF3D4947);
   static const Color iceTextBrownDark = Color(0xFF433624);
   static const Color iceTextMuted = Color(0xFF6D7A77);
+
+  // Life Timeline Palette (Figma node 1:522)
+  static const Color timelineInputBg = Color(0xFFF4F1EA);
+  static const Color timelineChipBg = Color(0xFFEDE8DF);
+  static const Color timelineCardBg = Color(0xFFF9F7F2);
+  static const Color timelineOlive = Color(0xFF5B6153);
+  static const Color timelineDotMuted = Color(0xFFA5A79B);
+  static const Color timelineTextWarm = Color(0xFF6E6857);
+  static const Color timelineBadgeBrown = Color(0xFF4A3F2C);
+  static const Color timelineDividerBlue = Color(0xFFE5EEFF);
 }

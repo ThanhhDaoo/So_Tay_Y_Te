@@ -1,29 +1,38 @@
 import 'package:flutter/material.dart';
-import '../../../../domain/usecases/medical/get_medical_timeline_usecase.dart';
 import 'timeline_state.dart';
 
+/// ViewModel quản lý trạng thái tìm kiếm, lọc và tương tác trên Dòng Thời Gian Bệnh Án.
 class TimelineViewModel extends ChangeNotifier {
-  final GetMedicalTimelineUseCase? getTimelineUseCase;
+  final TextEditingController searchController = TextEditingController();
+  TimelineState _state = TimelineState.initial();
 
-  TimelineState _state = TimelineInitial();
   TimelineState get state => _state;
 
-  TimelineViewModel({this.getTimelineUseCase});
-
-  Future<void> loadEvents() async {
-    _state = TimelineLoading();
+  void updateSearchQuery(String query) {
+    _state = _state.copyWith(searchQuery: query);
     notifyListeners();
+  }
 
-    try {
-      if (getTimelineUseCase != null) {
-        final events = await getTimelineUseCase!();
-        _state = TimelineLoaded(events);
-      } else {
-        _state = const TimelineLoaded([]);
-      }
-    } catch (e) {
-      _state = TimelineError(e.toString());
-    }
+  void selectFilter(String filterId) {
+    if (_state.selectedFilterId == filterId) return;
+    _state = _state.copyWith(selectedFilterId: filterId);
     notifyListeners();
+  }
+
+  void notifyUser(String message) {
+    _state = _state.copyWith(lastActionMessage: message);
+    notifyListeners();
+  }
+
+  void clearActionMessage() {
+    if (_state.lastActionMessage == null) return;
+    _state = _state.copyWith(clearActionMessage: true);
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 }
