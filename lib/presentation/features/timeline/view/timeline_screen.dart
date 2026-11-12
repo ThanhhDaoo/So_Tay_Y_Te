@@ -53,6 +53,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   void _onNavTabSelected(int index) {
     if (index == 0) return;
+    if (index == 1) {
+      Navigator.pushReplacementNamed(context, AppRoutes.prescriptions);
+      return;
+    }
     if (index == 2) {
       Navigator.pushReplacementNamed(context, AppRoutes.emergencyCard);
       return;

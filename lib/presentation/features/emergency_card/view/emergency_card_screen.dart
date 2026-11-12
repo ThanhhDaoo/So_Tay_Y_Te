@@ -147,6 +147,13 @@ class _EmergencyCardScreenState extends State<EmergencyCardScreen> {
                       );
                       return;
                     }
+                    if (index == 1) {
+                      Navigator.pushReplacementNamed(
+                        context,
+                        AppRoutes.prescriptions,
+                      );
+                      return;
+                    }
                     _viewModel.selectNavIndex(index);
                   },
                 ),

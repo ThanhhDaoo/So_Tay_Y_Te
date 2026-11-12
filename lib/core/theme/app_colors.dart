@@ -77,4 +77,14 @@ class AppColors {
   static const Color timelineTextWarm = Color(0xFF6E6857);
   static const Color timelineBadgeBrown = Color(0xFF4A3F2C);
   static const Color timelineDividerBlue = Color(0xFFE5EEFF);
+
+  // Prescriptions & Medication Schedule Palette (Figma node 1:254)
+  static const Color rxBackground = Color(0xFFF9F7F2);
+  static const Color rxBorder = Color(0xFFDFD7C8);
+  static const Color rxOlive = Color(0xFF5C6254);
+  static const Color rxBadgeCream = Color(0xFFF2E9DE);
+  static const Color rxProDarkText = Color(0xFF410002);
+  static const Color rxBlueSoft = Color(0xFFDCE9FF);
+  static const Color rxProgressTrack = Color(0xFFD3E4FE);
+  static const Color rxAdviceCircle = Color(0xFFE3E5DC);
 }
