@@ -13,7 +13,9 @@ import 'widgets/timeline_vitals_bento.dart';
 
 /// Màn hình Dòng Thời Gian Bệnh Án (Life Timeline) theo kiến trúc MVVM.
 class TimelineScreen extends StatefulWidget {
-  const TimelineScreen({super.key});
+  final bool showBottomNav;
+
+  const TimelineScreen({super.key, this.showBottomNav = true});
 
   @override
   State<TimelineScreen> createState() => _TimelineScreenState();
@@ -122,15 +124,16 @@ class _TimelineScreenState extends State<TimelineScreen> {
                       Navigator.pushNamed(context, AppRoutes.addRecord),
                 ),
               ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: IceBottomNavBar(
-                  selectedIndex: 0,
-                  onSelectTab: _onNavTabSelected,
+              if (widget.showBottomNav)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: IceBottomNavBar(
+                    selectedIndex: 0,
+                    onSelectTab: _onNavTabSelected,
+                  ),
                 ),
-              ),
             ],
           ),
         );

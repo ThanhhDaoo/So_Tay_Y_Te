@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleLoginSuccess() async {
     if (!mounted) return;
-    Navigator.pushReplacementNamed(context, AppRoutes.emergencyCard);
+    Navigator.pushReplacementNamed(context, AppRoutes.mainShell);
   }
 
   @override

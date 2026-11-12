@@ -13,7 +13,9 @@ import 'widgets/rx_quick_actions_row.dart';
 
 /// Màn hình Quản Lý Toa Thuốc & Lịch Uống theo kiến trúc MVVM.
 class PrescriptionsScreen extends StatefulWidget {
-  const PrescriptionsScreen({super.key});
+  final bool showBottomNav;
+
+  const PrescriptionsScreen({super.key, this.showBottomNav = true});
 
   @override
   State<PrescriptionsScreen> createState() => _PrescriptionsScreenState();
@@ -163,15 +165,16 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                 right: 0,
                 child: RxHeader(),
               ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: IceBottomNavBar(
-                  selectedIndex: 1,
-                  onSelectTab: _onNavTabSelected,
+              if (widget.showBottomNav)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: IceBottomNavBar(
+                    selectedIndex: 1,
+                    onSelectTab: _onNavTabSelected,
+                  ),
                 ),
-              ),
             ],
           ),
         );

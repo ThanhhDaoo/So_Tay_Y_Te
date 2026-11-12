@@ -15,7 +15,9 @@ import 'widgets/ice_qr_module_card.dart';
 
 /// Màn hình Thẻ Cấp Cứu Khẩn Cấp (ICE) theo kiến trúc MVVM.
 class EmergencyCardScreen extends StatefulWidget {
-  const EmergencyCardScreen({super.key});
+  final bool showBottomNav;
+
+  const EmergencyCardScreen({super.key, this.showBottomNav = true});
 
   @override
   State<EmergencyCardScreen> createState() => _EmergencyCardScreenState();
@@ -133,31 +135,32 @@ class _EmergencyCardScreenState extends State<EmergencyCardScreen> {
                 right: 0,
                 child: IceHeader(),
               ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: IceBottomNavBar(
-                  selectedIndex: state.selectedNavIndex,
-                  onSelectTab: (index) {
-                    if (index == 0) {
-                      Navigator.pushReplacementNamed(
-                        context,
-                        AppRoutes.timeline,
-                      );
-                      return;
-                    }
-                    if (index == 1) {
-                      Navigator.pushReplacementNamed(
-                        context,
-                        AppRoutes.prescriptions,
-                      );
-                      return;
-                    }
-                    _viewModel.selectNavIndex(index);
-                  },
+              if (widget.showBottomNav)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: IceBottomNavBar(
+                    selectedIndex: state.selectedNavIndex,
+                    onSelectTab: (index) {
+                      if (index == 0) {
+                        Navigator.pushReplacementNamed(
+                          context,
+                          AppRoutes.timeline,
+                        );
+                        return;
+                      }
+                      if (index == 1) {
+                        Navigator.pushReplacementNamed(
+                          context,
+                          AppRoutes.prescriptions,
+                        );
+                        return;
+                      }
+                      _viewModel.selectNavIndex(index);
+                    },
+                  ),
                 ),
-              ),
             ],
           ),
         );

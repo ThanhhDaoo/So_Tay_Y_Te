@@ -7,9 +7,11 @@ import '../features/paywall/view/paywall_screen.dart';
 import '../features/auth/view/login_screen.dart';
 import '../features/auth/view/register_screen.dart';
 import '../features/prescriptions/view/prescriptions_screen.dart';
+import '../features/main_shell/view/main_shell_screen.dart';
 
 class AppRoutes {
   static const String timeline = '/';
+  static const String mainShell = '/main';
   static const String login = '/login';
   static const String register = '/register';
   static const String addRecord = '/add-record';
@@ -26,6 +28,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
       case timeline:
         return MaterialPageRoute(builder: (_) => const TimelineScreen());
+      case mainShell:
+        return MaterialPageRoute(builder: (_) => const MainShellScreen());
       case addRecord:
         return MaterialPageRoute(builder: (_) => const AddRecordScreen());
       case recordDetail:
