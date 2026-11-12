@@ -95,32 +95,70 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected ? AppColors.iceOlive : AppColors.iceTextMuted;
+    final activeColor = AppColors.iceOliveDark;
+    final inactiveColor = const Color(0xFF8A9491);
+    final iconColor = isSelected ? AppColors.iceOlive : inactiveColor;
+    final labelColor = isSelected ? activeColor : inactiveColor;
 
     return Expanded(
       child: InkWell(
         onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            SizedBox(
-              width: 22,
-              height: 22,
-              child: Center(
-                child: SvgPicture.asset(
-                  iconAsset,
-                  colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+            if (isSelected)
+              Positioned(
+                top: 0,
+                child: Container(
+                  width: 24,
+                  height: 3,
+                  decoration: const BoxDecoration(
+                    color: AppColors.iceOlive,
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(3),
+                    ),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: color,
-              ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.iceOlive.withValues(alpha: 0.14)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: SizedBox(
+                    width: 22,
+                    height: 20,
+                    child: Center(
+                      child: SvgPicture.asset(
+                        iconAsset,
+                        colorFilter: ColorFilter.mode(
+                          iconColor,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: isSelected ? 10.5 : 10,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: labelColor,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -148,6 +186,9 @@ class _CenterIceButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.iceOlive,
           shape: BoxShape.circle,
+          border: isSelected
+              ? Border.all(color: AppColors.iceAccentCream, width: 2)
+              : null,
           boxShadow: [
             BoxShadow(
               color: AppColors.iceOlive.withValues(alpha: 0.35),
