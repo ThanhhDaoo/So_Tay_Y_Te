@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../routes/app_routes.dart';
+import '../../main_shell/view/main_shell_screen.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import '../viewmodel/prescriptions_viewmodel.dart';
 import 'widgets/rx_active_plan_card.dart';
@@ -55,15 +56,12 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
 
   void _onNavTabSelected(int index) {
     if (index == 1) return;
-    if (index == 0) {
-      Navigator.pushReplacementNamed(context, AppRoutes.timeline);
-      return;
-    }
-    if (index == 2) {
-      Navigator.pushReplacementNamed(context, AppRoutes.emergencyCard);
-      return;
-    }
-    _viewModel.notifyUser('Tính năng đang được phát triển');
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MainShellScreen(initialIndex: index),
+      ),
+    );
   }
 
   @override

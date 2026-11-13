@@ -111,4 +111,22 @@ class AppColors {
   static const Color reportAllergyTextRed = Color(0xFF93000A);
   static const Color reportNoticeBg = Color(0xFFF7EFE4);
   static const Color reportQrBg = Color(0xFFDCE9FF);
+
+  // Security & Biometric Lock Palette (Figma node 1:1997)
+  static const Color secBackground = Color(0xFFFBF9F4);
+  static const Color secOlive = Color(0xFF52594B);
+  static const Color secOliveMuted = Color(0xFF3D4947);
+  static const Color secCardGradientStart = Color(0xFFF5EDE2);
+  static const Color secCardGradientEnd = Color(0xFFEBE5DA);
+  static const Color secCardBorder = Color(0xFFECE7DF);
+  static const Color secItemBg = Color(0xFFF7F5EF);
+  static const Color secStatusBg = Color(0xFFF5ECE0);
+  static const Color secPillActive = Color(0xFFE8D2B5);
+  static const Color secPillActiveText = Color(0xFF433624);
+  static const Color secToggleActive = Color(0xFF00685F);
+  static const Color secRadioSelectedBg = Color(0xFFF0EDE5);
+  static const Color secSqlCipherPillBg = Color(0x6699EFE5);
+  static const Color secDangerBg = Color(0x4DFFDAD6);
+  static const Color secDangerIconBg = Color(0xFFFFDAD6);
+  static const Color secDangerText = Color(0xFFBB0112);
 }

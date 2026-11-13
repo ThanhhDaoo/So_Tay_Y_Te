@@ -60,26 +60,26 @@ class ProfileFamilySwitcher extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
+                      horizontal: 11,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [
-                          Color(0xFFF8E7D3),
-                          Color(0xFFE8D2B5),
+                          Color(0xFFF3ECE0),
+                          Color(0xFFE5D5BF),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(
-                        color: const Color(0xFFD8C2A3),
-                        width: 1,
+                        color: const Color(0xFFC7A87E),
+                        width: 1.2,
                       ),
                       boxShadow: const [
                         BoxShadow(
-                          color: Color(0x1F433624),
+                          color: Color(0x24433624),
                           blurRadius: 4,
-                          offset: Offset(0, 1.5),
+                          offset: Offset(0, 2),
                         ),
                       ],
                     ),
@@ -88,8 +88,8 @@ class ProfileFamilySwitcher extends StatelessWidget {
                       children: [
                         SvgPicture.asset(
                           'assets/icons/ic_prof_vault_pro.svg',
-                          width: 12,
-                          height: 12,
+                          width: 13,
+                          height: 13,
                           colorFilter: const ColorFilter.mode(
                             Color(0xFF433624),
                             BlendMode.srcIn,
@@ -99,21 +99,17 @@ class ProfileFamilySwitcher extends StatelessWidget {
                         Text(
                           'Gói Vault Pro',
                           style: AppTypography.caption.copyWith(
-                            fontSize: 11,
+                            fontSize: 11.5,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 0.2,
                             color: const Color(0xFF433624),
                           ),
                         ),
                         const SizedBox(width: 4),
-                        SvgPicture.asset(
-                          'assets/icons/ic_prof_arrow_right.svg',
-                          width: 8,
-                          height: 8,
-                          colorFilter: const ColorFilter.mode(
-                            Color(0xFF433624),
-                            BlendMode.srcIn,
-                          ),
+                        const Icon(
+                          Icons.chevron_right,
+                          size: 14,
+                          color: Color(0xFF433624),
                         ),
                       ],
                     ),

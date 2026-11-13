@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../documents/view/documents_screen.dart';
 import '../../emergency_card/view/emergency_card_screen.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import '../../prescriptions/view/prescriptions_screen.dart';
 import '../../profile/view/profile_screen.dart';
 import '../../timeline/view/timeline_screen.dart';
+import '../../security_settings/view/security_settings_screen.dart';
 
 /// Màn hình khung chính giữ thanh điều hướng cố định và chuyển tab mượt bằng IndexedStack.
 class MainShellScreen extends StatefulWidget {
@@ -44,7 +44,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
           PrescriptionsScreen(showBottomNav: false),
           EmergencyCardScreen(showBottomNav: false),
           ProfileScreen(showBottomNav: false),
-          DocumentsScreen(showBottomNav: false),
+          SecuritySettingsScreen(showBottomNav: false),
         ],
       ),
       bottomNavigationBar: IceBottomNavBar(

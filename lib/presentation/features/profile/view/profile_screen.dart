@@ -6,11 +6,13 @@ import '../../../routes/app_routes.dart';
 import '../viewmodel/profile_viewmodel.dart';
 import 'widgets/profile_allergy_warning_card.dart';
 import 'widgets/profile_chronic_conditions_card.dart';
+import 'widgets/profile_documents_card.dart';
 import 'widgets/profile_family_switcher.dart';
 import 'widgets/profile_header.dart';
 import 'widgets/profile_immunization_card.dart';
 import 'widgets/profile_patient_hero_card.dart';
 import 'widgets/profile_security_actions_bar.dart';
+import 'widgets/profile_vault_pro_banner.dart';
 import 'widgets/profile_vitals_bento_grid.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -54,15 +56,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _onSelectBottomTab(int index) {
     if (index == 3) return;
-    if (index <= 2) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => MainShellScreen(initialIndex: index),
-        ),
-      );
-      return;
-    }
-    _showSnack('Tính năng đang được phát triển');
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => MainShellScreen(initialIndex: index),
+      ),
+    );
   }
 
   @override
@@ -122,6 +120,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 sliver: SliverList.list(
                   children: [
                     ProfilePatientHeroCard(profile: activeProfile),
+                    const SizedBox(height: 18),
+                    ProfileVaultProBanner(
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.paywall),
+                    ),
+                    const SizedBox(height: 18),
+                    ProfileDocumentsCard(
+                      onTap: () =>
+                          Navigator.of(context).pushNamed(AppRoutes.documents),
+                    ),
                     const SizedBox(height: 18),
                     ProfileVitalsBentoGrid(profile: activeProfile),
                     const SizedBox(height: 18),

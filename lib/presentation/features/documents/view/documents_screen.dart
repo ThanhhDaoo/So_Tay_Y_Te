@@ -56,15 +56,11 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   }
 
   void _onSelectBottomTab(int index) {
-    if (index == 4) return;
-    if (index <= 3) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => MainShellScreen(initialIndex: index),
-        ),
-      );
-      return;
-    }
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => MainShellScreen(initialIndex: index),
+      ),
+    );
   }
 
   @override

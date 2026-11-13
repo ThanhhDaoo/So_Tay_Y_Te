@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../routes/app_routes.dart';
+import '../../main_shell/view/main_shell_screen.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import '../viewmodel/timeline_state.dart';
 import '../viewmodel/timeline_viewmodel.dart';
@@ -55,15 +56,12 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   void _onNavTabSelected(int index) {
     if (index == 0) return;
-    if (index == 1) {
-      Navigator.pushReplacementNamed(context, AppRoutes.prescriptions);
-      return;
-    }
-    if (index == 2) {
-      Navigator.pushReplacementNamed(context, AppRoutes.emergencyCard);
-      return;
-    }
-    _viewModel.notifyUser('Tính năng đang được phát triển');
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MainShellScreen(initialIndex: index),
+      ),
+    );
   }
 
   @override
@@ -102,7 +100,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     onSelectFilter: _viewModel.selectFilter,
                   ),
                   const SizedBox(height: 16),
-                  const TimelineVitalsBento(),
+                  TimelineVitalsBento(
+                    onViewReports: () =>
+                        Navigator.pushNamed(context, AppRoutes.vitalReports),
+                  ),
                   const SizedBox(height: 18),
                   _buildTimelineSectionHeader(),
                   const SizedBox(height: 12),
@@ -233,6 +234,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     AppRoutes.recordDetail,
                     arguments: records[i].id,
                   ),
+                  onViewAllDocs: () =>
+                      Navigator.pushNamed(context, AppRoutes.documents),
+                  onViewPrescription: () =>
+                      Navigator.pushNamed(context, AppRoutes.prescriptions),
                 ),
                 if (i < records.length - 1) const SizedBox(height: 16),
               ],

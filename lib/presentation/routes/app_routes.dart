@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import '../features/timeline/view/timeline_screen.dart';
 import '../features/add_record/view/add_record_screen.dart';
-import '../features/record_detail/view/record_detail_screen.dart';
-import '../features/emergency_card/view/emergency_card_screen.dart';
-import '../features/paywall/view/paywall_screen.dart';
 import '../features/auth/view/login_screen.dart';
 import '../features/auth/view/register_screen.dart';
-import '../features/prescriptions/view/prescriptions_screen.dart';
-import '../features/profile/view/profile_screen.dart';
 import '../features/documents/view/documents_screen.dart';
 import '../features/main_shell/view/main_shell_screen.dart';
+import '../features/paywall/view/paywall_screen.dart';
+import '../features/record_detail/view/record_detail_screen.dart';
 import '../features/vital_reports/view/vital_reports_screen.dart';
 
 class AppRoutes {
@@ -26,6 +22,8 @@ class AppRoutes {
   static const String paywall = '/paywall';
   static const String vitalReports = '/vital-reports';
   static const String vitalReport = '/vital-report';
+  static const String securitySettings = '/security-settings';
+  static const String settings = '/settings';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -34,9 +32,31 @@ class AppRoutes {
       case register:
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
       case timeline:
-        return MaterialPageRoute(builder: (_) => const TimelineScreen());
+        return MaterialPageRoute(
+          builder: (_) => const MainShellScreen(initialIndex: 0),
+        );
+      case prescriptions:
+        return MaterialPageRoute(
+          builder: (_) => const MainShellScreen(initialIndex: 1),
+        );
+      case emergencyCard:
+        return MaterialPageRoute(
+          builder: (_) => const MainShellScreen(initialIndex: 2),
+        );
+      case profile:
+        return MaterialPageRoute(
+          builder: (_) => const MainShellScreen(initialIndex: 3),
+        );
+      case securitySettings:
+      case AppRoutes.settings:
+        return MaterialPageRoute(
+          builder: (_) => const MainShellScreen(initialIndex: 4),
+        );
       case mainShell:
-        return MaterialPageRoute(builder: (_) => const MainShellScreen());
+        final initialIndex = settings.arguments as int? ?? 2;
+        return MaterialPageRoute(
+          builder: (_) => MainShellScreen(initialIndex: initialIndex),
+        );
       case addRecord:
         return MaterialPageRoute(builder: (_) => const AddRecordScreen());
       case recordDetail:
@@ -44,12 +64,6 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => RecordDetailScreen(recordId: recordId ?? ''),
         );
-      case emergencyCard:
-        return MaterialPageRoute(builder: (_) => const EmergencyCardScreen());
-      case prescriptions:
-        return MaterialPageRoute(builder: (_) => const PrescriptionsScreen());
-      case profile:
-        return MaterialPageRoute(builder: (_) => const ProfileScreen());
       case documents:
         return MaterialPageRoute(builder: (_) => const DocumentsScreen());
       case paywall:

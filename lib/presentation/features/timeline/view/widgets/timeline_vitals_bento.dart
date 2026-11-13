@@ -4,7 +4,12 @@ import '../../../../../core/theme/app_colors.dart';
 
 /// Lưới Bento 2x2 hiển thị các chỉ số sinh hiệu mới nhất.
 class TimelineVitalsBento extends StatelessWidget {
-  const TimelineVitalsBento({super.key});
+  const TimelineVitalsBento({
+    super.key,
+    this.onViewReports,
+  });
+
+  final VoidCallback? onViewReports;
 
   @override
   Widget build(BuildContext context) {
@@ -33,15 +38,53 @@ class TimelineVitalsBento extends StatelessWidget {
                   ),
                 ],
               ),
-              const Text(
-                'Hôm nay, 08:30',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.44,
-                  color: AppColors.iceTextMuted,
+              if (onViewReports != null)
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onViewReports,
+                    borderRadius: BorderRadius.circular(999),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.iceAccentCream,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Xem báo cáo',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.timelineOlive,
+                            ),
+                          ),
+                          SizedBox(width: 2),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 13,
+                            color: AppColors.timelineOlive,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                const Text(
+                  'Hôm nay, 08:30',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.44,
+                    color: AppColors.iceTextMuted,
+                  ),
                 ),
-              ),
             ],
           ),
         ),

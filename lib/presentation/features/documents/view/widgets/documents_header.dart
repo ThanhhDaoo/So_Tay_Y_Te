@@ -42,6 +42,35 @@ class DocumentsHeader extends StatelessWidget {
             children: [
               Row(
                 children: [
+                  if (Navigator.of(context).canPop())
+                    Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => Navigator.of(context).pop(),
+                          borderRadius: BorderRadius.circular(999),
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFE5DFD4),
+                              ),
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                size: 14,
+                                color: AppColors.iceTextNavy,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   Image.asset(
                     'assets/images/img_sotayyte_logo.png',
                     width: 32,
