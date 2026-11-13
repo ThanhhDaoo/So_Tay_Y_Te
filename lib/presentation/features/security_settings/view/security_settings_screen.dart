@@ -4,7 +4,6 @@ import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import '../../main_shell/view/main_shell_screen.dart';
 import '../viewmodel/security_settings_state.dart';
 import '../viewmodel/security_settings_viewmodel.dart';
-import 'widgets/all_screens_navigation_card.dart';
 import 'widgets/app_lock_biometrics_card.dart';
 import 'widgets/backup_restore_card.dart';
 import 'widgets/danger_zone_wipe_card.dart';
@@ -99,12 +98,6 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               children: [
                 // 1. Hero / Master Shield Security Center Card
                 MasterShieldSecurityCard(state: state),
-                const SizedBox(height: 20),
-
-                // Danh Sách Điều Hướng Nhanh 8 Màn Hình Chuẩn Figma
-                AllScreensNavigationCard(
-                  onSelectMainTab: widget.onSelectMainTab,
-                ),
                 const SizedBox(height: 20),
 
                 // 2. Khóa Ứng Dụng & Sinh Trắc Học
