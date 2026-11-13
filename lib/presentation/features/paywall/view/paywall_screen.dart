@@ -1,56 +1,166 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../common_widgets/custom_button.dart';
+import '../viewmodel/paywall_viewmodel.dart';
+import 'widgets/account_linking_card.dart';
+import 'widgets/paywall_header.dart';
+import 'widgets/trust_assurances_row.dart';
+import 'widgets/vault_brand_hero.dart';
+import 'widgets/vault_cta_button.dart';
+import 'widgets/vault_features_checklist.dart';
+import 'widgets/vault_pricing_selector.dart';
 
-class PaywallScreen extends StatelessWidget {
+class PaywallScreen extends StatefulWidget {
   const PaywallScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Nâng cấp bản Pro')),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Icon(Icons.workspace_premium, size: 80, color: Colors.amber),
-            const SizedBox(height: 16),
-            const Text(
-              'Mở khóa toàn bộ tính năng Pro',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            _buildFeatureRow(Icons.cloud_sync, 'Đồng bộ hóa đám mây không giới hạn'),
-            _buildFeatureRow(Icons.picture_as_pdf, 'Xuất hồ sơ sức khỏe dạng PDF chuẩn y khoa'),
-            _buildFeatureRow(Icons.family_restroom, 'Quản lý hồ sơ nhiều thành viên gia đình'),
-            _buildFeatureRow(Icons.security, 'Mã hóa cấp cao bảo vệ dữ liệu y tế'),
-            const Spacer(),
-            CustomButton(
-              text: 'Đăng ký ngay - 59.000đ / tháng',
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Xử lý thanh toán thành công!')),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-          ],
+  State<PaywallScreen> createState() => _PaywallScreenState();
+}
+
+class _PaywallScreenState extends State<PaywallScreen> {
+  late final PaywallViewModel _viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = PaywallViewModel();
+  }
+
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: AppColors.iceOlive,
+          behavior: SnackBarBehavior.floating,
         ),
-      ),
+      );
+  }
+
+  void _onStartTrial() {
+    final plan = _viewModel.state.selectedPlan;
+    _showSnack(
+      'Kích hoạt 7 ngày dùng thử ${plan.title} (${plan.price}) thành công!',
     );
   }
 
-  Widget _buildFeatureRow(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.primary),
-          const SizedBox(width: 12),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 15))),
-        ],
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFFBF9F4),
+      body: ListenableBuilder(
+        listenable: _viewModel,
+        builder: (context, _) {
+          final state = _viewModel.state;
+
+          return Stack(
+            children: [
+              // Subtle background atmospheric glows
+              Positioned(
+                top: -48,
+                right: -32,
+                child: Container(
+                  width: 224,
+                  height: 224,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppColors.iceAccentCream.withValues(alpha: 0.45),
+                        AppColors.iceAccentCream.withValues(alpha: 0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 480,
+                left: -48,
+                child: Container(
+                  width: 192,
+                  height: 192,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppColors.iceAccentCream.withValues(alpha: 0.35),
+                        AppColors.iceAccentCream.withValues(alpha: 0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: PaywallHeader(
+                      onBack: () => Navigator.of(context).maybePop(),
+                      onProfileTap: () =>
+                          _showSnack('Tài khoản: Nguyễn Thu Trang (Gói Free)'),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      20,
+                      16,
+                      32 + bottomPadding,
+                    ),
+                    sliver: SliverList.list(
+                      children: [
+                        const VaultBrandHero(),
+                        const SizedBox(height: 22),
+                        const VaultFeaturesChecklist(),
+                        const SizedBox(height: 22),
+                        VaultPricingSelector(
+                          selectedPlan: state.selectedPlan,
+                          onSelectPlan: _viewModel.selectPlan,
+                        ),
+                        const SizedBox(height: 20),
+                        VaultCtaButton(
+                          onStartTrial: _onStartTrial,
+                          isProcessing: state.isProcessing,
+                        ),
+                        const SizedBox(height: 22),
+                        AccountLinkingCard(
+                          linkedProvider: state.linkedProvider,
+                          onLinkGoogle: () async {
+                            await _viewModel.linkAccount('Google');
+                            _showSnack(
+                              'Đã liên kết Google Account thành công!',
+                            );
+                          },
+                          onLinkApple: () async {
+                            await _viewModel.linkAccount('Apple');
+                            _showSnack(
+                              'Đã liên kết Apple ID thành công!',
+                            );
+                          },
+                          onLinkPhone: () async {
+                            await _viewModel.linkAccount('Phone');
+                            _showSnack(
+                              'Đã xác thực OTP Số điện thoại thành công!',
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        const TrustAssurancesRow(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }

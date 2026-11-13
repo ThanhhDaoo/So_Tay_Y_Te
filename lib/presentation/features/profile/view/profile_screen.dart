@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import '../../main_shell/view/main_shell_screen.dart';
+import '../../../routes/app_routes.dart';
 import '../viewmodel/profile_viewmodel.dart';
 import 'widgets/profile_allergy_warning_card.dart';
 import 'widgets/profile_chronic_conditions_card.dart';
@@ -106,6 +107,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onSelectMember: _viewModel.selectMember,
                     onAddMemberTap: () =>
                         _showSnack('Tính năng thêm thành viên đang phát triển'),
+                    onVaultProTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.paywall),
                   ),
                 ),
               ),

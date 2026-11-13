@@ -5,18 +5,20 @@ import '../../../../../core/theme/app_typography.dart';
 import '../../viewmodel/profile_state.dart';
 
 class ProfileFamilySwitcher extends StatelessWidget {
+  final List<FamilyMemberChip> members;
+  final String selectedMemberId;
+  final ValueChanged<String> onSelectMember;
+  final VoidCallback? onAddMemberTap;
+  final VoidCallback? onVaultProTap;
+
   const ProfileFamilySwitcher({
     super.key,
     required this.members,
     required this.selectedMemberId,
     required this.onSelectMember,
     this.onAddMemberTap,
+    this.onVaultProTap,
   });
-
-  final List<FamilyMemberChip> members;
-  final String selectedMemberId;
-  final ValueChanged<String> onSelectMember;
-  final VoidCallback? onAddMemberTap;
 
   @override
   Widget build(BuildContext context) {
@@ -51,34 +53,71 @@ class ProfileFamilySwitcher extends StatelessWidget {
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.iceAccentCream.withValues(alpha: 0.50),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SvgPicture.asset(
-                      'assets/icons/ic_prof_vault_pro.svg',
-                      width: 11,
-                      height: 11,
-                      colorFilter: const ColorFilter.mode(
-                        AppColors.iceTextBrownDark,
-                        BlendMode.srcIn,
-                      ),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onVaultProTap,
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Gói Vault Pro',
-                      style: AppTypography.caption.copyWith(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.iceTextBrownDark,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFFF8E7D3),
+                          Color(0xFFE8D2B5),
+                        ],
                       ),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: const Color(0xFFD8C2A3),
+                        width: 1,
+                      ),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x1F433624),
+                          blurRadius: 4,
+                          offset: Offset(0, 1.5),
+                        ),
+                      ],
                     ),
-                  ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SvgPicture.asset(
+                          'assets/icons/ic_prof_vault_pro.svg',
+                          width: 12,
+                          height: 12,
+                          colorFilter: const ColorFilter.mode(
+                            Color(0xFF433624),
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Gói Vault Pro',
+                          style: AppTypography.caption.copyWith(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
+                            color: const Color(0xFF433624),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        SvgPicture.asset(
+                          'assets/icons/ic_prof_arrow_right.svg',
+                          width: 8,
+                          height: 8,
+                          colorFilter: const ColorFilter.mode(
+                            Color(0xFF433624),
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],

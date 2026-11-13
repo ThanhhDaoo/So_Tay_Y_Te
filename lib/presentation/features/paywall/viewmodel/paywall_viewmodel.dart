@@ -1,16 +1,28 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'paywall_state.dart';
 
 class PaywallViewModel extends ChangeNotifier {
-  bool _isLoading = false;
-  bool get isLoading => _isLoading;
+  PaywallViewModel() : _state = const PaywallState();
 
-  Future<bool> purchasePro() async {
-    _isLoading = true;
+  PaywallState _state;
+  PaywallState get state => _state;
+
+  void selectPlan(PlanType plan) {
+    if (_state.selectedPlan == plan) return;
+    _state = _state.copyWith(selectedPlan: plan);
+    notifyListeners();
+  }
+
+  Future<void> linkAccount(String provider) async {
+    _state = _state.copyWith(isProcessing: true);
     notifyListeners();
 
-    await Future.delayed(const Duration(seconds: 1));
-    _isLoading = false;
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+
+    _state = _state.copyWith(
+      isProcessing: false,
+      linkedProvider: provider,
+    );
     notifyListeners();
-    return true;
   }
 }
