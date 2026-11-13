@@ -41,7 +41,6 @@ class IceBottomNavBar extends StatelessWidget {
           child: SizedBox(
             height: 64,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _NavItem(
                   label: 'Thời gian',
@@ -178,43 +177,48 @@ class _CenterIceButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: AppColors.iceOlive,
-          shape: BoxShape.circle,
-          border: isSelected
-              ? Border.all(color: AppColors.iceAccentCream, width: 2)
-              : null,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.iceOlive.withValues(alpha: 0.35),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
+    return Expanded(
+      child: Center(
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppColors.iceOlive,
+              shape: BoxShape.circle,
+              border: isSelected
+                  ? Border.all(color: AppColors.iceAccentCream, width: 2)
+                  : null,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.iceOlive.withValues(alpha: 0.35),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              'assets/icons/ic_nav_ice.svg',
-              width: 18,
-              height: 18,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SvgPicture.asset(
+                  'assets/icons/ic_nav_ice.svg',
+                  width: 18,
+                  height: 18,
+                ),
+                const SizedBox(height: 1),
+                const Text(
+                  'ICE',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.iceAccentCream,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 1),
-            const Text(
-              'ICE',
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                color: AppColors.iceAccentCream,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
