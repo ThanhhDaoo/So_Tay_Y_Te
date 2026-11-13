@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../documents/view/documents_screen.dart';
 import '../../emergency_card/view/emergency_card_screen.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import '../../prescriptions/view/prescriptions_screen.dart';
@@ -26,18 +26,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
   }
 
   void _onSelectTab(int index) {
-    if (index > 3) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(
-            content: Text('Tính năng đang được phát triển'),
-            backgroundColor: AppColors.iceOlive,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      return;
-    }
+    if (index > 4) return;
     if (_selectedIndex == index) return;
     setState(() {
       _selectedIndex = index;
@@ -55,6 +44,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
           PrescriptionsScreen(showBottomNav: false),
           EmergencyCardScreen(showBottomNav: false),
           ProfileScreen(showBottomNav: false),
+          DocumentsScreen(showBottomNav: false),
         ],
       ),
       bottomNavigationBar: IceBottomNavBar(

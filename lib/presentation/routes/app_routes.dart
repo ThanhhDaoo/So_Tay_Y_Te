@@ -8,6 +8,7 @@ import '../features/auth/view/login_screen.dart';
 import '../features/auth/view/register_screen.dart';
 import '../features/prescriptions/view/prescriptions_screen.dart';
 import '../features/profile/view/profile_screen.dart';
+import '../features/documents/view/documents_screen.dart';
 import '../features/main_shell/view/main_shell_screen.dart';
 
 class AppRoutes {
@@ -20,6 +21,7 @@ class AppRoutes {
   static const String emergencyCard = '/emergency-card';
   static const String prescriptions = '/prescriptions';
   static const String profile = '/profile';
+  static const String documents = '/documents';
   static const String paywall = '/paywall';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -45,6 +47,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const PrescriptionsScreen());
       case profile:
         return MaterialPageRoute(builder: (_) => const ProfileScreen());
+      case documents:
+        return MaterialPageRoute(builder: (_) => const DocumentsScreen());
       case paywall:
         return MaterialPageRoute(builder: (_) => const PaywallScreen());
       default:
