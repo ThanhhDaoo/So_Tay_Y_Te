@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../routes/app_routes.dart';
@@ -24,6 +25,7 @@ class TimelineScreen extends StatefulWidget {
 
 class _TimelineScreenState extends State<TimelineScreen> {
   late final TimelineViewModel _viewModel;
+  bool _isFabVisible = true;
 
   @override
   void initState() {
@@ -81,34 +83,48 @@ class _TimelineScreenState extends State<TimelineScreen> {
           extendBodyBehindAppBar: true,
           body: Stack(
             children: [
-              ListView(
-                padding: EdgeInsets.only(
-                  top: topPadding + 74,
-                  bottom: bottomPadding + 148,
-                  left: 16,
-                  right: 16,
-                ),
-                children: [
-                  TimelineSearchFilterBar(
-                    controller: _viewModel.searchController,
-                    onSearchChanged: _viewModel.updateSearchQuery,
-                    onFilterTap: () => _viewModel.notifyUser(
-                      'Đang lọc theo: ${state.selectedFilterId}',
+              NotificationListener<UserScrollNotification>(
+                onNotification: (notification) {
+                  if (notification.direction == ScrollDirection.reverse) {
+                    if (_isFabVisible) {
+                      setState(() => _isFabVisible = false);
+                    }
+                  } else if (notification.direction == ScrollDirection.forward) {
+                    if (!_isFabVisible) {
+                      setState(() => _isFabVisible = true);
+                    }
+                  }
+                  return true;
+                },
+                child: ListView(
+                  padding: EdgeInsets.only(
+                    top: topPadding + 74,
+                    bottom: bottomPadding + 148,
+                    left: 16,
+                    right: 16,
+                  ),
+                  children: [
+                    TimelineSearchFilterBar(
+                      controller: _viewModel.searchController,
+                      onSearchChanged: _viewModel.updateSearchQuery,
+                      onFilterTap: () => _viewModel.notifyUser(
+                        'Đang lọc theo: ${state.selectedFilterId}',
+                      ),
+                      filters: state.filters,
+                      selectedFilterId: state.selectedFilterId,
+                      onSelectFilter: _viewModel.selectFilter,
                     ),
-                    filters: state.filters,
-                    selectedFilterId: state.selectedFilterId,
-                    onSelectFilter: _viewModel.selectFilter,
-                  ),
-                  const SizedBox(height: 16),
-                  TimelineVitalsBento(
-                    onViewReports: () =>
-                        Navigator.pushNamed(context, AppRoutes.vitalReports),
-                  ),
-                  const SizedBox(height: 18),
-                  _buildTimelineSectionHeader(),
-                  const SizedBox(height: 12),
-                  _buildChronologicalSpine(records),
-                ],
+                    const SizedBox(height: 16),
+                    TimelineVitalsBento(
+                      onViewReports: () =>
+                          Navigator.pushNamed(context, AppRoutes.vitalReports),
+                    ),
+                    const SizedBox(height: 18),
+                    _buildTimelineSectionHeader(),
+                    const SizedBox(height: 12),
+                    _buildChronologicalSpine(records),
+                  ],
+                ),
               ),
               const Positioned(
                 top: 0,
@@ -117,12 +133,20 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 child: TimelineHeader(),
               ),
               Positioned(
-                left: 16,
                 right: 16,
-                bottom: bottomPadding + 74,
-                child: TimelineStickyFab(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, AppRoutes.addRecord),
+                bottom: bottomPadding + 76,
+                child: AnimatedSlide(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOutCubic,
+                  offset: _isFabVisible ? Offset.zero : const Offset(0, 2),
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: _isFabVisible ? 1.0 : 0.0,
+                    child: TimelineStickyFab(
+                      onPressed: () =>
+                          Navigator.pushNamed(context, AppRoutes.addRecord),
+                    ),
+                  ),
                 ),
               ),
               if (widget.showBottomNav)

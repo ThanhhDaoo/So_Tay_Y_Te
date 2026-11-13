@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
 
-/// Nút nổi cố định phía trên thanh điều hướng: "Thêm Đợt Khám Mới".
+/// Nút nổi tạo nhanh đợt khám mới với thiết kế gọn gàng, tự động ẩn khi cuộn.
 class TimelineStickyFab extends StatelessWidget {
   final VoidCallback onPressed;
 
@@ -14,35 +14,42 @@ class TimelineStickyFab extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(999),
         child: Ink(
-          height: 48,
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             color: AppColors.timelineOlive,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.15),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.timelineOlive.withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 8),
+                color: AppColors.timelineOlive.withValues(alpha: 0.35),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SvgPicture.asset(
                 'assets/icons/ic_add_circle_white.svg',
-                width: 18.33,
-                height: 18.33,
+                width: 16,
+                height: 16,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 7),
               const Text(
-                'Thêm Đợt Khám Mới',
+                'Thêm đợt khám',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
+                  letterSpacing: -0.2,
                 ),
               ),
             ],
@@ -52,4 +59,3 @@ class TimelineStickyFab extends StatelessWidget {
     );
   }
 }
-
