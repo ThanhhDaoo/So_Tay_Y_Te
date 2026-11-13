@@ -5,10 +5,13 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/input_validators.dart';
 import '../../../routes/app_routes.dart';
 import '../viewmodel/login_viewmodel.dart';
+import 'widgets/auth_ambient_background.dart';
+import 'widgets/auth_animated_entrance.dart';
 import 'widgets/auth_divider.dart';
 import 'widgets/auth_header.dart';
 import 'widgets/auth_text_field.dart';
 import 'widgets/guest_mode_card.dart';
+import 'widgets/pulsing_biometric_button.dart';
 import 'widgets/social_auth_button.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -46,6 +49,9 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: AppColors.backgroundLight,
       body: Stack(
         children: [
+          const Positioned.fill(
+            child: AuthAmbientBackground(),
+          ),
           ListenableBuilder(
             listenable: _viewModel,
             builder: (context, _) {
@@ -60,39 +66,51 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildWelcomeHeading(),
+                    AuthAnimatedEntrance(
+                      delay: const Duration(milliseconds: 60),
+                      child: _buildWelcomeHeading(),
+                    ),
                     const SizedBox(height: 24),
                     Form(
                       key: _viewModel.formKey,
                       child: Column(
                         children: [
-                          AuthTextField(
-                            label: 'Email hoặc Mã hồ sơ',
-                            trailingLabel: 'VD: STYT-892410',
-                            trailingLabelColor: AppColors.textMuted,
-                            hintText: 'bacsitu@sotayyte.vn hoặc STYT-XXXX',
-                            prefixIconAsset: 'assets/icons/ic_badge_id.svg',
-                            controller: _viewModel.identifierController,
-                            validator: InputValidators.validateRequired,
+                          AuthAnimatedEntrance(
+                            delay: const Duration(milliseconds: 140),
+                            child: AuthTextField(
+                              label: 'Email hoặc Mã hồ sơ',
+                              trailingLabel: 'VD: STYT-892410',
+                              trailingLabelColor: AppColors.textMuted,
+                              hintText: 'bacsitu@sotayyte.vn hoặc STYT-XXXX',
+                              prefixIconAsset: 'assets/icons/ic_badge_id.svg',
+                              controller: _viewModel.identifierController,
+                              validator: InputValidators.validateRequired,
+                            ),
                           ),
                           const SizedBox(height: 16),
-                          AuthTextField(
-                            label: 'Mật khẩu hồ sơ',
-                            hintText: 'Nhập mật khẩu an toàn',
-                            prefixIconAsset: 'assets/icons/ic_lock.svg',
-                            prefixIconWidth: 13.33,
-                            prefixIconHeight: 17.5,
-                            controller: _viewModel.passwordController,
-                            obscureText: state.obscurePassword,
-                            onToggleObscure:
-                                _viewModel.togglePasswordVisibility,
-                            suffixIconAsset: 'assets/icons/ic_eye.svg',
-                            suffixIconWidth: 18.33,
-                            suffixIconHeight: 12.5,
-                            validator: InputValidators.validateRequired,
+                          AuthAnimatedEntrance(
+                            delay: const Duration(milliseconds: 200),
+                            child: AuthTextField(
+                              label: 'Mật khẩu hồ sơ',
+                              hintText: 'Nhập mật khẩu an toàn',
+                              prefixIconAsset: 'assets/icons/ic_lock.svg',
+                              prefixIconWidth: 13.33,
+                              prefixIconHeight: 17.5,
+                              controller: _viewModel.passwordController,
+                              obscureText: state.obscurePassword,
+                              onToggleObscure:
+                                  _viewModel.togglePasswordVisibility,
+                              suffixIconAsset: 'assets/icons/ic_eye.svg',
+                              suffixIconWidth: 18.33,
+                              suffixIconHeight: 12.5,
+                              validator: InputValidators.validateRequired,
+                            ),
                           ),
                           const SizedBox(height: 14),
-                          _buildRememberAndForgot(state.rememberMe),
+                          AuthAnimatedEntrance(
+                            delay: const Duration(milliseconds: 260),
+                            child: _buildRememberAndForgot(state.rememberMe),
+                          ),
                           if (state.errorMessage != null) ...[
                             const SizedBox(height: 12),
                             Container(
@@ -119,27 +137,45 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                           const SizedBox(height: 18),
-                          _buildPrimaryActionRow(state.isLoading),
+                          AuthAnimatedEntrance(
+                            delay: const Duration(milliseconds: 320),
+                            child: _buildPrimaryActionRow(state.isLoading),
+                          ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 24),
-                    const AuthDivider(
-                      text: 'Hoặc tiếp tục nhanh với',
+                    const AuthAnimatedEntrance(
+                      delay: Duration(milliseconds: 380),
+                      child: AuthDivider(
+                        text: 'Hoặc tiếp tục nhanh với',
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    _buildSocialOptions(state.isLoading),
+                    AuthAnimatedEntrance(
+                      delay: const Duration(milliseconds: 440),
+                      child: _buildSocialOptions(state.isLoading),
+                    ),
                     const SizedBox(height: 24),
-                    GuestModeCard(
-                      onContinueAsGuest: () async {
-                        final ok = await _viewModel.continueAsGuestOffline();
-                        if (ok) await _handleLoginSuccess();
-                      },
+                    AuthAnimatedEntrance(
+                      delay: const Duration(milliseconds: 500),
+                      child: GuestModeCard(
+                        onContinueAsGuest: () async {
+                          final ok = await _viewModel.continueAsGuestOffline();
+                          if (ok) await _handleLoginSuccess();
+                        },
+                      ),
                     ),
                     const SizedBox(height: 20),
-                    _buildSignUpRedirect(),
+                    AuthAnimatedEntrance(
+                      delay: const Duration(milliseconds: 560),
+                      child: _buildSignUpRedirect(),
+                    ),
                     const SizedBox(height: 16),
-                    _buildSecurityFootnote(),
+                    AuthAnimatedEntrance(
+                      delay: const Duration(milliseconds: 620),
+                      child: _buildSecurityFootnote(),
+                    ),
                   ],
                 ),
               );
@@ -386,40 +422,12 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(width: 10),
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceMuted,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0D000000),
-                blurRadius: 2,
-                offset: Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            child: InkWell(
-              onTap: isLoading
-                  ? null
-                  : () async {
-                      final ok = await _viewModel.signInWithSocial('biometric');
-                      if (ok) await _handleLoginSuccess();
-                    },
-              borderRadius: BorderRadius.circular(8),
-              child: Center(
-                child: SvgPicture.asset(
-                  'assets/icons/ic_fingerprint.svg',
-                  width: 19.55,
-                  height: 21.63,
-                ),
-              ),
-            ),
-          ),
+        PulsingBiometricButton(
+          isLoading: isLoading,
+          onTap: () async {
+            final ok = await _viewModel.signInWithSocial('biometric');
+            if (ok) await _handleLoginSuccess();
+          },
         ),
       ],
     );
