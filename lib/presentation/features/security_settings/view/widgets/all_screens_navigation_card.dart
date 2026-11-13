@@ -6,7 +6,24 @@ import '../../../main_shell/view/main_shell_screen.dart';
 
 /// Thẻ điều hướng danh mục 8 màn hình chuẩn theo Figma
 class AllScreensNavigationCard extends StatelessWidget {
-  const AllScreensNavigationCard({super.key});
+  final ValueChanged<int>? onSelectMainTab;
+
+  const AllScreensNavigationCard({
+    super.key,
+    this.onSelectMainTab,
+  });
+
+  void _switchTab(BuildContext context, int tabIndex) {
+    if (onSelectMainTab != null) {
+      onSelectMainTab!(tabIndex);
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => MainShellScreen(initialIndex: tabIndex),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,11 +34,7 @@ class AllScreensNavigationCard extends StatelessWidget {
         subtitle: 'Tab trung tâm ICE • Nút đỏ lớn',
         icon: Icons.emergency_rounded,
         color: const Color(0xFFBA1A1A),
-        onTap: () => Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => const MainShellScreen(initialIndex: 2),
-          ),
-        ),
+        onTap: () => _switchTab(context, 2),
       ),
       _ScreenEntry(
         number: '2',
@@ -29,11 +42,7 @@ class AllScreensNavigationCard extends StatelessWidget {
         subtitle: 'Tab 1 • Trục sự kiện y tế',
         icon: Icons.timeline_rounded,
         color: AppColors.iceOlive,
-        onTap: () => Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => const MainShellScreen(initialIndex: 0),
-          ),
-        ),
+        onTap: () => _switchTab(context, 0),
       ),
       _ScreenEntry(
         number: '3',
@@ -41,11 +50,7 @@ class AllScreensNavigationCard extends StatelessWidget {
         subtitle: 'Tab 2 • Nhắc thuốc thông minh',
         icon: Icons.medication_rounded,
         color: const Color(0xFF2E6B5E),
-        onTap: () => Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => const MainShellScreen(initialIndex: 1),
-          ),
-        ),
+        onTap: () => _switchTab(context, 1),
       ),
       _ScreenEntry(
         number: '4',
@@ -53,11 +58,7 @@ class AllScreensNavigationCard extends StatelessWidget {
         subtitle: 'Tab 4 • Chỉ số & switcher gia đình',
         icon: Icons.person_pin_rounded,
         color: const Color(0xFF6C5C45),
-        onTap: () => Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => const MainShellScreen(initialIndex: 3),
-          ),
-        ),
+        onTap: () => _switchTab(context, 3),
       ),
       _ScreenEntry(
         number: '5',

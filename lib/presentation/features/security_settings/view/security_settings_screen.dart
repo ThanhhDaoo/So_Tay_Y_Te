@@ -14,10 +14,12 @@ import 'widgets/security_settings_header.dart';
 
 class SecuritySettingsScreen extends StatefulWidget {
   final bool showBottomNav;
+  final ValueChanged<int>? onSelectMainTab;
 
   const SecuritySettingsScreen({
     super.key,
     this.showBottomNav = true,
+    this.onSelectMainTab,
   });
 
   @override
@@ -60,6 +62,10 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
 
   void _onBottomNavSelect(int index) {
     if (index == 4) return; // already on Settings tab
+    if (widget.onSelectMainTab != null) {
+      widget.onSelectMainTab!(index);
+      return;
+    }
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => MainShellScreen(initialIndex: index),
@@ -96,7 +102,9 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 const SizedBox(height: 20),
 
                 // Danh Sách Điều Hướng Nhanh 8 Màn Hình Chuẩn Figma
-                const AllScreensNavigationCard(),
+                AllScreensNavigationCard(
+                  onSelectMainTab: widget.onSelectMainTab,
+                ),
                 const SizedBox(height: 20),
 
                 // 2. Khóa Ứng Dụng & Sinh Trắc Học

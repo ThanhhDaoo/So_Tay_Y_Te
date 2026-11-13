@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../features/add_record/view/add_record_screen.dart';
 import '../features/auth/view/login_screen.dart';
@@ -58,19 +59,19 @@ class AppRoutes {
           builder: (_) => MainShellScreen(initialIndex: initialIndex),
         );
       case addRecord:
-        return MaterialPageRoute(builder: (_) => const AddRecordScreen());
+        return CupertinoPageRoute(builder: (_) => const AddRecordScreen());
       case recordDetail:
         final recordId = settings.arguments as String?;
-        return MaterialPageRoute(
+        return CupertinoPageRoute(
           builder: (_) => RecordDetailScreen(recordId: recordId ?? ''),
         );
       case documents:
-        return MaterialPageRoute(builder: (_) => const DocumentsScreen());
+        return CupertinoPageRoute(builder: (_) => const DocumentsScreen());
       case paywall:
-        return MaterialPageRoute(builder: (_) => const PaywallScreen());
+        return CupertinoPageRoute(builder: (_) => const PaywallScreen());
       case vitalReports:
       case vitalReport:
-        return MaterialPageRoute(builder: (_) => const VitalReportsScreen());
+        return CupertinoPageRoute(builder: (_) => const VitalReportsScreen());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

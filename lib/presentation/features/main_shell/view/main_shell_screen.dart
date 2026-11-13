@@ -39,12 +39,15 @@ class _MainShellScreenState extends State<MainShellScreen> {
       extendBody: true,
       body: IndexedStack(
         index: _selectedIndex,
-        children: const [
-          TimelineScreen(showBottomNav: false),
-          PrescriptionsScreen(showBottomNav: false),
-          EmergencyCardScreen(showBottomNav: false),
-          ProfileScreen(showBottomNav: false),
-          SecuritySettingsScreen(showBottomNav: false),
+        children: [
+          const TimelineScreen(showBottomNav: false),
+          const PrescriptionsScreen(showBottomNav: false),
+          const EmergencyCardScreen(showBottomNav: false),
+          const ProfileScreen(showBottomNav: false),
+          SecuritySettingsScreen(
+            showBottomNav: false,
+            onSelectMainTab: _onSelectTab,
+          ),
         ],
       ),
       bottomNavigationBar: IceBottomNavBar(
