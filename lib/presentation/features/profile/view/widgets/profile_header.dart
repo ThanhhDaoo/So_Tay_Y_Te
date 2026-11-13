@@ -51,23 +51,21 @@ class ProfileHeader extends StatelessWidget {
                     children: [
                       Text(
                         'SỔ TAY Y TẾ',
-                        style: AppTypography.caption.copyWith(
+                        style: TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.1,
-                          color: AppColors.iceTextMuted,
-                          height: 1.0,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.55,
+                          color: AppColors.iceOlive,
+                          height: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 2),
                       Text(
                         'Hồ Sơ',
-                        style: AppTypography.headerTitle.copyWith(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.34,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.iceTextNavy,
-                          height: 1.15,
+                          height: 1.2,
                         ),
                       ),
                     ],

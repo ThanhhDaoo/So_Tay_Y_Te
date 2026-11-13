@@ -122,39 +122,29 @@ class _NavItem extends StatelessWidget {
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.iceOlive.withValues(alpha: 0.14)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: SizedBox(
-                    width: 22,
-                    height: 20,
-                    child: Center(
-                      child: SvgPicture.asset(
-                        iconAsset,
-                        colorFilter: ColorFilter.mode(
-                          iconColor,
-                          BlendMode.srcIn,
-                        ),
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: Center(
+                    child: SvgPicture.asset(
+                      iconAsset,
+                      width: iconAsset.contains('settings') ? 18 : 20,
+                      height: iconAsset.contains('settings') ? 6 : 20,
+                      colorFilter: ColorFilter.mode(
+                        iconColor,
+                        BlendMode.srcIn,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: isSelected ? 10.5 : 10,
+                    fontSize: 10,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: labelColor,
+                    height: 1.1,
                   ),
                 ),
               ],
