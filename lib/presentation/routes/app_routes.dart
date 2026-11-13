@@ -10,6 +10,7 @@ import '../features/prescriptions/view/prescriptions_screen.dart';
 import '../features/profile/view/profile_screen.dart';
 import '../features/documents/view/documents_screen.dart';
 import '../features/main_shell/view/main_shell_screen.dart';
+import '../features/vital_reports/view/vital_reports_screen.dart';
 
 class AppRoutes {
   static const String timeline = '/';
@@ -23,6 +24,8 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String documents = '/documents';
   static const String paywall = '/paywall';
+  static const String vitalReports = '/vital-reports';
+  static const String vitalReport = '/vital-report';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -51,6 +54,9 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const DocumentsScreen());
       case paywall:
         return MaterialPageRoute(builder: (_) => const PaywallScreen());
+      case vitalReports:
+      case vitalReport:
+        return MaterialPageRoute(builder: (_) => const VitalReportsScreen());
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

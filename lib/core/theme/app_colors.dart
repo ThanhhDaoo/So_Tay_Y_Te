@@ -87,4 +87,28 @@ class AppColors {
   static const Color rxBlueSoft = Color(0xFFDCE9FF);
   static const Color rxProgressTrack = Color(0xFFD3E4FE);
   static const Color rxAdviceCircle = Color(0xFFE3E5DC);
+
+  // Vital Reports & Clinical Export Palette (Figma node 1:1666)
+  static const Color reportBackground = Color(0xFFF8F9FF);
+  static const Color reportTeal = Color(0xFF00685F);
+  static const Color reportTealSoft = Color(0x1A00685F);
+  static const Color reportOlive = Color(0xFF545B4D);
+  static const Color reportOliveDark = Color(0xFF515849);
+  static const Color reportCream = Color(0xFFE8D2B5);
+  static const Color reportCreamDark = Color(0xFF53442F);
+  static const Color reportPillBg = Color(0xFFEFE7DA);
+  static const Color reportSegmentBg = Color(0xFFF5F3EE);
+  static const Color reportHeroBg = Color(0xB3EFF4FF);
+  static const Color reportTextDark = Color(0xFF0B1C30);
+  static const Color reportTextMuted = Color(0xFF6D7A77);
+  static const Color reportTextSlate = Color(0xFF3D4947);
+  static const Color reportZoneGreen = Color(0xCC10B981);
+  static const Color reportZoneYellow = Color(0xFFFBBF24);
+  static const Color reportZoneRed = Color(0xFFBB0112);
+  static const Color reportBorderLight = Color(0xFFECE7DF);
+  static const Color reportDividerGray = Color(0xFFBCC9C6);
+  static const Color reportAllergyBannerBg = Color(0xFFFFDAD6);
+  static const Color reportAllergyTextRed = Color(0xFF93000A);
+  static const Color reportNoticeBg = Color(0xFFF7EFE4);
+  static const Color reportQrBg = Color(0xFFDCE9FF);
 }

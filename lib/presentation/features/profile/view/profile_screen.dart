@@ -142,9 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ProfileSecurityActionsBar(
                       isEditLocked: state.isEditLocked,
                       onToggleLock: _viewModel.toggleEditLock,
-                      onExportPdf: () => _showSnack(
-                        'Đang chuẩn bị bản tóm tắt PDF cho ${activeChip.name}...',
-                      ),
+                      onExportPdf: () => Navigator.of(context).pushNamed(AppRoutes.vitalReports),
                       onShareEmergency: () => _showSnack(
                         'Đã tạo liên kết chia sẻ cấp cứu QR cho ${activeChip.name}',
                       ),
