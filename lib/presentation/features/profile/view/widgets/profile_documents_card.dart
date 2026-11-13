@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
 
-/// Thẻ nổi bật truy cập Kho Tài Liệu Y Tế & Kết Quả Xét Nghiệm từ màn hình Hồ Sơ.
+/// Thẻ Kho Tài Liệu Y Tế & Kết Quả Xét Nghiệm đồng bộ 100% màu nền dự án.
 class ProfileDocumentsCard extends StatelessWidget {
   const ProfileDocumentsCard({
     super.key,
@@ -14,24 +15,17 @@ class ProfileDocumentsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFF4FAF9),
-            Color(0xFFE8F5F3),
-          ],
-        ),
+        color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF00685F).withValues(alpha: 0.35),
-          width: 1.5,
+          color: AppColors.iceCardBorder,
+          width: 1.2,
         ),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x1200685F),
-            blurRadius: 10,
-            offset: Offset(0, 3),
+            color: Color(0x0A000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -45,43 +39,36 @@ class ProfileDocumentsCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top row: Icon + Title + Badges + Button
+                // Top Row: Icon + Title + Badge + Button
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Icon container
+                    // Icon container - màu Olive thương hiệu
                     Container(
-                      width: 48,
-                      height: 48,
+                      width: 46,
+                      height: 46,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF00897B),
-                            Color(0xFF00685F),
-                          ],
-                        ),
+                        color: AppColors.iceOlive,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x3300685F),
-                            blurRadius: 8,
-                            offset: Offset(0, 3),
+                            color: Color(0x24545B4D),
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
                           ),
                         ],
                       ),
                       child: const Center(
                         child: Icon(
                           Icons.folder_shared_rounded,
-                          size: 26,
+                          size: 24,
                           color: Colors.white,
                         ),
                       ),
                     ),
                     const SizedBox(width: 12),
 
-                    // Title & Badges
+                    // Title & Badge
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,11 +77,11 @@ class ProfileDocumentsCard extends StatelessWidget {
                             children: [
                               Flexible(
                                 child: Text(
-                                  'Kho Tài Liệu & Kết Quả XN',
+                                  'Kho Tài Liệu Y Tế',
                                   style: AppTypography.heading3.copyWith(
                                     fontSize: 15.5,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF004D40),
+                                    color: AppColors.iceTextNavy,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -114,16 +101,20 @@ class ProfileDocumentsCard extends StatelessWidget {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF00685F),
+                                  color: AppColors.iceMetricBox,
                                   borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(
+                                    color: AppColors.iceCardBorder,
+                                    width: 1,
+                                  ),
                                 ),
-                                child: const Text(
-                                  '12 TÀI LIỆU',
-                                  style: TextStyle(
+                                child: Text(
+                                  '12 TỆP ĐÍNH KÈM',
+                                  style: AppTypography.caption.copyWith(
                                     fontSize: 9.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                    letterSpacing: 0.4,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.3,
+                                    color: AppColors.iceOlive,
                                   ),
                                 ),
                               ),
@@ -133,10 +124,10 @@ class ProfileDocumentsCard extends StatelessWidget {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFE0F2F1),
+                                  color: const Color(0xFFF3ECE0),
                                   borderRadius: BorderRadius.circular(999),
                                   border: Border.all(
-                                    color: const Color(0xFF80CBC4),
+                                    color: AppColors.iceAccentCream,
                                     width: 0.8,
                                   ),
                                 ),
@@ -146,15 +137,15 @@ class ProfileDocumentsCard extends StatelessWidget {
                                     Icon(
                                       Icons.auto_awesome,
                                       size: 10,
-                                      color: Color(0xFF00685F),
+                                      color: Color(0xFF6C5C45),
                                     ),
                                     SizedBox(width: 3),
                                     Text(
-                                      'AI OCR',
+                                      'OCR',
                                       style: TextStyle(
                                         fontSize: 9.5,
                                         fontWeight: FontWeight.w700,
-                                        color: Color(0xFF00685F),
+                                        color: Color(0xFF6C5C45),
                                       ),
                                     ),
                                   ],
@@ -167,20 +158,20 @@ class ProfileDocumentsCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
 
-                    // Primary Action Button "Mở Kho >"
+                    // Primary Action Button "Mở kho ›"
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00685F),
+                        color: AppColors.iceOlive,
                         borderRadius: BorderRadius.circular(999),
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x2600685F),
-                            blurRadius: 6,
-                            offset: Offset(0, 2),
+                            color: Color(0x20545B4D),
+                            blurRadius: 4,
+                            offset: Offset(0, 1.5),
                           ),
                         ],
                       ),
@@ -190,7 +181,7 @@ class ProfileDocumentsCard extends StatelessWidget {
                           Text(
                             'Mở kho',
                             style: TextStyle(
-                              fontSize: 12.5,
+                              fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),
@@ -209,34 +200,34 @@ class ProfileDocumentsCard extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
-                // Description
+                // Subtitle
                 Text(
-                  'Lưu trữ hồ sơ xét nghiệm máu, phim X-Quang, MRI và đơn thuốc quét số hóa tự động.',
+                  'Lưu trữ hồ sơ xét nghiệm máu, chẩn đoán hình ảnh X-Quang, MRI và đơn thuốc đã số hóa.',
                   style: AppTypography.caption.copyWith(
                     fontSize: 12,
-                    color: const Color(0xFF2E5E58),
+                    color: AppColors.textSecondaryLight,
                     height: 1.35,
                   ),
                 ),
 
                 const SizedBox(height: 10),
 
-                // Content preview pills
-                Wrap(
+                // Category Chips
+                const Wrap(
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    _FeatureTag(
+                    _DocTag(
                       icon: Icons.bloodtype_outlined,
                       label: 'Xét nghiệm máu',
                     ),
-                    _FeatureTag(
+                    _DocTag(
                       icon: Icons.monitor_heart_outlined,
                       label: 'Phim X-Quang / MRI',
                     ),
-                    _FeatureTag(
+                    _DocTag(
                       icon: Icons.receipt_long_outlined,
-                      label: 'Đơn thuốc OCR',
+                      label: 'Đơn thuốc',
                     ),
                   ],
                 ),
@@ -249,11 +240,11 @@ class ProfileDocumentsCard extends StatelessWidget {
   }
 }
 
-class _FeatureTag extends StatelessWidget {
+class _DocTag extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _FeatureTag({
+  const _DocTag({
     required this.icon,
     required this.label,
   });
@@ -263,10 +254,10 @@ class _FeatureTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.85),
+        color: AppColors.surfaceWarm,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: const Color(0xFFB2DFDB),
+          color: AppColors.divider,
           width: 0.8,
         ),
       ),
@@ -276,7 +267,7 @@ class _FeatureTag extends StatelessWidget {
           Icon(
             icon,
             size: 13,
-            color: const Color(0xFF00685F),
+            color: AppColors.iceOlive,
           ),
           const SizedBox(width: 4),
           Text(
@@ -284,7 +275,7 @@ class _FeatureTag extends StatelessWidget {
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF004D40),
+              color: AppColors.textSecondaryLight,
             ),
           ),
         ],
