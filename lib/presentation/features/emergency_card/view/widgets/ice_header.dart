@@ -59,7 +59,7 @@ class IceHeader extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Cap Cuu Ice',
+                        'Cấp Cứu ICE',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,

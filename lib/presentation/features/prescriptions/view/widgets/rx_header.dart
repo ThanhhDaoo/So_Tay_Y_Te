@@ -63,7 +63,7 @@ class RxHeader extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Don Thuoc',
+                        'Đơn Thuốc',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,

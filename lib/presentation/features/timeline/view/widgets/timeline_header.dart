@@ -60,7 +60,7 @@ class TimelineHeader extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Dong Thoi Gian',
+                        'Dòng Thời Gian',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
