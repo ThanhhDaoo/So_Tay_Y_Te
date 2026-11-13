@@ -4,6 +4,8 @@ import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import '../../main_shell/view/main_shell_screen.dart';
 import '../../../routes/app_routes.dart';
 import '../viewmodel/profile_viewmodel.dart';
+import 'widgets/add_family_member_sheet.dart';
+import 'widgets/medical_history_sheet.dart';
 import 'widgets/profile_allergy_warning_card.dart';
 import 'widgets/profile_chronic_conditions_card.dart';
 import 'widgets/profile_documents_card.dart';
@@ -103,8 +105,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     members: state.familyMembers,
                     selectedMemberId: state.selectedMemberId,
                     onSelectMember: _viewModel.selectMember,
-                    onAddMemberTap: () =>
-                        _showSnack('Tính năng thêm thành viên đang phát triển'),
+                    onAddMemberTap: () => AddFamilyMemberSheet.show(
+                      context,
+                      onAdd: (name, rel, blood) {
+                        _showSnack('Đã thêm hồ sơ: $name ($rel, $blood)');
+                      },
+                    ),
                     onVaultProTap: () =>
                         Navigator.of(context).pushNamed(AppRoutes.paywall),
                   ),
@@ -139,8 +145,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 18),
                     ProfileChronicConditionsCard(
                       conditions: activeProfile.chronicConditions,
-                      onDetailTap: () =>
-                          _showSnack('Chi tiết bệnh sử đang phát triển'),
+                      onDetailTap: () => MedicalHistorySheet.show(
+                        context,
+                        patientName: activeProfile.fullName,
+                      ),
                     ),
                     const SizedBox(height: 18),
                     ProfileImmunizationCard(

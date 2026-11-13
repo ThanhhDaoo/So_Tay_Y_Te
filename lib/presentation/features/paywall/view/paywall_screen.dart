@@ -8,6 +8,7 @@ import 'widgets/vault_brand_hero.dart';
 import 'widgets/vault_cta_button.dart';
 import 'widgets/vault_features_checklist.dart';
 import 'widgets/vault_pricing_selector.dart';
+import 'widgets/vault_pro_payment_sheet.dart';
 
 class PaywallScreen extends StatefulWidget {
   const PaywallScreen({super.key});
@@ -45,8 +46,14 @@ class _PaywallScreenState extends State<PaywallScreen> {
 
   void _onStartTrial() {
     final plan = _viewModel.state.selectedPlan;
-    _showSnack(
-      'Kích hoạt 7 ngày dùng thử ${plan.title} (${plan.price}) thành công!',
+    VaultProPaymentSheet.show(
+      context,
+      selectedPlan: plan,
+      onSuccess: () {
+        _showSnack(
+          'Chúc mừng bạn đã nâng cấp thành công ${plan.title}! Toàn bộ tính năng Pro đã được mở khóa.',
+        );
+      },
     );
   }
 

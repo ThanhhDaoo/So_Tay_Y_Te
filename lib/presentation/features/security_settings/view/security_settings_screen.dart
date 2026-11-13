@@ -6,6 +6,7 @@ import '../viewmodel/security_settings_state.dart';
 import '../viewmodel/security_settings_viewmodel.dart';
 import 'widgets/app_lock_biometrics_card.dart';
 import 'widgets/backup_restore_card.dart';
+import 'widgets/change_pin_modal.dart';
 import 'widgets/danger_zone_wipe_card.dart';
 import 'widgets/encryption_privacy_card.dart';
 import 'widgets/master_shield_security_card.dart';
@@ -105,13 +106,18 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   state: state,
                   onToggleBiometrics: _viewModel.toggleBiometricLock,
                   onChangePin: () {
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Tính năng đổi mã PIN 6 chữ số đang được bảo mật.'),
-                        backgroundColor: AppColors.secOlive,
-                        behavior: SnackBarBehavior.floating,
-                      ),
+                    ChangePinModal.show(
+                      context,
+                      onSuccess: () {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Mã PIN 6 chữ số đã được cập nhật và mã hóa thành công!'),
+                            backgroundColor: AppColors.secOlive,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
                     );
                   },
                   onSelectTimeout: _viewModel.setAutoLockTimeout,
