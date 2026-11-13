@@ -120,3 +120,4 @@ class _PulsingBiometricButtonState extends State<PulsingBiometricButton>
     );
   }
 }
+

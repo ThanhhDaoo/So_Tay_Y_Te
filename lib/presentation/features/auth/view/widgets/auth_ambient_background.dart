@@ -99,3 +99,4 @@ class _AuthAmbientBackgroundState extends State<AuthAmbientBackground>
     );
   }
 }
+
