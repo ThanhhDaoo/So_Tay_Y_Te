@@ -173,3 +173,4 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
     return results.map((m) => AuthIdentityModel.fromMap(m)).toList();
   }
 }
+

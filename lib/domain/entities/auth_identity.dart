@@ -33,3 +33,4 @@ class AuthIdentity {
     required this.linkedAt,
   });
 }
+

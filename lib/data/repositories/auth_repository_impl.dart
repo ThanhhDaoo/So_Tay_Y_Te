@@ -1,4 +1,5 @@
 import 'package:uuid/uuid.dart';
+import '../../core/config/supabase_config.dart';
 import '../../core/security/password_hasher.dart';
 import '../../domain/entities/auth_identity.dart';
 import '../../domain/entities/user_account.dart';
@@ -7,6 +8,7 @@ import '../../domain/repositories/auth_repository.dart';
 import '../datasources/local/app_preferences_datasource.dart';
 import '../datasources/local/auth_local_datasource.dart';
 import '../datasources/remote/auth_remote_datasource.dart';
+import '../datasources/remote/supabase_auth_datasource.dart';
 import '../models/auth_identity_model.dart';
 import '../models/user_account_model.dart';
 
@@ -14,12 +16,14 @@ class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
   final AppPreferencesDataSource localDataSource;
   final AuthLocalDataSource authLocalDataSource;
+  final SupabaseAuthRemoteDataSource? supabaseAuthRemoteDataSource;
   final Uuid _uuid = const Uuid();
 
   AuthRepositoryImpl({
     required this.remoteDataSource,
     required this.localDataSource,
     required this.authLocalDataSource,
+    this.supabaseAuthRemoteDataSource,
   });
 
   @override
@@ -41,6 +45,25 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<UserProfile> loginAnonymous() async {
+    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
+      try {
+        final cloudGuest = await supabaseAuthRemoteDataSource!.signInAnonymously();
+        await authLocalDataSource.createUser(cloudGuest);
+        await localDataSource.saveSession(
+          userId: cloudGuest.id,
+          patientCode: cloudGuest.patientCode,
+          contact: cloudGuest.primaryContact,
+          rememberMe: false,
+        );
+        return UserProfile(
+          id: cloudGuest.id,
+          fullName: cloudGuest.fullName,
+          emergencyContact: cloudGuest.primaryContact,
+          isPro: false,
+        );
+      } catch (_) {}
+    }
+
     final patientCode = await authLocalDataSource.generateUniquePatientCode();
     final guestId = 'guest-${_uuid.v4().substring(0, 8)}';
     final now = DateTime.now();
@@ -103,6 +126,11 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> logout() async {
+    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
+      try {
+        await supabaseAuthRemoteDataSource!.signOut();
+      } catch (_) {}
+    }
     await localDataSource.clearSession();
   }
 
@@ -115,6 +143,33 @@ class AuthRepositoryImpl implements AuthRepository {
     String? gender,
     String? bloodType,
   }) async {
+    // 1. Nếu đã kết nối Supabase Cloud, đăng ký lên Supabase Auth
+    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
+      try {
+        final cloudAccount = await supabaseAuthRemoteDataSource!.signUpWithEmail(
+          email: contact.trim().toLowerCase(),
+          password: password,
+          fullName: fullName.trim(),
+          dateOfBirth: dateOfBirth,
+          gender: gender,
+          bloodType: bloodType,
+        );
+
+        // Đồng bộ bản ghi xuống CSDL SQLite cục bộ
+        await authLocalDataSource.createUser(cloudAccount);
+        await localDataSource.saveSession(
+          userId: cloudAccount.id,
+          patientCode: cloudAccount.patientCode,
+          contact: cloudAccount.primaryContact,
+          rememberMe: true,
+        );
+        return cloudAccount;
+      } catch (e) {
+        throw Exception(e.toString().replaceFirst('Exception: ', ''));
+      }
+    }
+
+    // 2. Chế độ CSDL Local-First (SQLite + SHA-256 + Salt)
     final existingUser = await authLocalDataSource.findByIdentifier(contact);
     if (existingUser != null) {
       throw Exception('Số điện thoại hoặc Email này đã được đăng ký hồ sơ.');
@@ -172,6 +227,29 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
     bool rememberMe = true,
   }) async {
+    // 1. Nếu đã kết nối Supabase Cloud và identifier là email
+    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null && identifier.contains('@')) {
+      try {
+        final cloudAccount = await supabaseAuthRemoteDataSource!.signInWithEmail(
+          email: identifier.trim().toLowerCase(),
+          password: password,
+        );
+
+        // Lưu session & cập nhật local DB
+        await authLocalDataSource.createUser(cloudAccount);
+        await localDataSource.saveSession(
+          userId: cloudAccount.id,
+          patientCode: cloudAccount.patientCode,
+          contact: cloudAccount.primaryContact,
+          rememberMe: rememberMe,
+        );
+        return cloudAccount;
+      } catch (e) {
+        throw Exception(e.toString().replaceFirst('Exception: ', ''));
+      }
+    }
+
+    // 2. Chế độ CSDL Local-First (SQLite)
     final user = await authLocalDataSource.findByIdentifier(identifier);
     if (user == null) {
       throw Exception('Mã hồ sơ hoặc Email/SĐT chưa được đăng ký trong hệ thống.');
@@ -213,6 +291,15 @@ class AuthRepositoryImpl implements AuthRepository {
     required String identifier,
     required String newPassword,
   }) async {
+    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null && identifier.contains('@')) {
+      try {
+        await supabaseAuthRemoteDataSource!.resetPassword(identifier.trim().toLowerCase());
+        return;
+      } catch (e) {
+        throw Exception(e.toString().replaceFirst('Exception: ', ''));
+      }
+    }
+
     final user = await authLocalDataSource.findByIdentifier(identifier);
     if (user == null) {
       throw Exception('Không tìm thấy tài khoản tương ứng với mã hoặc liên hệ này.');

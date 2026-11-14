@@ -27,3 +27,4 @@ class PasswordHasher {
     return computedHash == expectedHash;
   }
 }
+

@@ -2,8 +2,10 @@ import 'package:get_it/get_it.dart';
 import '../../data/datasources/local/app_preferences_datasource.dart';
 import '../../data/datasources/local/auth_local_datasource.dart';
 import '../../data/datasources/remote/auth_remote_datasource.dart';
+import '../../data/datasources/remote/supabase_auth_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../config/supabase_config.dart';
 import '../database/database_helper.dart';
 
 final sl = GetIt.instance;
@@ -14,6 +16,9 @@ class InjectionContainer {
   InjectionContainer._internal();
 
   static Future<void> init() async {
+    // 0. Khởi tạo Supabase Backend (Option A)
+    await SupabaseConfig.initialize();
+
     // 1. Database & Core
     if (!sl.isRegistered<DatabaseHelper>()) {
       final dbHelper = AppDatabaseHelper();
@@ -34,6 +39,12 @@ class InjectionContainer {
       );
     }
 
+    if (!sl.isRegistered<SupabaseAuthRemoteDataSource>()) {
+      sl.registerLazySingleton<SupabaseAuthRemoteDataSource>(
+        () => SupabaseAuthRemoteDataSourceImpl(),
+      );
+    }
+
     if (!sl.isRegistered<AuthLocalDataSource>()) {
       sl.registerLazySingleton<AuthLocalDataSource>(
         () => AuthLocalDataSourceImpl(databaseHelper: sl<DatabaseHelper>()),
@@ -47,6 +58,7 @@ class InjectionContainer {
           remoteDataSource: sl<AuthRemoteDataSource>(),
           localDataSource: sl<AppPreferencesDataSource>(),
           authLocalDataSource: sl<AuthLocalDataSource>(),
+          supabaseAuthRemoteDataSource: sl<SupabaseAuthRemoteDataSource>(),
         ),
       );
     }
