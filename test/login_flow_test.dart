@@ -1,9 +1,32 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:so_tay_y_te/core/security/biometric_service.dart';
 import 'package:so_tay_y_te/domain/entities/user_account.dart';
 import 'package:so_tay_y_te/domain/entities/user_profile.dart';
 import 'package:so_tay_y_te/domain/repositories/auth_repository.dart';
 import 'package:so_tay_y_te/presentation/features/auth/viewmodel/login_state.dart';
 import 'package:so_tay_y_te/presentation/features/auth/viewmodel/login_viewmodel.dart';
+
+class MockSuccessBiometricService implements BiometricService {
+  @override
+  Future<bool> isBiometricAvailable() async => true;
+
+  @override
+  Future<List<BiometricHardwareType>> getAvailableBiometrics() async => [BiometricHardwareType.face];
+
+  @override
+  Future<bool> authenticate({required String localizedReason}) async => true;
+}
+
+class MockFailingBiometricService implements BiometricService {
+  @override
+  Future<bool> isBiometricAvailable() async => false;
+
+  @override
+  Future<List<BiometricHardwareType>> getAvailableBiometrics() async => [BiometricHardwareType.none];
+
+  @override
+  Future<bool> authenticate({required String localizedReason}) async => false;
+}
 
 class MockLoginAuthRepository implements AuthRepository {
   final Map<String, String> _passwords = {
@@ -197,6 +220,35 @@ void main() {
       // Check auto-login now
       final autoLoginOk = await viewModel.checkAutoLogin();
       expect(autoLoginOk, isTrue);
+    });
+
+    test('Biometric sign in succeeds with active session or credentials', () async {
+      final successBiometricService = MockSuccessBiometricService();
+      final bioViewModel = LoginViewModel(
+        authRepository: mockRepo,
+        biometricService: successBiometricService,
+      );
+
+      bioViewModel.identifierController.text = 'STYT-892410';
+      bioViewModel.passwordController.text = '123456';
+
+      final success = await bioViewModel.signInWithBiometrics();
+      expect(success, isTrue);
+      expect(bioViewModel.state.status, equals(LoginStatus.success));
+      expect(bioViewModel.state.loggedInUser?.patientCode, equals('STYT-892410'));
+    });
+
+    test('Biometric sign in fails when biometric hardware is unavailable or cancelled', () async {
+      final failingBiometricService = MockFailingBiometricService();
+      final bioViewModel = LoginViewModel(
+        authRepository: mockRepo,
+        biometricService: failingBiometricService,
+      );
+
+      final success = await bioViewModel.signInWithBiometrics();
+      expect(success, isFalse);
+      expect(bioViewModel.state.status, equals(LoginStatus.error));
+      expect(bioViewModel.state.errorMessage, contains('Thiết bị không hỗ trợ'));
     });
   });
 }

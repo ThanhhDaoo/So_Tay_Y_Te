@@ -187,3 +187,4 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
     await client?.auth.signOut();
   }
 }
+

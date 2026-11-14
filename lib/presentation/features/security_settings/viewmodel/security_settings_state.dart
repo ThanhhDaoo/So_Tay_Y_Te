@@ -25,8 +25,8 @@ class SecuritySettingsState {
   final String? feedbackMessage;
 
   const SecuritySettingsState({
-    this.isBiometricLockEnabled = true,
-    this.hasPinCode = true,
+    this.isBiometricLockEnabled = false,
+    this.hasPinCode = false,
     this.maskedPin = '••••••',
     this.autoLockTimeout = AutoLockTimeout.immediate,
     this.isHardwareEnclaveActive = true,
@@ -52,6 +52,7 @@ class SecuritySettingsState {
     String? lastBackupSize,
     SecurityOperation? currentOperation,
     String? feedbackMessage,
+    bool clearFeedbackMessage = false,
   }) {
     return SecuritySettingsState(
       isBiometricLockEnabled: isBiometricLockEnabled ?? this.isBiometricLockEnabled,
@@ -66,8 +67,7 @@ class SecuritySettingsState {
       lastBackupTime: lastBackupTime ?? this.lastBackupTime,
       lastBackupSize: lastBackupSize ?? this.lastBackupSize,
       currentOperation: currentOperation ?? this.currentOperation,
-      feedbackMessage: feedbackMessage,
+      feedbackMessage: clearFeedbackMessage ? null : (feedbackMessage ?? this.feedbackMessage),
     );
   }
 }
-

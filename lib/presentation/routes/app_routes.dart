@@ -7,6 +7,7 @@ import '../features/documents/view/documents_screen.dart';
 import '../features/main_shell/view/main_shell_screen.dart';
 import '../features/paywall/view/paywall_screen.dart';
 import '../features/record_detail/view/record_detail_screen.dart';
+import '../features/security_settings/view/app_lock_screen.dart';
 import '../features/vital_reports/view/vital_reports_screen.dart';
 
 class AppRoutes {
@@ -25,6 +26,7 @@ class AppRoutes {
   static const String vitalReport = '/vital-report';
   static const String securitySettings = '/security-settings';
   static const String settings = '/settings';
+  static const String appLock = '/app-lock';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -72,6 +74,16 @@ class AppRoutes {
       case vitalReports:
       case vitalReport:
         return CupertinoPageRoute(builder: (_) => const VitalReportsScreen());
+      case appLock:
+        final onUnlocked = settings.arguments as VoidCallback? ?? () {};
+        return MaterialPageRoute(
+          builder: (ctx) => AppLockScreen(
+            onUnlocked: () {
+              Navigator.of(ctx).pop();
+              onUnlocked();
+            },
+          ),
+        );
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

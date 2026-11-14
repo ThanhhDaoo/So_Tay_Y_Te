@@ -3,15 +3,27 @@ import '../../../../../core/theme/app_colors.dart';
 
 class ChangePinModal extends StatefulWidget {
   final VoidCallback onSuccess;
+  final ValueChanged<String>? onPinCreated;
 
-  const ChangePinModal({super.key, required this.onSuccess});
+  const ChangePinModal({
+    super.key,
+    required this.onSuccess,
+    this.onPinCreated,
+  });
 
-  static void show(BuildContext context, {required VoidCallback onSuccess}) {
+  static void show(
+    BuildContext context, {
+    required VoidCallback onSuccess,
+    ValueChanged<String>? onPinCreated,
+  }) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => ChangePinModal(onSuccess: onSuccess),
+      builder: (_) => ChangePinModal(
+        onSuccess: onSuccess,
+        onPinCreated: onPinCreated,
+      ),
     );
   }
 
@@ -38,7 +50,9 @@ class _ChangePinModalState extends State<ChangePinModal> {
             });
           } else {
             if (_pin == _firstPin) {
+              final confirmedPin = _pin;
               Navigator.pop(context);
+              widget.onPinCreated?.call(confirmedPin);
               widget.onSuccess();
             } else {
               ScaffoldMessenger.of(context).showSnackBar(

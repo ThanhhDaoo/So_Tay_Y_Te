@@ -429,7 +429,7 @@ class _LoginScreenState extends State<LoginScreen> {
         PulsingBiometricButton(
           isLoading: isLoading,
           onTap: () async {
-            final ok = await _viewModel.signInWithSocial('biometric');
+            final ok = await _viewModel.signInWithBiometrics();
             if (ok) await _handleLoginSuccess();
           },
         ),

@@ -15,6 +15,17 @@ abstract class AppPreferencesDataSource {
   Future<void> clearSession();
   Future<void> setProStatus(bool isPro);
   Future<bool> getProStatus();
+  Future<void> setBiometricLockEnabled(bool enabled);
+  Future<bool> isBiometricLockEnabled();
+  Future<void> savePin({required String pinHash, required String salt});
+  Future<String?> getPinHash();
+  Future<String?> getPinSalt();
+  Future<bool> hasPin();
+  Future<void> clearPin();
+  Future<void> setAutoLockTimeout(int minutes);
+  Future<int> getAutoLockTimeout();
+  Future<void> setPrivacyScreenEnabled(bool enabled);
+  Future<bool> isPrivacyScreenEnabled();
 }
 
 class AppPreferencesDataSourceImpl implements AppPreferencesDataSource {
@@ -24,6 +35,11 @@ class AppPreferencesDataSourceImpl implements AppPreferencesDataSource {
   static const String _keyContact = 'auth_contact';
   static const String _keyRememberMe = 'auth_remember_me';
   static const String _keyIsPro = 'is_pro_member';
+  static const String _keyBiometricEnabled = 'security_biometric_enabled';
+  static const String _keyPinHash = 'security_pin_hash';
+  static const String _keyPinSalt = 'security_pin_salt';
+  static const String _keyAutoLockTimeout = 'security_auto_lock_timeout';
+  static const String _keyPrivacyScreen = 'security_privacy_screen';
 
   Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
 
@@ -91,5 +107,73 @@ class AppPreferencesDataSourceImpl implements AppPreferencesDataSource {
   Future<bool> getProStatus() async {
     final prefs = await _prefs;
     return prefs.getBool(_keyIsPro) ?? false;
+  }
+
+  @override
+  Future<void> setBiometricLockEnabled(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_keyBiometricEnabled, enabled);
+  }
+
+  @override
+  Future<bool> isBiometricLockEnabled() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_keyBiometricEnabled) ?? false;
+  }
+
+  @override
+  Future<void> savePin({required String pinHash, required String salt}) async {
+    final prefs = await _prefs;
+    await prefs.setString(_keyPinHash, pinHash);
+    await prefs.setString(_keyPinSalt, salt);
+  }
+
+  @override
+  Future<String?> getPinHash() async {
+    final prefs = await _prefs;
+    return prefs.getString(_keyPinHash);
+  }
+
+  @override
+  Future<String?> getPinSalt() async {
+    final prefs = await _prefs;
+    return prefs.getString(_keyPinSalt);
+  }
+
+  @override
+  Future<bool> hasPin() async {
+    final prefs = await _prefs;
+    return prefs.containsKey(_keyPinHash) && prefs.getString(_keyPinHash) != null;
+  }
+
+  @override
+  Future<void> clearPin() async {
+    final prefs = await _prefs;
+    await prefs.remove(_keyPinHash);
+    await prefs.remove(_keyPinSalt);
+  }
+
+  @override
+  Future<void> setAutoLockTimeout(int minutes) async {
+    final prefs = await _prefs;
+    await prefs.setInt(_keyAutoLockTimeout, minutes);
+  }
+
+  @override
+  Future<int> getAutoLockTimeout() async {
+    final prefs = await _prefs;
+    return prefs.getInt(_keyAutoLockTimeout) ?? 0; // 0 = immediate
+  }
+
+  @override
+  Future<void> setPrivacyScreenEnabled(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_keyPrivacyScreen, enabled);
+  }
+
+  @override
+  Future<bool> isPrivacyScreenEnabled() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_keyPrivacyScreen) ?? true;
   }
 }

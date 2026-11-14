@@ -1,6 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:so_tay_y_te/core/security/biometric_service.dart';
+import 'package:so_tay_y_te/data/datasources/local/app_preferences_datasource.dart';
 import 'package:so_tay_y_te/presentation/features/security_settings/view/security_settings_screen.dart';
+import 'package:so_tay_y_te/presentation/features/security_settings/viewmodel/security_settings_state.dart';
+import 'package:so_tay_y_te/presentation/features/security_settings/viewmodel/security_settings_viewmodel.dart';
+
+class MockSuccessBiometricService implements BiometricService {
+  @override
+  Future<bool> isBiometricAvailable() async => true;
+
+  @override
+  Future<List<BiometricHardwareType>> getAvailableBiometrics() async => [BiometricHardwareType.face];
+
+  @override
+  Future<bool> authenticate({required String localizedReason}) async => true;
+}
+
+class MockFailingBiometricService implements BiometricService {
+  @override
+  Future<bool> isBiometricAvailable() async => false;
+
+  @override
+  Future<List<BiometricHardwareType>> getAvailableBiometrics() async => [BiometricHardwareType.none];
+
+  @override
+  Future<bool> authenticate({required String localizedReason}) async => false;
+}
 
 void main() {
   testWidgets('SecuritySettingsScreen renders all security & biometric sections', (tester) async {
@@ -75,5 +102,92 @@ void main() {
     // Verify notification snackbar
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.textContaining('thành công'), findsOneWidget);
+  });
+
+  group('Sub-module 2.3: Security Settings & PIN Vault ViewModel Tests', () {
+    late AppPreferencesDataSource prefsDs;
+
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+      prefsDs = AppPreferencesDataSourceImpl();
+    });
+
+    test('toggleBiometricLock enables when hardware authentication succeeds', () async {
+      final successBio = MockSuccessBiometricService();
+      final vm = SecuritySettingsViewModel(
+        preferencesDataSource: prefsDs,
+        biometricService: successBio,
+      );
+      await vm.loadSettings();
+
+      await vm.toggleBiometricLock(true);
+      expect(vm.state.isBiometricLockEnabled, isTrue);
+      expect(await prefsDs.isBiometricLockEnabled(), isTrue);
+      expect(vm.state.feedbackMessage, contains('Đã kích hoạt xác thực Face ID'));
+
+      await vm.toggleBiometricLock(false);
+      expect(vm.state.isBiometricLockEnabled, isFalse);
+      expect(await prefsDs.isBiometricLockEnabled(), isFalse);
+    });
+
+    test('toggleBiometricLock fails when hardware biometric unavailable', () async {
+      final failBio = MockFailingBiometricService();
+      final vm = SecuritySettingsViewModel(
+        preferencesDataSource: prefsDs,
+        biometricService: failBio,
+      );
+      await vm.loadSettings();
+
+      await vm.toggleBiometricLock(true);
+      expect(vm.state.isBiometricLockEnabled, isFalse);
+      expect(vm.state.feedbackMessage, contains('Thiết bị không hỗ trợ'));
+    });
+
+    test('saveNewPin and verifyPin work with cryptographic hash & salt', () async {
+      final vm = SecuritySettingsViewModel(
+        preferencesDataSource: prefsDs,
+        biometricService: MockSuccessBiometricService(),
+      );
+
+      await vm.saveNewPin('889900');
+      expect(vm.state.hasPinCode, isTrue);
+      expect(await prefsDs.hasPin(), isTrue);
+
+      final valid = await vm.verifyPin('889900');
+      expect(valid, isTrue);
+
+      final invalid = await vm.verifyPin('111111');
+      expect(invalid, isFalse);
+    });
+
+    test('setAutoLockTimeout and togglePrivacyScreen update preferences correctly', () async {
+      final vm = SecuritySettingsViewModel(
+        preferencesDataSource: prefsDs,
+        biometricService: MockSuccessBiometricService(),
+      );
+
+      await vm.setAutoLockTimeout(AutoLockTimeout.oneMinute);
+      expect(vm.state.autoLockTimeout, equals(AutoLockTimeout.oneMinute));
+      expect(await prefsDs.getAutoLockTimeout(), equals(1));
+
+      await vm.togglePrivacyScreen(false);
+      expect(vm.state.isPrivacyScreenInMultitaskEnabled, isFalse);
+      expect(await prefsDs.isPrivacyScreenEnabled(), isFalse);
+    });
+
+    test('wipeAllLocalData resets security state and wipes preferences', () async {
+      final vm = SecuritySettingsViewModel(
+        preferencesDataSource: prefsDs,
+        biometricService: MockSuccessBiometricService(),
+      );
+
+      await vm.saveNewPin('999888');
+      await vm.wipeAllLocalData();
+
+      expect(vm.state.hasPinCode, isFalse);
+      expect(vm.state.isBiometricLockEnabled, isFalse);
+      expect(await prefsDs.hasPin(), isFalse);
+      expect(await prefsDs.isBiometricLockEnabled(), isFalse);
+    });
   });
 }

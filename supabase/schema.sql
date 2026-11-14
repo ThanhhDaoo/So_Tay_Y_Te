@@ -152,3 +152,4 @@ ON CONFLICT (id) DO NOTHING;
 CREATE POLICY "Bảo vệ file y tế riêng tư cho từng người dùng"
 ON storage.objects FOR ALL
 USING (bucket_id = 'medical-documents' AND auth.uid()::TEXT = (storage.foldername(name))[1]);
+

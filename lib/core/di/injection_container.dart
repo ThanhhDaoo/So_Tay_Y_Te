@@ -7,6 +7,7 @@ import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../config/supabase_config.dart';
 import '../database/database_helper.dart';
+import '../security/biometric_service.dart';
 
 final sl = GetIt.instance;
 
@@ -20,6 +21,12 @@ class InjectionContainer {
     await SupabaseConfig.initialize();
 
     // 1. Database & Core
+    if (!sl.isRegistered<BiometricService>()) {
+      sl.registerLazySingleton<BiometricService>(
+        () => BiometricServiceImpl(),
+      );
+    }
+
     if (!sl.isRegistered<DatabaseHelper>()) {
       final dbHelper = AppDatabaseHelper();
       await dbHelper.init();
