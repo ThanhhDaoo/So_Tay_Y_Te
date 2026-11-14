@@ -9,6 +9,8 @@ import '../config/supabase_config.dart';
 import '../database/database_helper.dart';
 import '../security/biometric_service.dart';
 import '../services/notification_service.dart';
+import '../services/ocr_service.dart';
+import '../services/pdf_report_service.dart';
 
 final sl = GetIt.instance;
 
@@ -22,6 +24,18 @@ class InjectionContainer {
     await SupabaseConfig.initialize();
 
     // 1. Database & Core
+    if (!sl.isRegistered<OcrService>()) {
+      sl.registerLazySingleton<OcrService>(
+        () => OcrServiceImpl(),
+      );
+    }
+
+    if (!sl.isRegistered<PdfReportService>()) {
+      sl.registerLazySingleton<PdfReportService>(
+        () => PdfReportServiceImpl(),
+      );
+    }
+
     if (!sl.isRegistered<NotificationService>()) {
       sl.registerLazySingleton<NotificationService>(
         () => NotificationServiceImpl(),

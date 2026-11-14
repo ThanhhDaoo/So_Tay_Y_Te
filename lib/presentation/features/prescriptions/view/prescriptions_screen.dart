@@ -5,6 +5,7 @@ import '../../../routes/app_routes.dart';
 import '../../main_shell/view/main_shell_screen.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import '../viewmodel/prescriptions_viewmodel.dart';
+import 'widgets/prescription_ocr_result_modal.dart';
 import 'widgets/rx_active_plan_card.dart';
 import 'widgets/rx_adherence_summary_card.dart';
 import 'widgets/rx_dose_slot_card.dart';
@@ -106,8 +107,16 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                   RxQuickActionsRow(
                     onAddPrescription: () =>
                         Navigator.pushNamed(context, AppRoutes.addRecord),
-                    onScanOcr: () =>
-                        Navigator.pushNamed(context, AppRoutes.paywall),
+                    onScanOcr: () {
+                      PrescriptionOcrResultModal.show(
+                        context,
+                        onApplyResult: (result) {
+                          _viewModel.notifyUser(
+                            'Đã nhận diện thành công ${result.medicines.length} loại thuốc từ toa thuốc!',
+                          );
+                        },
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   InkWell(

@@ -49,6 +49,10 @@
 	</dict>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Sổ Tay Y Tế sử dụng Face ID để xác thực và bảo vệ hồ sơ bệnh án của bạn.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Sổ Tay Y Tế cần quyền truy cập Camera để chụp và quét thông minh đơn thuốc, kết quả xét nghiệm.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Sổ Tay Y Tế cần quyền truy cập Thư viện ảnh để quét hình ảnh đơn thuốc đã lưu.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

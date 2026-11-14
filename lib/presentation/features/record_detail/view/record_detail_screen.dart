@@ -1,11 +1,73 @@
 import 'package:flutter/material.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/pdf_report_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../domain/entities/medical_event.dart';
+import '../../../../domain/entities/medicine.dart';
+import '../../../../domain/entities/prescription.dart';
 import '../../../routes/app_routes.dart';
 
 class RecordDetailScreen extends StatelessWidget {
   final String recordId;
+  final PdfReportService? pdfReportService;
 
-  const RecordDetailScreen({super.key, required this.recordId});
+  const RecordDetailScreen({
+    super.key,
+    required this.recordId,
+    this.pdfReportService,
+  });
+
+  MedicalEvent _createCurrentEvent() {
+    return MedicalEvent(
+      id: recordId.isNotEmpty ? recordId : 'REC-2024-0418',
+      title: 'Viêm dạ dày & Trào ngược dạ dày thực quản (GERD Độ A)',
+      description: 'Đau âm ỉ vùng thượng vị sau ăn, ợ chua nhiều về đêm. Xét nghiệm vi khuẩn HP dương tính.',
+      date: DateTime(2024, 4, 18, 9, 30),
+      type: MedicalEventType.generalCheckup,
+      prescription: Prescription(
+        id: 'RX-2024-089',
+        doctorName: 'BS. CKII Lê Hoàng Tuấn',
+        hospital: 'Bệnh viện Đa khoa Quốc tế Vinmec',
+        issuedDate: DateTime(2024, 4, 18),
+        medicines: const [
+          Medicine(id: 'm1', name: 'Nexium Mups 40mg', dosage: '40mg • 1 viên/ngày', frequency: 'Trước ăn sáng 30p'),
+          Medicine(id: 'm2', name: 'Amoxicillin 500mg', dosage: '500mg • 2 viên/ngày', frequency: 'Sau ăn no'),
+          Medicine(id: 'm3', name: 'Clarithromycin 500mg', dosage: '500mg • 2 viên/ngày', frequency: 'Sau ăn no'),
+          Medicine(id: 'm4', name: 'Gaviscon Dual Action', dosage: '1 gói • 3 lần/ngày', frequency: 'Sau ăn trưa/tối'),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportPdf(BuildContext context) async {
+    final pdfService = pdfReportService ??
+        (sl.isRegistered<PdfReportService>() ? sl<PdfReportService>() : PdfReportServiceImpl());
+    try {
+      final event = _createCurrentEvent();
+      await pdfService.printRecord(record: event);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi xuất PDF: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _sharePdf(BuildContext context) async {
+    final pdfService = pdfReportService ??
+        (sl.isRegistered<PdfReportService>() ? sl<PdfReportService>() : PdfReportServiceImpl());
+    try {
+      final event = _createCurrentEvent();
+      await pdfService.shareRecordPdf(record: event);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi chia sẻ PDF: $e')),
+        );
+      }
+    }
+  }
 
   void _showImagePreview(BuildContext context, String title, String imageAsset) {
     showDialog<void>(
@@ -135,19 +197,11 @@ class RecordDetailScreen extends StatelessWidget {
                   ),
                   IconButton(
                     icon: const Icon(Icons.share_outlined, size: 22, color: AppColors.iceOlive),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Đã tạo liên kết chia sẻ bệnh án bảo mật E2EE'),
-                          backgroundColor: AppColors.iceOlive,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
+                    onPressed: () => _sharePdf(context),
                   ),
                   IconButton(
                     icon: const Icon(Icons.picture_as_pdf_outlined, size: 22, color: AppColors.iceOlive),
-                    onPressed: () => Navigator.pushNamed(context, AppRoutes.vitalReports),
+                    onPressed: () => _exportPdf(context),
                   ),
                 ],
               ),
@@ -452,7 +506,7 @@ class RecordDetailScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () => Navigator.pushNamed(context, AppRoutes.vitalReports),
+                          onPressed: () => _exportPdf(context),
                           icon: const Icon(Icons.print, size: 18),
                           label: const Text('Xuất Bản PDF'),
                           style: ElevatedButton.styleFrom(
@@ -501,12 +555,16 @@ class RecordDetailScreen extends StatelessWidget {
             children: [
               Icon(icon, size: 18, color: AppColors.iceOlive),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.iceTextNavy,
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.iceTextNavy,
+                  ),
                 ),
               ),
             ],
