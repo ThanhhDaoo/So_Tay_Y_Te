@@ -108,6 +108,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 AppLockBiometricsCard(
                   state: state,
                   onToggleBiometrics: _viewModel.toggleBiometricLock,
+                  onLockNow: () {
+                    Navigator.of(context).pushNamed(
+                      AppRoutes.appLock,
+                      arguments: () {},
+                    );
+                  },
                   onChangePin: () {
                     ChangePinModal.show(
                       context,

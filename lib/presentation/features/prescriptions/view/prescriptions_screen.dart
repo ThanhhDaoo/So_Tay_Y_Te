@@ -15,8 +15,13 @@ import 'widgets/rx_quick_actions_row.dart';
 /// Màn hình Quản Lý Toa Thuốc & Lịch Uống theo kiến trúc MVVM.
 class PrescriptionsScreen extends StatefulWidget {
   final bool showBottomNav;
+  final PrescriptionsViewModel? viewModel;
 
-  const PrescriptionsScreen({super.key, this.showBottomNav = true});
+  const PrescriptionsScreen({
+    super.key,
+    this.showBottomNav = true,
+    this.viewModel,
+  });
 
   @override
   State<PrescriptionsScreen> createState() => _PrescriptionsScreenState();
@@ -28,7 +33,8 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
   @override
   void initState() {
     super.initState();
-    _viewModel = PrescriptionsViewModel()..addListener(_onViewModelChanged);
+    _viewModel = (widget.viewModel ?? PrescriptionsViewModel())
+      ..addListener(_onViewModelChanged);
   }
 
   @override
@@ -103,28 +109,65 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                     onScanOcr: () =>
                         Navigator.pushNamed(context, AppRoutes.paywall),
                   ),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: _viewModel.testSendInstantReminder,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceLight,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.rxBorder),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.notifications_active_outlined, size: 16, color: AppColors.rxOlive),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Bấm để thử chuông báo thức uống thuốc ngay lập tức',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.rxOlive,
+                              ),
+                            ),
+                          ),
+                          Icon(Icons.chevron_right, size: 16, color: AppColors.rxOlive),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          SvgPicture.asset(
-                            'assets/icons/ic_rx_clock_schedule.svg',
-                            width: 16.67,
-                            height: 16.67,
-                          ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'Lịch nhắc thuốc hôm nay',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.iceTextNavy,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            SvgPicture.asset(
+                              'assets/icons/ic_rx_clock_schedule.svg',
+                              width: 16.67,
+                              height: 16.67,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 6),
+                            const Flexible(
+                              child: Text(
+                                'Lịch nhắc thuốc hôm nay',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.iceTextNavy,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       const Text(
                         '22 Tháng 4, 2024',
                         style: TextStyle(

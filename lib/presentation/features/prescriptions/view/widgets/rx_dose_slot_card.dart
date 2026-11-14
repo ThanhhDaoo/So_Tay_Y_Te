@@ -110,9 +110,9 @@ class RxDoseSlotCard extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 6,
             children: [
               Text(
                 slot.title,
@@ -122,7 +122,6 @@ class RxDoseSlotCard extends StatelessWidget {
                   color: AppColors.iceTextNavy,
                 ),
               ),
-              const SizedBox(width: 8),
               Text(
                 slot.timeLabel,
                 style: TextStyle(

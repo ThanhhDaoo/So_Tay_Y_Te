@@ -9,6 +9,7 @@ class AppLockBiometricsCard extends StatelessWidget {
   final ValueChanged<bool> onToggleBiometrics;
   final VoidCallback onChangePin;
   final ValueChanged<AutoLockTimeout> onSelectTimeout;
+  final VoidCallback? onLockNow;
 
   const AppLockBiometricsCard({
     super.key,
@@ -16,6 +17,7 @@ class AppLockBiometricsCard extends StatelessWidget {
     required this.onToggleBiometrics,
     required this.onChangePin,
     required this.onSelectTimeout,
+    this.onLockNow,
   });
 
   @override
@@ -261,6 +263,26 @@ class AppLockBiometricsCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                  if (onLockNow != null) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                        onPressed: onLockNow,
+                        icon: const Icon(Icons.lock_outline, size: 18),
+                        label: const Text(
+                          'Khóa Ứng Dụng Ngay (Test Màn hình Khóa & PIN)',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],

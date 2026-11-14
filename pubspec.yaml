@@ -45,6 +45,8 @@ dependencies:
   flutter_svg: ^2.3.4
   google_fonts: ^9.0.0
   local_auth: ^3.0.2
+  flutter_local_notifications: ^23.0.2
+  timezone: ^0.11.2
 
 dev_dependencies:
   flutter_test:
