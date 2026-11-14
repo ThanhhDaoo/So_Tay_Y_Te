@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../domain/repositories/auth_repository.dart';
+import '../../../routes/app_routes.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import '../../main_shell/view/main_shell_screen.dart';
 import '../viewmodel/security_settings_state.dart';
@@ -145,6 +148,80 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   state: state,
                   onWipeData: _viewModel.wipeAllLocalData,
                 ),
+                const SizedBox(height: 24),
+
+                // 6. Đăng Xuất Tài Khoản Khỏi Thiết Bị
+                Material(
+                  color: AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.divider),
+                    ),
+                    child: ListTile(
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withAlpha(25),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.logout_rounded, color: AppColors.error),
+                    ),
+                    title: const Text(
+                      'Đăng xuất khỏi thiết bị',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.error,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Xóa phiên làm việc hiện tại, dữ liệu bệnh án vẫn được lưu an toàn.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          title: const Text('Đăng Xuất Tài Khoản'),
+                          content: const Text(
+                            'Bạn có chắc chắn muốn đăng xuất? Bạn sẽ cần nhập lại mật khẩu hoặc Face ID để truy cập hồ sơ.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text('Hủy'),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.error,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              onPressed: () async {
+                                Navigator.pop(ctx);
+                                if (sl.isRegistered<AuthRepository>()) {
+                                  await sl<AuthRepository>().logout();
+                                }
+                                if (context.mounted) {
+                                  Navigator.of(context).pushNamedAndRemoveUntil(
+                                    AppRoutes.login,
+                                    (route) => false,
+                                  );
+                                }
+                              },
+                              child: const Text('Đăng Xuất', style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               ],
             ),
           ),

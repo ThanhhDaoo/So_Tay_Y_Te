@@ -28,6 +28,16 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     _viewModel = LoginViewModel();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAutoLogin();
+    });
+  }
+
+  Future<void> _checkAutoLogin() async {
+    final hasActiveSession = await _viewModel.checkAutoLogin();
+    if (hasActiveSession && mounted) {
+      _handleLoginSuccess();
+    }
   }
 
   @override
@@ -338,13 +348,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         GestureDetector(
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Tính năng khôi phục mật khẩu đang phát triển.'),
-              ),
-            );
-          },
+          onTap: () => _showForgotPasswordDialog(),
           child: Text(
             'Quên mật khẩu?',
             style: AppTypography.labelSmallSemiBold.copyWith(
@@ -476,6 +480,137 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showForgotPasswordDialog() {
+    final idController = TextEditingController();
+    final newPassController = TextEditingController();
+    final confirmPassController = TextEditingController();
+    String? localError;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              backgroundColor: AppColors.surfaceLight,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.lock_reset, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Đặt Lại Mật Khẩu Hồ Sơ',
+                          style: AppTypography.heading3,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Nhập Mã hồ sơ (STYT-XXXXXX) hoặc Email/SĐT đã đăng ký để tạo mật khẩu mới.',
+                      style: AppTypography.caption,
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: idController,
+                      decoration: InputDecoration(
+                        labelText: 'Mã hồ sơ hoặc Email/SĐT',
+                        hintText: 'VD: STYT-892410 hoặc 0912...',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: newPassController,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: 'Mật khẩu mới (tối thiểu 6 ký tự)',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: confirmPassController,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: 'Xác nhận mật khẩu mới',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                    ),
+                    if (localError != null) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        localError!,
+                        style: const TextStyle(color: AppColors.error, fontSize: 12),
+                      ),
+                    ],
+                    const SizedBox(height: 18),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogCtx),
+                          child: const Text('Hủy'),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () async {
+                            if (newPassController.text != confirmPassController.text) {
+                              setDialogState(() {
+                                localError = 'Mật khẩu xác nhận không khớp.';
+                              });
+                              return;
+                            }
+
+                            final ok = await _viewModel.resetPassword(
+                              identifier: idController.text.trim(),
+                              newPassword: newPassController.text,
+                            );
+
+                            if (ok) {
+                              if (dialogCtx.mounted) {
+                                Navigator.pop(dialogCtx);
+                              }
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay.'),
+                                    backgroundColor: AppColors.success,
+                                  ),
+                                );
+                              }
+                            } else {
+                              setDialogState(() {
+                                localError = _viewModel.state.errorMessage ?? 'Không tìm thấy tài khoản.';
+                              });
+                            }
+                          },
+                          child: const Text('Xác Nhận Đổi', style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
