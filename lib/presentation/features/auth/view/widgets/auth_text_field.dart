@@ -22,6 +22,8 @@ class AuthTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextInputType keyboardType;
   final Color hintColor;
+  final VoidCallback? onTap;
+  final bool readOnly;
 
   const AuthTextField({
     super.key,
@@ -43,6 +45,8 @@ class AuthTextField extends StatelessWidget {
     this.validator,
     this.keyboardType = TextInputType.text,
     this.hintColor = AppColors.textHint,
+    this.onTap,
+    this.readOnly = false,
   });
 
   @override
@@ -94,6 +98,8 @@ class AuthTextField extends StatelessWidget {
           child: TextFormField(
             controller: controller,
             obscureText: obscureText,
+            readOnly: readOnly,
+            onTap: onTap,
             onChanged: onChanged,
             validator: validator,
             keyboardType: keyboardType,

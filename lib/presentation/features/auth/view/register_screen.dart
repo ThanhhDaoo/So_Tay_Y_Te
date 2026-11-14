@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/input_validators.dart';
+import '../../../../domain/entities/user_account.dart';
 import '../../../routes/app_routes.dart';
 import '../viewmodel/register_viewmodel.dart';
 import 'widgets/auth_ambient_background.dart';
@@ -103,6 +104,93 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               prefixIconHeight: 15,
                               controller: _viewModel.contactController,
                               validator: InputValidators.validateRequired,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          AuthAnimatedEntrance(
+                            delay: const Duration(milliseconds: 230),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  flex: 6,
+                                  child: AuthTextField(
+                                    label: 'Ngày tháng năm sinh',
+                                    isRequired: false,
+                                    hintText: 'Chọn ngày sinh',
+                                    prefixIconAsset: 'assets/icons/ic_prof_cake_dob.svg',
+                                    controller: _viewModel.dobController,
+                                    onTap: () async {
+                                      final picked = await showDatePicker(
+                                        context: context,
+                                        initialDate: DateTime(1995, 5, 15),
+                                        firstDate: DateTime(1920),
+                                        lastDate: DateTime.now(),
+                                        builder: (context, child) {
+                                          return Theme(
+                                            data: Theme.of(context).copyWith(
+                                              colorScheme: const ColorScheme.light(
+                                                primary: AppColors.primary,
+                                                onPrimary: Colors.white,
+                                                surface: Colors.white,
+                                                onSurface: AppColors.textPrimaryLight,
+                                              ),
+                                            ),
+                                            child: child!,
+                                          );
+                                        },
+                                      );
+                                      if (picked != null) {
+                                        _viewModel.setDateOfBirth(picked);
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  flex: 4,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Nhóm máu',
+                                        style: AppTypography.labelSemiBold.copyWith(
+                                          fontSize: 13,
+                                          color: AppColors.textPrimaryLight,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Container(
+                                        height: 48,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.surfaceLight,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: AppColors.divider),
+                                        ),
+                                        child: DropdownButtonHideUnderline(
+                                          child: DropdownButton<String>(
+                                            value: state.bloodType,
+                                            isExpanded: true,
+                                            icon: const Icon(Icons.arrow_drop_down, color: AppColors.primary),
+                                            items: const [
+                                              DropdownMenuItem(value: 'O+', child: Text('O+ (Phổ biến)')),
+                                              DropdownMenuItem(value: 'A+', child: Text('A+')),
+                                              DropdownMenuItem(value: 'B+', child: Text('B+')),
+                                              DropdownMenuItem(value: 'AB+', child: Text('AB+')),
+                                              DropdownMenuItem(value: 'O-', child: Text('O- (Hiếm)')),
+                                              DropdownMenuItem(value: 'Chưa rõ', child: Text('Chưa rõ')),
+                                            ],
+                                            onChanged: (val) {
+                                              if (val != null) _viewModel.setBloodType(val);
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -431,7 +519,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ? null
               : () async {
                   final ok = await _viewModel.submitRegistration();
-                  if (ok) _navigateToTimeline();
+                  if (ok && mounted) {
+                    final account = _viewModel.state.createdAccount;
+                    if (account != null) {
+                      _showSuccessRegistrationDialog(account);
+                    } else {
+                      _navigateToTimeline();
+                    }
+                  }
                 },
           borderRadius: BorderRadius.circular(8),
           child: Row(
@@ -547,6 +642,145 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showSuccessRegistrationDialog(UserAccount account) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: AppColors.surfaceLight,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: SvgPicture.asset(
+                      'assets/icons/ic_shield_check.svg',
+                      width: 32,
+                      height: 32,
+                      colorFilter: const ColorFilter.mode(
+                        AppColors.primary,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Cấp Thẻ Y Tế Thành Công!',
+                  style: AppTypography.heading2.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimaryLight,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Hồ sơ của bạn đã được khởi tạo và mã hóa an toàn trên hệ thống Sổ Tay Y Tế.',
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 18),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.backgroundLight,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.iceOlive.withAlpha(120)),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'MÃ ĐỊNH DANH HỒ SƠ Y TẾ',
+                        style: AppTypography.caption.copyWith(
+                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        account.patientCode,
+                        style: AppTypography.heading1.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2.0,
+                        ),
+                      ),
+                      const Divider(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Chủ thẻ:', style: AppTypography.caption),
+                          Text(
+                            account.fullName,
+                            style: AppTypography.caption.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Nhóm máu:', style: AppTypography.caption),
+                          Text(
+                            account.bloodType ?? 'Chưa rõ',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.accent,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                      _navigateToTimeline();
+                    },
+                    child: Text(
+                      'Bắt Đầu Sử Dụng',
+                      style: AppTypography.labelSemiBold.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

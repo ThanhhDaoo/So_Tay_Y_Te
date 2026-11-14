@@ -1,3 +1,5 @@
+import '../../../../domain/entities/user_account.dart';
+
 enum RegisterStatus { initial, loading, success, error }
 
 enum PasswordStrength {
@@ -17,6 +19,10 @@ class RegisterState {
   final bool enableBiometric;
   final bool acceptedTerms;
   final PasswordStrength passwordStrength;
+  final String gender;
+  final String bloodType;
+  final DateTime? dateOfBirth;
+  final UserAccount? createdAccount;
   final String? errorMessage;
 
   const RegisterState({
@@ -26,6 +32,10 @@ class RegisterState {
     this.enableBiometric = true,
     this.acceptedTerms = true,
     this.passwordStrength = PasswordStrength.medium,
+    this.gender = 'Nam',
+    this.bloodType = 'O+',
+    this.dateOfBirth,
+    this.createdAccount,
     this.errorMessage,
   });
 
@@ -38,6 +48,10 @@ class RegisterState {
     bool? enableBiometric,
     bool? acceptedTerms,
     PasswordStrength? passwordStrength,
+    String? gender,
+    String? bloodType,
+    DateTime? dateOfBirth,
+    UserAccount? createdAccount,
     String? errorMessage,
   }) {
     return RegisterState(
@@ -48,8 +62,11 @@ class RegisterState {
       enableBiometric: enableBiometric ?? this.enableBiometric,
       acceptedTerms: acceptedTerms ?? this.acceptedTerms,
       passwordStrength: passwordStrength ?? this.passwordStrength,
+      gender: gender ?? this.gender,
+      bloodType: bloodType ?? this.bloodType,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      createdAccount: createdAccount ?? this.createdAccount,
       errorMessage: errorMessage,
     );
   }
 }
-
