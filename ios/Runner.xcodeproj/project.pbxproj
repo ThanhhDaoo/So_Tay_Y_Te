@@ -383,6 +383,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				DEVELOPMENT_TEAM = T8TRKX8376;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sotayyte.soTayYTe;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -565,6 +569,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
 				DEVELOPMENT_TEAM = T8TRKX8376;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sotayyte.soTayYTe;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -587,6 +595,10 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
 				);
 				DEVELOPMENT_TEAM = T8TRKX8376;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sotayyte.soTayYTe;
