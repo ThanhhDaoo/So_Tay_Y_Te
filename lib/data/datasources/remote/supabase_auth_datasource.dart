@@ -1,3 +1,5 @@
+import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/supabase_config.dart';
 import '../../models/user_account_model.dart';
@@ -72,16 +74,33 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
       throw Exception('Không thể tạo tài khoản trên máy chủ Supabase.');
     }
 
-    // Đợi trigger tạo profile hoặc lấy thông tin profile
+    // Tra cứu hoặc tạo mới bản ghi trong public.profiles
     final profileRes = await client
         .from('profiles')
         .select()
         .eq('id', user.id)
         .maybeSingle();
 
+    final generatedCode = 'STYT-${Random().nextInt(899999) + 100000}';
     final patientCode = profileRes != null
-        ? (profileRes['patient_code'] as String? ?? 'STYT-999999')
-        : 'STYT-999999';
+        ? (profileRes['patient_code'] as String? ?? generatedCode)
+        : generatedCode;
+
+    if (profileRes == null) {
+      try {
+        await client.from('profiles').upsert({
+          'id': user.id,
+          'patient_code': patientCode,
+          'full_name': fullName,
+          'date_of_birth': dateOfBirth,
+          'gender': gender ?? 'Chưa rõ',
+          'blood_type': bloodType ?? 'Chưa rõ',
+          'primary_phone': email,
+        });
+      } catch (e) {
+        debugPrint('[Supabase] Không thể chèn profile: $e');
+      }
+    }
 
     return UserAccountModel(
       id: user.id,

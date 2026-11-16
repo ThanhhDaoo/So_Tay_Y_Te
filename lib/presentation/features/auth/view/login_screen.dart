@@ -246,7 +246,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     ? () {}
                     : () async {
                         final ok = await _viewModel.signInWithSocial('apple');
-                        if (ok) await _handleLoginSuccess();
+                        if (ok) {
+                          await _handleLoginSuccess();
+                        } else if (mounted) {
+                          _showSocialAuthNotice(
+                            context,
+                            title: 'Đăng nhập Apple ID',
+                            message: _viewModel.state.errorMessage ?? 'Chưa kích hoạt Apple Sign-In.',
+                          );
+                        }
                       },
               ),
             ),
@@ -264,7 +272,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     ? () {}
                     : () async {
                         final ok = await _viewModel.signInWithSocial('google');
-                        if (ok) await _handleLoginSuccess();
+                        if (ok) {
+                          await _handleLoginSuccess();
+                        } else if (mounted) {
+                          _showSocialAuthNotice(
+                            context,
+                            title: 'Đăng nhập Google Account',
+                            message: _viewModel.state.errorMessage ?? 'Chưa kích hoạt Google Sign-In.',
+                          );
+                        }
                       },
               ),
             ),
@@ -603,6 +619,68 @@ class _LoginScreenState extends State<LoginScreen> {
           },
         );
       },
+    );
+  }
+
+  void _showSocialAuthNotice(
+    BuildContext context, {
+    required String title,
+    required String message,
+  }) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.backgroundLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded, color: AppColors.accent),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: AppTypography.heading2.copyWith(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(message, style: AppTypography.body),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.secondary.withAlpha(80),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '💡 Mẹo: Bạn có thể bấm "Tạo Tài Khoản Mới" ở dưới để đăng ký Email thật lên Supabase ngay lập tức!',
+                style: AppTypography.caption.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Đóng'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pushNamed(context, AppRoutes.register);
+            },
+            child: const Text('Tạo Tài Khoản Email', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 }

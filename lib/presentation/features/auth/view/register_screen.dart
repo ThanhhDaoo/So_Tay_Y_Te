@@ -581,7 +581,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ? () {}
                 : () async {
                     final ok = await _viewModel.registerWithSocial('apple');
-                    if (ok) _navigateToTimeline();
+                    if (ok) {
+                      _navigateToTimeline();
+                    } else if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(_viewModel.state.errorMessage ?? 'Chưa cấu hình Apple OAuth trên Supabase.'),
+                          backgroundColor: AppColors.error,
+                        ),
+                      );
+                    }
                   },
           ),
         ),
@@ -601,7 +610,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ? () {}
                 : () async {
                     final ok = await _viewModel.registerWithSocial('google');
-                    if (ok) _navigateToTimeline();
+                    if (ok) {
+                      _navigateToTimeline();
+                    } else if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(_viewModel.state.errorMessage ?? 'Chưa cấu hình Google OAuth trên Supabase.'),
+                          backgroundColor: AppColors.error,
+                        ),
+                      );
+                    }
                   },
           ),
         ),

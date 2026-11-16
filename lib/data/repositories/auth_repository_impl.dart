@@ -1,3 +1,4 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/config/firebase_config.dart';
 import '../../core/config/supabase_config.dart';
@@ -451,57 +452,49 @@ class AuthRepositoryImpl implements AuthRepository {
     String? accessToken,
   }) async {
     final isApple = provider.toLowerCase() == 'apple';
-    final providerType = isApple ? AuthProviderType.apple : AuthProviderType.google;
-    final defaultContact = isApple ? 'apple_patient@icloud.com' : 'google_patient@gmail.com';
-    final defaultName = isApple ? 'Bệnh nhân Apple ID' : 'Bệnh nhân Google Account';
+    final providerName = isApple ? 'Apple' : 'Google';
 
-    // 1. Kiểm tra tài khoản đã liên kết trước đó
-    final existingUser = await authLocalDataSource.findByIdentifier(defaultContact);
-    if (existingUser != null) {
-      await localDataSource.saveSession(
-        userId: existingUser.id,
-        patientCode: existingUser.patientCode,
-        contact: defaultContact,
-        rememberMe: true,
-      );
-      return existingUser;
+    // 1. Nếu đã kết nối Supabase Cloud:
+    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
+      try {
+        final oauthProvider = isApple ? OAuthProvider.apple : OAuthProvider.google;
+        await supabaseAuthRemoteDataSource!.signInWithOAuth(oauthProvider);
+        final currentUser = supabaseAuthRemoteDataSource!.currentAuthUser;
+        if (currentUser != null) {
+          final account = UserAccountModel(
+            id: currentUser.id,
+            patientCode: 'STYT-${currentUser.id.substring(0, 6).toUpperCase()}',
+            fullName: currentUser.userMetadata?['full_name'] as String? ?? 'Bệnh nhân $providerName',
+            primaryContact: currentUser.email ?? '$providerName-user',
+            passwordHash: '',
+            salt: '',
+            createdAt: DateTime.now(),
+          );
+          await authLocalDataSource.createUser(account);
+          await localDataSource.saveSession(
+            userId: account.id,
+            patientCode: account.patientCode,
+            contact: account.primaryContact,
+            rememberMe: true,
+          );
+          return account;
+        }
+      } catch (e) {
+        final err = e.toString();
+        if (err.contains('not enabled') || err.contains('Unsupported provider')) {
+          throw Exception(
+            'Phương thức đăng nhập với $providerName chưa được kích hoạt trên Supabase Console.\n'
+            'Vui lòng vào Authentication -> Providers để cấu hình Client ID, hoặc sử dụng Đăng ký / Đăng nhập bằng Email & Mật khẩu.',
+          );
+        }
+        throw Exception(e.toString().replaceFirst('Exception: ', ''));
+      }
     }
 
-    // 2. Tạo tài khoản mới & liên kết identity
-    final userId = _uuid.v4();
-    final patientCode = await authLocalDataSource.generateUniquePatientCode();
-    final now = DateTime.now();
-
-    final newUser = UserAccountModel(
-      id: userId,
-      patientCode: patientCode,
-      fullName: defaultName,
-      primaryContact: defaultContact,
-      passwordHash: '',
-      salt: '',
-      isGuest: false,
-      createdAt: now,
+    // 2. Chế độ thông báo rõ ràng cho môi trường chưa cấu hình OAuth
+    throw Exception(
+      'Phương thức $providerName chưa được cấu hình OAuth trên Supabase.\n'
+      'Vui lòng sử dụng tính năng "Đăng ký" bằng Email hoặc "Đăng nhập Số Điện Thoại / OTP" để trải nghiệm dữ liệu thật ngay!',
     );
-
-    final created = await authLocalDataSource.createUser(
-      newUser,
-      initialIdentity: AuthIdentityModel(
-        id: _uuid.v4(),
-        userId: userId,
-        provider: providerType,
-        providerUid: '$provider-$userId',
-        emailAssociated: defaultContact,
-        linkedAt: now,
-      ),
-    );
-
-    await localDataSource.saveSession(
-      userId: userId,
-      patientCode: patientCode,
-      contact: defaultContact,
-      rememberMe: true,
-    );
-
-    return created;
   }
 }
