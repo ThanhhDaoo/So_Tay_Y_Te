@@ -2,9 +2,11 @@ import 'package:get_it/get_it.dart';
 import '../../data/datasources/local/app_preferences_datasource.dart';
 import '../../data/datasources/local/auth_local_datasource.dart';
 import '../../data/datasources/remote/auth_remote_datasource.dart';
+import '../../data/datasources/remote/firebase_auth_datasource.dart';
 import '../../data/datasources/remote/supabase_auth_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../config/firebase_config.dart';
 import '../config/supabase_config.dart';
 import '../database/database_helper.dart';
 import '../security/biometric_service.dart';
@@ -20,10 +22,11 @@ class InjectionContainer {
   InjectionContainer._internal();
 
   static Future<void> init() async {
-    // 0. Khởi tạo Supabase Backend (Option A)
+    // 0. Khởi tạo Cloud Backend Services (Supabase & Firebase)
     await SupabaseConfig.initialize();
+    await FirebaseConfig.initialize();
 
-    // 1. Database & Core
+    // 1. Database & Core Services
     if (!sl.isRegistered<OcrService>()) {
       sl.registerLazySingleton<OcrService>(
         () => OcrServiceImpl(),
@@ -73,6 +76,12 @@ class InjectionContainer {
       );
     }
 
+    if (!sl.isRegistered<FirebaseAuthRemoteDataSource>()) {
+      sl.registerLazySingleton<FirebaseAuthRemoteDataSource>(
+        () => FirebaseAuthRemoteDataSourceImpl(),
+      );
+    }
+
     if (!sl.isRegistered<AuthLocalDataSource>()) {
       sl.registerLazySingleton<AuthLocalDataSource>(
         () => AuthLocalDataSourceImpl(databaseHelper: sl<DatabaseHelper>()),
@@ -87,6 +96,7 @@ class InjectionContainer {
           localDataSource: sl<AppPreferencesDataSource>(),
           authLocalDataSource: sl<AuthLocalDataSource>(),
           supabaseAuthRemoteDataSource: sl<SupabaseAuthRemoteDataSource>(),
+          firebaseAuthRemoteDataSource: sl<FirebaseAuthRemoteDataSource>(),
         ),
       );
     }

@@ -14,6 +14,7 @@ import 'widgets/auth_text_field.dart';
 import 'widgets/guest_migration_notice_card.dart';
 import 'widgets/password_strength_meter.dart';
 import 'widgets/social_auth_button.dart';
+import 'widgets/cloud_backend_status_badge.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -320,6 +321,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          const CloudBackendStatusBadge(),
+          const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(

@@ -71,6 +71,44 @@ class MockTestAuthRepository implements AuthRepository {
 
   @override
   Future<void> resetPassword({required String identifier, required String newPassword}) async {}
+
+  @override
+  Future<String> sendPhoneOtp(String phoneNumber) async => 'mock-ver-123';
+
+  @override
+  Future<UserAccount> verifyPhoneOtp({
+    required String phoneNumber,
+    required String verificationId,
+    required String smsCode,
+  }) async {
+    return UserAccount(
+      id: 'phone-reg-mock',
+      patientCode: 'STYT-123456',
+      fullName: 'Bệnh nhân ($phoneNumber)',
+      primaryContact: phoneNumber,
+      passwordHash: '',
+      salt: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  @override
+  Future<UserAccount> signInWithSocialProvider({
+    required String provider,
+    String? idToken,
+    String? accessToken,
+  }) async {
+    final isApple = provider.toLowerCase() == 'apple';
+    return UserAccount(
+      id: 'soc-mock',
+      patientCode: 'STYT-123456',
+      fullName: isApple ? 'Bệnh nhân Apple' : 'Bệnh nhân Google',
+      primaryContact: isApple ? 'apple_user@icloud.com' : 'google_user@gmail.com',
+      passwordHash: '',
+      salt: '',
+      createdAt: DateTime.now(),
+    );
+  }
 }
 
 void main() {

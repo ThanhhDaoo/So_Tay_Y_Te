@@ -13,6 +13,8 @@ import 'widgets/auth_text_field.dart';
 import 'widgets/guest_mode_card.dart';
 import 'widgets/pulsing_biometric_button.dart';
 import 'widgets/social_auth_button.dart';
+import 'widgets/phone_otp_bottom_sheet.dart';
+import 'widgets/cloud_backend_status_badge.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -208,31 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceMuted,
-              borderRadius: BorderRadius.circular(9999),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'Cổng Dữ Liệu Y Tế An Toàn',
-                  style: AppTypography.badge,
-                ),
-              ],
-            ),
-          ),
+          const CloudBackendStatusBadge(),
           const SizedBox(height: 12),
           Text(
             'Chào mừng trở lại',
@@ -303,9 +281,23 @@ class _LoginScreenState extends State<LoginScreen> {
           textColor: AppColors.textOtpButton,
           onPressed: isLoading
               ? () {}
-              : () async {
-                  final ok = await _viewModel.signInWithSocial('otp');
-                  if (ok) await _handleLoginSuccess();
+              : () {
+                  PhoneOtpBottomSheet.show(
+                    context: context,
+                    viewModel: _viewModel,
+                    onSuccess: (account) async {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Đăng nhập thành công! Mã hồ sơ: ${account.patientCode}',
+                          ),
+                          backgroundColor: AppColors.success,
+                        ),
+                      );
+                      await _handleLoginSuccess();
+                    },
+                  );
                 },
         ),
       ],

@@ -123,6 +123,48 @@ class MockLoginAuthRepository implements AuthRepository {
       createdAt: DateTime.now(),
     );
   }
+
+  @override
+  Future<String> sendPhoneOtp(String phoneNumber) async => 'mock-ver-123';
+
+  @override
+  Future<UserAccount> verifyPhoneOtp({
+    required String phoneNumber,
+    required String verificationId,
+    required String smsCode,
+  }) async {
+    final user = UserAccount(
+      id: 'phone-mock',
+      patientCode: 'STYT-892410',
+      fullName: 'Bệnh nhân ($phoneNumber)',
+      primaryContact: phoneNumber,
+      passwordHash: '',
+      salt: '',
+      createdAt: DateTime.now(),
+    );
+    activeSession = user;
+    return user;
+  }
+
+  @override
+  Future<UserAccount> signInWithSocialProvider({
+    required String provider,
+    String? idToken,
+    String? accessToken,
+  }) async {
+    final isApple = provider.toLowerCase() == 'apple';
+    final user = UserAccount(
+      id: isApple ? 'apple-mock' : 'google-mock',
+      patientCode: 'STYT-892410',
+      fullName: isApple ? 'Bệnh nhân Apple' : 'Bệnh nhân Google',
+      primaryContact: isApple ? 'apple_user@icloud.com' : 'google_user@gmail.com',
+      passwordHash: '',
+      salt: '',
+      createdAt: DateTime.now(),
+    );
+    activeSession = user;
+    return user;
+  }
 }
 
 void main() {

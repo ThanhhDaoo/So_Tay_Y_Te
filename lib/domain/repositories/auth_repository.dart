@@ -29,4 +29,20 @@ abstract class AuthRepository {
     required String identifier,
     required String newPassword,
   });
+
+  // Hybrid Phone OTP (Firebase & Supabase)
+  Future<String> sendPhoneOtp(String phoneNumber);
+
+  Future<UserAccount> verifyPhoneOtp({
+    required String phoneNumber,
+    required String verificationId,
+    required String smsCode,
+  });
+
+  // Social Sign-In (Apple & Google)
+  Future<UserAccount> signInWithSocialProvider({
+    required String provider,
+    String? idToken,
+    String? accessToken,
+  });
 }

@@ -157,19 +157,12 @@ class LoginViewModel extends ChangeNotifier {
         return true;
       }
 
-      // 3. Fallback tài khoản demo mặc định STYT-892410
-      final defaultUser = await _authRepository.login(
-        identifier: 'STYT-892410',
-        password: '123456',
-        rememberMe: _state.rememberMe,
-      );
       _state = _state.copyWith(
-        status: LoginStatus.success,
-        loggedInUser: defaultUser,
-        errorMessage: null,
+        status: LoginStatus.error,
+        errorMessage: 'Vui lòng đăng nhập bằng mật khẩu một lần trước khi dùng Face ID.',
       );
       notifyListeners();
-      return true;
+      return false;
     } catch (e) {
       _state = _state.copyWith(
         status: LoginStatus.error,
@@ -185,24 +178,60 @@ class LoginViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final isApple = provider.toLowerCase() == 'apple';
-      final defaultContact = isApple ? 'apple_user@icloud.com' : 'google_user@gmail.com';
-      final defaultName = isApple ? 'Bệnh nhân Apple' : 'Bệnh nhân Google';
+      final user = await _authRepository.signInWithSocialProvider(
+        provider: provider,
+      );
 
-      UserAccount user;
-      try {
-        user = await _authRepository.login(
-          identifier: defaultContact,
-          password: 'SocialOAuthSecureToken2026!',
-          rememberMe: _state.rememberMe,
-        );
-      } catch (_) {
-        user = await _authRepository.register(
-          fullName: defaultName,
-          contact: defaultContact,
-          password: 'SocialOAuthSecureToken2026!',
-        );
-      }
+      _state = _state.copyWith(
+        status: LoginStatus.success,
+        loggedInUser: user,
+        errorMessage: null,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _state = _state.copyWith(
+        status: LoginStatus.error,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<String> sendPhoneOtp(String phoneNumber) async {
+    _state = _state.copyWith(status: LoginStatus.loading, errorMessage: null);
+    notifyListeners();
+
+    try {
+      final verId = await _authRepository.sendPhoneOtp(phoneNumber);
+      _state = _state.copyWith(status: LoginStatus.initial, errorMessage: null);
+      notifyListeners();
+      return verId;
+    } catch (e) {
+      _state = _state.copyWith(
+        status: LoginStatus.error,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<bool> verifyPhoneOtp({
+    required String phoneNumber,
+    required String verificationId,
+    required String smsCode,
+  }) async {
+    _state = _state.copyWith(status: LoginStatus.loading, errorMessage: null);
+    notifyListeners();
+
+    try {
+      final user = await _authRepository.verifyPhoneOtp(
+        phoneNumber: phoneNumber,
+        verificationId: verificationId,
+        smsCode: smsCode,
+      );
 
       _state = _state.copyWith(
         status: LoginStatus.success,
@@ -359,4 +388,42 @@ class _FallbackInMemoryAuthRepository implements AuthRepository {
 
   @override
   Future<void> resetPassword({required String identifier, required String newPassword}) async {}
+
+  @override
+  Future<String> sendPhoneOtp(String phoneNumber) async => 'fb-ver-mock-123';
+
+  @override
+  Future<UserAccount> verifyPhoneOtp({
+    required String phoneNumber,
+    required String verificationId,
+    required String smsCode,
+  }) async {
+    return UserAccount(
+      id: 'phone-mock-user',
+      patientCode: 'STYT-892410',
+      fullName: 'Bệnh nhân ($phoneNumber)',
+      primaryContact: phoneNumber,
+      passwordHash: '',
+      salt: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  @override
+  Future<UserAccount> signInWithSocialProvider({
+    required String provider,
+    String? idToken,
+    String? accessToken,
+  }) async {
+    final isApple = provider.toLowerCase() == 'apple';
+    return UserAccount(
+      id: 'soc-mock-user',
+      patientCode: 'STYT-892410',
+      fullName: isApple ? 'Bệnh nhân Apple' : 'Bệnh nhân Google',
+      primaryContact: isApple ? 'apple_user@icloud.com' : 'google_user@gmail.com',
+      passwordHash: '',
+      salt: '',
+      createdAt: DateTime.now(),
+    );
+  }
 }

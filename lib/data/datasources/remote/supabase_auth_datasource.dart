@@ -17,7 +17,19 @@ abstract class SupabaseAuthRemoteDataSource {
     required String password,
   });
 
+  Future<void> sendPhoneOtp({required String phone});
+  Future<UserAccountModel> verifyPhoneOtp({
+    required String phone,
+    required String token,
+  });
+
   Future<void> signInWithOAuth(OAuthProvider provider);
+  Future<UserAccountModel> signInWithIdToken({
+    required OAuthProvider provider,
+    required String idToken,
+    String? accessToken,
+  });
+
   Future<UserAccountModel> signInAnonymously();
   Future<void> resetPassword(String email);
   Future<void> signOut();
@@ -134,6 +146,60 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
   }
 
   @override
+  Future<void> sendPhoneOtp({required String phone}) async {
+    final client = _client;
+    if (client == null) {
+      throw Exception('Supabase chưa được cấu hình.');
+    }
+
+    await client.auth.signInWithOtp(
+      phone: phone,
+    );
+  }
+
+  @override
+  Future<UserAccountModel> verifyPhoneOtp({
+    required String phone,
+    required String token,
+  }) async {
+    final client = _client;
+    if (client == null) {
+      throw Exception('Supabase chưa được cấu hình.');
+    }
+
+    final res = await client.auth.verifyOTP(
+      phone: phone,
+      token: token,
+      type: OtpType.sms,
+    );
+
+    final user = res.user;
+    if (user == null) {
+      throw Exception('Mã OTP xác thực Supabase không hợp lệ.');
+    }
+
+    final profileRes = await client
+        .from('profiles')
+        .select()
+        .eq('id', user.id)
+        .maybeSingle();
+
+    final patientCode = profileRes != null
+        ? (profileRes['patient_code'] as String? ?? 'STYT-892410')
+        : 'STYT-892410';
+
+    return UserAccountModel(
+      id: user.id,
+      patientCode: patientCode,
+      fullName: 'Bệnh nhân ($phone)',
+      primaryContact: phone,
+      passwordHash: '',
+      salt: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  @override
   Future<void> signInWithOAuth(OAuthProvider provider) async {
     final client = _client;
     if (client == null) {
@@ -143,6 +209,49 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
     await client.auth.signInWithOAuth(
       provider,
       redirectTo: 'io.supabase.sotayyte://login-callback/',
+    );
+  }
+
+  @override
+  Future<UserAccountModel> signInWithIdToken({
+    required OAuthProvider provider,
+    required String idToken,
+    String? accessToken,
+  }) async {
+    final client = _client;
+    if (client == null) {
+      throw Exception('Supabase chưa được cấu hình.');
+    }
+
+    final res = await client.auth.signInWithIdToken(
+      provider: provider,
+      idToken: idToken,
+      accessToken: accessToken,
+    );
+
+    final user = res.user;
+    if (user == null) {
+      throw Exception('Đăng nhập qua OAuth thất bại.');
+    }
+
+    final profileRes = await client
+        .from('profiles')
+        .select()
+        .eq('id', user.id)
+        .maybeSingle();
+
+    final patientCode = profileRes != null
+        ? (profileRes['patient_code'] as String? ?? 'STYT-892410')
+        : 'STYT-892410';
+
+    return UserAccountModel(
+      id: user.id,
+      patientCode: patientCode,
+      fullName: user.userMetadata?['full_name'] as String? ?? user.email ?? 'Bệnh nhân',
+      primaryContact: user.email ?? user.id,
+      passwordHash: '',
+      salt: '',
+      createdAt: DateTime.now(),
     );
   }
 
@@ -187,4 +296,3 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
     await client?.auth.signOut();
   }
 }
-
