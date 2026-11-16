@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -25,6 +26,13 @@ class SupabaseConfig {
   }
 
   static Future<void> initialize() async {
+    // Bỏ qua gọi mạng trong môi trường kiểm thử tự động offline
+    if (Platform.environment.containsKey('FLUTTER_TEST')) {
+      _isInitialized = true;
+      debugPrint('[SupabaseConfig] Test environment: Giữ chế độ Local Sandbox.');
+      return;
+    }
+
     // Nếu chưa cấu hình Anon Key thật, bỏ qua để ứng dụng chạy chế độ Local-First an toàn
     if (supabaseAnonKey.contains('dummy')) {
       debugPrint('[SupabaseConfig] Project URL: $supabaseUrl đã sẵn sàng. Cần SUPABASE_ANON_KEY để kích hoạt kết nối đám mây.');
