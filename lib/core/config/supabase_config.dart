@@ -5,7 +5,7 @@ class SupabaseConfig {
   /// Điền URL của dự án Supabase từ Dashboard (Settings -> API)
   static const String supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: 'https://xyzcompany.supabase.co',
+    defaultValue: 'https://vwdcavexizkqbzhzdjib.supabase.co',
   );
 
   /// Điền Anon Key (Public) từ Dashboard (Settings -> API)
@@ -17,7 +17,6 @@ class SupabaseConfig {
   static bool _isInitialized = false;
   static bool get isConfigured =>
       _isInitialized &&
-      supabaseUrl != 'https://xyzcompany.supabase.co' &&
       !supabaseAnonKey.contains('dummy');
 
   static SupabaseClient? get client {
@@ -26,10 +25,9 @@ class SupabaseConfig {
   }
 
   static Future<void> initialize() async {
-    // Nếu chưa cấu hình URL thật, bỏ qua để ứng dụng chạy chế độ Local-First an toàn
-    if (supabaseUrl == 'https://xyzcompany.supabase.co' ||
-        supabaseAnonKey.contains('dummy')) {
-      debugPrint('[SupabaseConfig] Đang dùng CSDL Cục bộ (Local-First). Cấu hình SUPABASE_URL để kết nối đám mây.');
+    // Nếu chưa cấu hình Anon Key thật, bỏ qua để ứng dụng chạy chế độ Local-First an toàn
+    if (supabaseAnonKey.contains('dummy')) {
+      debugPrint('[SupabaseConfig] Project URL: $supabaseUrl đã sẵn sàng. Cần SUPABASE_ANON_KEY để kích hoạt kết nối đám mây.');
       return;
     }
 

@@ -10,7 +10,7 @@ class FirebaseConfig {
   /// ID Dự án Firebase
   static const String projectId = String.fromEnvironment(
     'FIREBASE_PROJECT_ID',
-    defaultValue: 'so-tay-y-te-production',
+    defaultValue: 'so-tay-y-te',
   );
 
   /// Mã App ID cho ứng dụng iOS
