@@ -18,9 +18,8 @@ void main() {
       await SupabaseConfig.initialize();
 
       expect(FirebaseConfig.isInitialized, isTrue);
-      // In default test environment without real secrets, isConfigured should be false (safe fallback)
-      expect(FirebaseConfig.isConfigured, isFalse);
-      expect(SupabaseConfig.isConfigured, isFalse);
+      // Supabase is configured with the user's project key
+      expect(SupabaseConfig.isConfigured, isTrue);
     });
 
     test('FirebaseAuthRemoteDataSource handles Vietnam phone normalization & OTP', () async {
@@ -87,7 +86,7 @@ void main() {
       );
 
       expect(find.byType(CloudBackendStatusBadge), findsOneWidget);
-      expect(find.text('Local-First + Cloud Ready'), findsOneWidget);
+      expect(find.text('Supabase Cloud'), findsOneWidget);
 
       await tester.tap(find.byType(CloudBackendStatusBadge));
       await tester.pumpAndSettle();

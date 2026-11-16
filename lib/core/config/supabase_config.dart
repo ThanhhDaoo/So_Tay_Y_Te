@@ -12,7 +12,7 @@ class SupabaseConfig {
   /// Điền Anon Key (Public) từ Dashboard (Settings -> API)
   static const String supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_anon_key',
+    defaultValue: 'sb_publishable_z410A9Qeeums9lTPfY0mSA_dRY3d-Iu',
   );
 
   static bool _isInitialized = false;
