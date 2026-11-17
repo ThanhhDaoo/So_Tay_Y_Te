@@ -155,11 +155,20 @@ class AuthRepositoryImpl implements AuthRepository {
     String? gender,
     String? bloodType,
   }) async {
-    // 1. Nếu đã kết nối Supabase Cloud, đăng ký lên Supabase Auth
+    final contactClean = contact.trim();
+    final isPhone = RegExp(r'^[0-9+]+$').hasMatch(contactClean);
+    final normalized = _normalizePhone(contactClean);
+    final authEmail = isPhone
+        ? '${normalized.replaceAll('+', '')}@sotayyte.vn'
+        : contactClean.toLowerCase();
+
+    UserAccountModel? cloudAccount;
+
+    // 1. Nếu đã kết nối Supabase Cloud, đăng ký lên Supabase Auth (hỗ trợ cả Email & SĐT)
     if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
       try {
-        final cloudAccount = await supabaseAuthRemoteDataSource!.signUpWithEmail(
-          email: contact.trim().toLowerCase(),
+        final res = await supabaseAuthRemoteDataSource!.signUpWithEmail(
+          email: authEmail,
           password: password,
           fullName: fullName,
           dateOfBirth: dateOfBirth,
@@ -167,27 +176,31 @@ class AuthRepositoryImpl implements AuthRepository {
           bloodType: bloodType,
         );
 
-        await authLocalDataSource.createUser(cloudAccount);
-        await localDataSource.saveSession(
-          userId: cloudAccount.id,
-          patientCode: cloudAccount.patientCode,
-          contact: cloudAccount.primaryContact,
-          rememberMe: true,
+        cloudAccount = UserAccountModel(
+          id: res.id,
+          patientCode: res.patientCode,
+          fullName: res.fullName,
+          primaryContact: contactClean,
+          passwordHash: '',
+          salt: '',
+          dateOfBirth: dateOfBirth,
+          gender: gender,
+          bloodType: bloodType,
+          createdAt: res.createdAt,
         );
-        return cloudAccount;
       } catch (e) {
-        throw Exception(e.toString().replaceFirst('Exception: ', ''));
+        debugPrint('[Supabase] Đăng ký đám mây gặp sự cố ($e), tự động lưu hồ sơ cục bộ.');
       }
     }
 
     // 2. Chế độ CSDL Local-First (SQLite + SHA-256 + Salt)
-    final existingUser = await authLocalDataSource.findByIdentifier(contact);
+    final existingUser = await authLocalDataSource.findByIdentifier(contactClean);
     if (existingUser != null) {
       throw Exception('Số điện thoại hoặc Email này đã được đăng ký hồ sơ.');
     }
 
-    final userId = _uuid.v4();
-    final patientCode = await authLocalDataSource.generateUniquePatientCode();
+    final userId = cloudAccount?.id ?? _uuid.v4();
+    final patientCode = cloudAccount?.patientCode ?? await authLocalDataSource.generateUniquePatientCode();
     final salt = PasswordHasher.generateSalt();
     final passwordHash = PasswordHasher.hashPassword(password, salt);
     final now = DateTime.now();
@@ -196,7 +209,7 @@ class AuthRepositoryImpl implements AuthRepository {
       id: userId,
       patientCode: patientCode,
       fullName: fullName.trim(),
-      primaryContact: contact.trim().toLowerCase(),
+      primaryContact: contactClean,
       passwordHash: passwordHash,
       salt: salt,
       dateOfBirth: dateOfBirth,
@@ -207,7 +220,6 @@ class AuthRepositoryImpl implements AuthRepository {
       createdAt: now,
     );
 
-    final isPhone = RegExp(r'^[0-9+]+$').hasMatch(contact.trim());
     final provider = isPhone ? AuthProviderType.phoneOtp : AuthProviderType.emailPassword;
 
     final created = await authLocalDataSource.createUser(
@@ -216,8 +228,8 @@ class AuthRepositoryImpl implements AuthRepository {
         id: _uuid.v4(),
         userId: userId,
         provider: provider,
-        providerUid: contact.trim().toLowerCase(),
-        emailAssociated: isPhone ? null : contact.trim().toLowerCase(),
+        providerUid: contactClean.toLowerCase(),
+        emailAssociated: isPhone ? authEmail : contactClean.toLowerCase(),
         linkedAt: now,
       ),
     );
@@ -225,7 +237,7 @@ class AuthRepositoryImpl implements AuthRepository {
     await localDataSource.saveSession(
       userId: userId,
       patientCode: patientCode,
-      contact: contact.trim().toLowerCase(),
+      contact: contactClean,
       rememberMe: true,
     );
 
@@ -238,30 +250,49 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
     bool rememberMe = true,
   }) async {
-    // 1. Nếu đã kết nối Supabase Cloud và identifier là email
-    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null && identifier.contains('@')) {
+    final cleanId = identifier.trim();
+    final isPhone = RegExp(r'^[0-9+]+$').hasMatch(cleanId);
+    final authEmail = isPhone
+        ? '${_normalizePhone(cleanId).replaceAll('+', '')}@sotayyte.vn'
+        : cleanId.toLowerCase();
+
+    // 1. Thử đăng nhập qua Supabase Cloud
+    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
       try {
         final cloudAccount = await supabaseAuthRemoteDataSource!.signInWithEmail(
-          email: identifier.trim().toLowerCase(),
+          email: authEmail,
           password: password,
         );
 
-        // Lưu session & cập nhật local DB
-        await authLocalDataSource.createUser(cloudAccount);
-        await localDataSource.saveSession(
-          userId: cloudAccount.id,
+        final mappedAccount = UserAccountModel(
+          id: cloudAccount.id,
           patientCode: cloudAccount.patientCode,
-          contact: cloudAccount.primaryContact,
+          fullName: cloudAccount.fullName,
+          primaryContact: cleanId,
+          passwordHash: '',
+          salt: '',
+          dateOfBirth: cloudAccount.dateOfBirth,
+          gender: cloudAccount.gender,
+          bloodType: cloudAccount.bloodType,
+          createdAt: cloudAccount.createdAt,
+        );
+
+        // Lưu session & cập nhật local DB
+        await authLocalDataSource.createUser(mappedAccount);
+        await localDataSource.saveSession(
+          userId: mappedAccount.id,
+          patientCode: mappedAccount.patientCode,
+          contact: mappedAccount.primaryContact,
           rememberMe: rememberMe,
         );
-        return cloudAccount;
+        return mappedAccount;
       } catch (e) {
-        throw Exception(e.toString().replaceFirst('Exception: ', ''));
+        debugPrint('[Supabase] Đăng nhập Cloud ($e), chuyển sang CSDL cục bộ.');
       }
     }
 
     // 2. Chế độ CSDL Local-First (SQLite)
-    final user = await authLocalDataSource.findByIdentifier(identifier);
+    final user = await authLocalDataSource.findByIdentifier(cleanId);
     if (user == null) {
       throw Exception('Mã hồ sơ hoặc Email/SĐT chưa được đăng ký trong hệ thống.');
     }
