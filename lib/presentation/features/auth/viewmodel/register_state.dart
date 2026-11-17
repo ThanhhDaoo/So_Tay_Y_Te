@@ -30,7 +30,7 @@ class RegisterState {
     this.obscurePassword = true,
     this.obscureConfirmPassword = true,
     this.enableBiometric = true,
-    this.acceptedTerms = true,
+    this.acceptedTerms = false,
     this.passwordStrength = PasswordStrength.medium,
     this.gender = 'Nam',
     this.bloodType = 'O+',

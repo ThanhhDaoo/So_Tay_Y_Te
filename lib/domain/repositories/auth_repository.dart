@@ -39,6 +39,13 @@ abstract class AuthRepository {
     required String smsCode,
   });
 
+  /// Chỉ xác thực mã OTP mà không tạo user (dùng cho luồng đăng ký SĐT)
+  Future<void> verifyPhoneOtpOnly({
+    required String phoneNumber,
+    required String verificationId,
+    required String smsCode,
+  });
+
   // Social Sign-In (Apple & Google)
   Future<UserAccount> signInWithSocialProvider({
     required String provider,

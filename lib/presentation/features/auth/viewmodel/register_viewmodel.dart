@@ -142,14 +142,14 @@ class RegisterViewModel extends ChangeNotifier {
 
     try {
       final contact = contactController.text.trim();
-      // 1. Xác thực mã OTP trước
-      await _authRepository.verifyPhoneOtp(
+      // 1. Chỉ xác thực mã OTP (KHÔNG tạo user) — tránh lỗi "đã đăng ký"
+      await _authRepository.verifyPhoneOtpOnly(
         phoneNumber: contact,
         verificationId: _verificationId ?? 'ver-init',
         smsCode: smsCode,
       );
 
-      // 2. Tạo tài khoản y tế chính thức
+      // 2. OTP hợp lệ → Tạo tài khoản y tế chính thức qua register()
       final user = await _authRepository.register(
         fullName: fullNameController.text.trim(),
         contact: contact,
@@ -364,6 +364,13 @@ class _FallbackRegisterAuthRepository implements AuthRepository {
 
   @override
   Future<void> resetPassword({required String identifier, required String newPassword}) async {}
+
+  @override
+  Future<void> verifyPhoneOtpOnly({
+    required String phoneNumber,
+    required String verificationId,
+    required String smsCode,
+  }) async {}
 
   @override
   Future<String> sendPhoneOtp(String phoneNumber) async => 'fb-ver-mock-123';

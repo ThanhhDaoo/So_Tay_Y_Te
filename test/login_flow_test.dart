@@ -81,6 +81,13 @@ class MockLoginAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> verifyPhoneOtpOnly({
+    required String phoneNumber,
+    required String verificationId,
+    required String smsCode,
+  }) async {}
+
+  @override
   Future<UserProfile> loginAnonymous() async {
     return const UserProfile(
       id: 'guest-123',

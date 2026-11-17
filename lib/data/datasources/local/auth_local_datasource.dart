@@ -107,10 +107,19 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
     final db = await _db;
 
     await db.transaction((txn) async {
-      await txn.insert('users', user.toMap());
+      // Dùng REPLACE để tránh crash khi user.id đã tồn tại (sync từ Cloud)
+      await txn.insert(
+        'users',
+        user.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
 
       if (initialIdentity != null) {
-        await txn.insert('auth_identities', initialIdentity.toMap());
+        await txn.insert(
+          'auth_identities',
+          initialIdentity.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       }
 
       // Tự động tạo hồ sơ user_profile tương ứng để đồng bộ hệ thống y tế

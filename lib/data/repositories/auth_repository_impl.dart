@@ -164,7 +164,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
     UserAccountModel? cloudAccount;
 
-    // 1. Nếu đã kết nối Supabase Cloud, đăng ký lên Supabase Auth (hỗ trợ cả Email & SĐT)
+    // 1. Nếu đã kết nối Supabase Cloud, đăng ký lên Supabase Auth
     if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
       try {
         final res = await supabaseAuthRemoteDataSource!.signUpWithEmail(
@@ -193,10 +193,13 @@ class AuthRepositoryImpl implements AuthRepository {
       }
     }
 
-    // 2. Chế độ CSDL Local-First (SQLite + SHA-256 + Salt)
-    final existingUser = await authLocalDataSource.findByIdentifier(contactClean);
-    if (existingUser != null) {
-      throw Exception('Số điện thoại hoặc Email này đã được đăng ký hồ sơ.');
+    // 2. Kiểm tra trùng lặp trên local — nhưng bỏ qua nếu Cloud đã tạo thành công
+    //    (Cloud là source of truth, local chỉ là cache)
+    if (cloudAccount == null) {
+      final existingUser = await authLocalDataSource.findByIdentifier(contactClean);
+      if (existingUser != null) {
+        throw Exception('Số điện thoại hoặc Email này đã được đăng ký hồ sơ.');
+      }
     }
 
     final userId = cloudAccount?.id ?? _uuid.v4();
@@ -222,6 +225,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
     final provider = isPhone ? AuthProviderType.phoneOtp : AuthProviderType.emailPassword;
 
+    // createUser đã dùng ConflictAlgorithm.replace, an toàn khi upsert
     final created = await authLocalDataSource.createUser(
       newUser,
       initialIdentity: AuthIdentityModel(
@@ -287,7 +291,17 @@ class AuthRepositoryImpl implements AuthRepository {
         );
         return mappedAccount;
       } catch (e) {
-        debugPrint('[Supabase] Đăng nhập Cloud ($e), chuyển sang CSDL cục bộ.');
+        final errStr = e.toString().toLowerCase();
+        // Nếu Supabase trả lỗi xác thực rõ ràng (sai mật khẩu / tài khoản không tồn tại),
+        // throw luôn thay vì fallback sang local — tránh gây nhầm lẫn
+        if (errStr.contains('invalid login credentials') ||
+            errStr.contains('invalid_credentials') ||
+            errStr.contains('email not confirmed') ||
+            errStr.contains('user not found')) {
+          throw Exception('Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.');
+        }
+        // Chỉ fallback khi lỗi mạng / Supabase không khả dụng
+        debugPrint('[Supabase] Đăng nhập Cloud lỗi kết nối ($e), chuyển sang CSDL cục bộ.');
       }
     }
 
@@ -353,7 +367,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   String _normalizePhone(String phone) {
-    String cleaned = phone.replaceAll(RegExp(r'\s+|-|\.'), '');
+    String cleaned = phone.replaceAll(RegExp(r'[\s.\-]+'), '');
     if (cleaned.startsWith('+')) return cleaned;
     if (cleaned.startsWith('84')) return '+$cleaned';
     if (cleaned.startsWith('0')) return '+84${cleaned.substring(1)}';
@@ -496,6 +510,53 @@ class AuthRepositoryImpl implements AuthRepository {
     );
 
     return finalUser;
+  }
+
+  @override
+  Future<void> verifyPhoneOtpOnly({
+    required String phoneNumber,
+    required String verificationId,
+    required String smsCode,
+  }) async {
+    final normalized = _normalizePhone(phoneNumber);
+
+    // 1. Xác thực qua Firebase (chỉ verify, không tạo user)
+    if (firebaseAuthRemoteDataSource != null) {
+      try {
+        await firebaseAuthRemoteDataSource!.verifyPhoneOtp(
+          phoneNumber: normalized,
+          verificationId: verificationId,
+          smsCode: smsCode,
+        );
+        return; // OTP hợp lệ
+      } catch (e) {
+        if (FirebaseConfig.isConfigured) {
+          throw Exception(e.toString().replaceFirst('Exception: ', ''));
+        }
+      }
+    }
+
+    // 2. Xác thực qua Supabase
+    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
+      try {
+        await supabaseAuthRemoteDataSource!.verifyPhoneOtp(
+          phone: normalized,
+          token: smsCode,
+        );
+        return; // OTP hợp lệ
+      } catch (e) {
+        // Fallback sang sandbox
+      }
+    }
+
+    // 3. Sandbox test codes
+    final isTestPhone =
+        (normalized == '+84362625218' && smsCode == '132005') ||
+        (normalized == '+84971860620' && smsCode == '131205') ||
+        smsCode == '123456';
+    if (!isTestPhone) {
+      throw Exception('Mã xác thực OTP không chính xác.');
+    }
   }
 
   @override

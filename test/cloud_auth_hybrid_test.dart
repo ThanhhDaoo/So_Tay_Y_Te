@@ -132,6 +132,10 @@ void main() {
       expect(find.text('Đăng Nhập Số Điện Thoại'), findsOneWidget);
       expect(find.text('Gửi Mã Xác Thực (SMS OTP)'), findsOneWidget);
 
+      // Nhập SĐT trước khi gửi OTP (field không còn hardcode mặc định)
+      await tester.enterText(find.byType(TextField), '0362625218');
+      await tester.pump();
+
       // Tap Send OTP
       await tester.tap(find.text('Gửi Mã Xác Thực (SMS OTP)'));
       await tester.pumpAndSettle();

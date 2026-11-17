@@ -73,6 +73,13 @@ class MockTestAuthRepository implements AuthRepository {
   Future<void> resetPassword({required String identifier, required String newPassword}) async {}
 
   @override
+  Future<void> verifyPhoneOtpOnly({
+    required String phoneNumber,
+    required String verificationId,
+    required String smsCode,
+  }) async {}
+
+  @override
   Future<String> sendPhoneOtp(String phoneNumber) async => 'mock-ver-123';
 
   @override
@@ -144,10 +151,12 @@ void main() {
       expect(viewModel.state.status, equals(RegisterStatus.initial));
       expect(viewModel.state.gender, equals('Nam'));
       expect(viewModel.state.bloodType, equals('O+'));
-      expect(viewModel.state.acceptedTerms, isTrue);
+      // acceptedTerms mặc định = false → user phải tự tick (chuẩn UX)
+      expect(viewModel.state.acceptedTerms, isFalse);
     });
 
     test('Password mismatch fails validation with error message', () async {
+      viewModel.toggleAcceptedTerms(true); // Tick terms trước khi test
       viewModel.fullNameController.text = 'Trần Thanh Đạo';
       viewModel.contactController.text = 'thanhdao@icloud.com';
       viewModel.passwordController.text = 'Password123@';
@@ -174,6 +183,7 @@ void main() {
     });
 
     test('Successful registration creates UserAccount with patientCode', () async {
+      viewModel.toggleAcceptedTerms(true); // Tick terms
       viewModel.fullNameController.text = 'Trần Thanh Đạo';
       viewModel.contactController.text = 'thanhdao@icloud.com';
       viewModel.passwordController.text = 'Password123@';
@@ -191,6 +201,7 @@ void main() {
     });
 
     test('Duplicate contact registration displays friendly error', () async {
+      viewModel.toggleAcceptedTerms(true); // Tick terms
       viewModel.fullNameController.text = 'Trần Thanh Đạo';
       viewModel.contactController.text = 'thanhdao@icloud.com';
       viewModel.passwordController.text = 'Password123@';

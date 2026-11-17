@@ -91,6 +91,13 @@ class MockSocialAuthRepository implements AuthRepository {
   Future<void> resetPassword({required String identifier, required String newPassword}) async {}
 
   @override
+  Future<void> verifyPhoneOtpOnly({
+    required String phoneNumber,
+    required String verificationId,
+    required String smsCode,
+  }) async {}
+
+  @override
   Future<String> sendPhoneOtp(String phoneNumber) async => 'mock-ver-123';
 
   @override

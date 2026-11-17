@@ -24,8 +24,8 @@ class LoginViewModel extends ChangeNotifier {
     BiometricService? biometricService,
   })  : _authRepository = authRepository ?? (sl.isRegistered<AuthRepository>() ? sl<AuthRepository>() : _createFallbackRepo()),
         _biometricService = biometricService ?? (sl.isRegistered<BiometricService>() ? sl<BiometricService>() : BiometricServiceImpl()),
-        identifierController = TextEditingController(text: 'STYT-892410'),
-        passwordController = TextEditingController(text: '123456');
+        identifierController = TextEditingController(),
+        passwordController = TextEditingController();
 
   static AuthRepository _createFallbackRepo() {
     return _FallbackInMemoryAuthRepository();
@@ -288,11 +288,12 @@ class LoginViewModel extends ChangeNotifier {
 
     try {
       final profile = await _authRepository.loginAnonymous();
+      // Dùng thông tin thật từ loginAnonymous, không hardcode
       final guestAccount = UserAccount(
         id: profile.id,
-        patientCode: 'STYT-GUEST',
+        patientCode: profile.id.startsWith('guest-') ? 'STYT-GUEST' : profile.id.substring(0, 11).toUpperCase(),
         fullName: profile.fullName,
-        primaryContact: 'guest@sotayyte.local',
+        primaryContact: profile.emergencyContact ?? 'guest@sotayyte.local',
         passwordHash: '',
         salt: '',
         isGuest: true,
@@ -420,6 +421,13 @@ class _FallbackInMemoryAuthRepository implements AuthRepository {
 
   @override
   Future<void> resetPassword({required String identifier, required String newPassword}) async {}
+
+  @override
+  Future<void> verifyPhoneOtpOnly({
+    required String phoneNumber,
+    required String verificationId,
+    required String smsCode,
+  }) async {}
 
   @override
   Future<String> sendPhoneOtp(String phoneNumber) async => 'fb-ver-mock-123';

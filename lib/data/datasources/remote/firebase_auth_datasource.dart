@@ -37,7 +37,7 @@ class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
   final Random _random = Random.secure();
 
   String _normalizePhoneNumber(String phone) {
-    String cleaned = phone.replaceAll(RegExp(r'\s+|-|\.'), '');
+    String cleaned = phone.replaceAll(RegExp(r'[\s.\-]+'), '');
     if (cleaned.startsWith('+')) {
       return cleaned;
     }

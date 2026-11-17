@@ -36,7 +36,7 @@ class PhoneOtpBottomSheet extends StatefulWidget {
 }
 
 class _PhoneOtpBottomSheetState extends State<PhoneOtpBottomSheet> {
-  final TextEditingController _phoneController = TextEditingController(text: '0912345678');
+  final TextEditingController _phoneController = TextEditingController();
   final List<TextEditingController> _otpControllers =
       List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _otpFocusNodes = List.generate(6, (_) => FocusNode());
