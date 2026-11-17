@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
 import '../../../../../domain/entities/user_account.dart';
+import '../../../../routes/app_routes.dart';
 import '../../viewmodel/register_viewmodel.dart';
 
 class RegistrationOtpBottomSheet extends StatefulWidget {
@@ -242,9 +243,62 @@ class _RegistrationOtpBottomSheetState extends State<RegistrationOtpBottomSheet>
             ),
             if (_errorMessage != null) ...[
               const SizedBox(height: 10),
-              Text(
-                _errorMessage!,
-                style: const TextStyle(color: AppColors.error, fontSize: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFCA5A5)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.info_outline, size: 16, color: AppColors.error),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(
+                              color: AppColors.error,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_errorMessage!.contains('đã được đăng ký')) ...[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          icon: const Icon(Icons.login, size: 16),
+                          label: const Text('Chuyển sang Đăng Nhập ngay'),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.pushReplacementNamed(
+                              context,
+                              AppRoutes.login,
+                              arguments: contact,
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ],
             const SizedBox(height: 16),

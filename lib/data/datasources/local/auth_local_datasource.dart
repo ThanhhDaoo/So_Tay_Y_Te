@@ -42,13 +42,37 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
     final cleanIdentifier = identifier.trim().toLowerCase();
     final db = await _db;
 
+    // Hỗ trợ tìm kiếm thông minh đa định dạng SĐT (09xxx, +84xxx, 84xxx)
+    final variants = <String>{cleanIdentifier};
+    final digitsOnly = cleanIdentifier.replaceAll(RegExp(r'\D'), '');
+    if (digitsOnly.length >= 8) {
+      variants.add(digitsOnly);
+      if (digitsOnly.startsWith('84') && digitsOnly.length >= 10) {
+        final local = '0${digitsOnly.substring(2)}';
+        variants.add(local);
+        variants.add('+$digitsOnly');
+      } else if (digitsOnly.startsWith('0') && digitsOnly.length >= 9) {
+        final intl = '+84${digitsOnly.substring(1)}';
+        variants.add(intl);
+        variants.add('84${digitsOnly.substring(1)}');
+      } else {
+        variants.add('0$digitsOnly');
+        variants.add('+84$digitsOnly');
+        variants.add('84$digitsOnly');
+      }
+    }
+
+    final placeholders = List.filled(variants.length, '?').join(', ');
+    final variantList = variants.toList();
+    final args = [...variantList, ...variantList];
+
     final results = await db.rawQuery(
       '''
       SELECT * FROM users 
-      WHERE LOWER(patient_code) = ? OR LOWER(primary_contact) = ? 
+      WHERE LOWER(patient_code) IN ($placeholders) OR LOWER(primary_contact) IN ($placeholders) 
       LIMIT 1
       ''',
-      [cleanIdentifier, cleanIdentifier],
+      args,
     );
 
     if (results.isEmpty) return null;

@@ -31,7 +31,10 @@ class AppRoutes {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case login:
-        return MaterialPageRoute(builder: (_) => const LoginScreen());
+        final identifier = settings.arguments as String?;
+        return MaterialPageRoute(
+          builder: (_) => LoginScreen(initialIdentifier: identifier),
+        );
       case register:
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
       case timeline:

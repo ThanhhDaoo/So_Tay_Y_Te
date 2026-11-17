@@ -20,7 +20,12 @@ import 'widgets/phone_otp_bottom_sheet.dart';
 import 'widgets/cloud_backend_status_badge.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final String? initialIdentifier;
+
+  const LoginScreen({
+    super.key,
+    this.initialIdentifier,
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -34,6 +39,9 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     _viewModel = LoginViewModel();
+    if (widget.initialIdentifier != null && widget.initialIdentifier!.isNotEmpty) {
+      _viewModel.identifierController.text = widget.initialIdentifier!;
+    }
     _initOAuthListener();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAutoLogin();
@@ -117,10 +125,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           AuthAnimatedEntrance(
                             delay: const Duration(milliseconds: 140),
                             child: AuthTextField(
-                              label: 'Email hoặc Mã hồ sơ',
-                              trailingLabel: 'VD: STYT-892410',
+                              label: 'Số điện thoại, Email hoặc Mã hồ sơ',
+                              trailingLabel: 'VD: 0971... hoặc STYT',
                               trailingLabelColor: AppColors.textMuted,
-                              hintText: 'bacsitu@sotayyte.vn hoặc STYT-XXXX',
+                              hintText: '0912... hoặc example@sotayyte.vn',
                               prefixIconAsset: 'assets/icons/ic_badge_id.svg',
                               controller: _viewModel.identifierController,
                               validator: InputValidators.validateRequired,

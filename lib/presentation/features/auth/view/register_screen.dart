@@ -308,12 +308,63 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     if (state.errorMessage != null) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        state.errorMessage!,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.error,
-                          fontWeight: FontWeight.w500,
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFFCA5A5)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.only(top: 2),
+                                  child: Icon(Icons.info_outline, size: 16, color: AppColors.error),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    state.errorMessage!,
+                                    style: AppTypography.caption.copyWith(
+                                      color: AppColors.error,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (state.errorMessage!.contains('đã được đăng ký')) ...[
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  icon: const Icon(Icons.login, size: 16),
+                                  label: const Text('Chuyển sang Đăng Nhập ngay'),
+                                  onPressed: () {
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      AppRoutes.login,
+                                      arguments: _viewModel.contactController.text.trim(),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
                     ],
@@ -571,17 +622,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   final isValid = _viewModel.validateRegistrationForm();
                   if (!isValid) return;
 
-                  try {
-                    await _viewModel.sendRegistrationOtp();
-                    if (!mounted) return;
-                    RegistrationOtpBottomSheet.show(
-                      context: context,
-                      viewModel: _viewModel,
-                      onSuccess: (account) {
-                        _showSuccessRegistrationDialog(account);
-                      },
-                    );
-                  } catch (e) {
+                  final rawContact = _viewModel.contactController.text.trim().replaceAll(RegExp(r'\s+'), '');
+                  final isPhone = RegExp(r'^[0-9+]+$').hasMatch(rawContact);
+
+                  if (isPhone) {
+                    try {
+                      await _viewModel.sendRegistrationOtp();
+                      if (!mounted) return;
+                      RegistrationOtpBottomSheet.show(
+                        context: context,
+                        viewModel: _viewModel,
+                        onSuccess: (account) {
+                          _showSuccessRegistrationDialog(account);
+                        },
+                      );
+                    } catch (e) {
+                      // Lỗi hiển thị qua state.errorMessage
+                    }
+                  } else {
                     final ok = await _viewModel.submitRegistration();
                     if (ok && mounted) {
                       final account = _viewModel.state.createdAccount;
