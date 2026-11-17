@@ -36,6 +36,9 @@ class SoTayYTeApp extends StatelessWidget {
         Locale('en', 'US'),
       ],
       initialRoute: AppRoutes.login,
+      onGenerateInitialRoutes: (initialRoute) => [
+        AppRoutes.onGenerateRoute(RouteSettings(name: initialRoute)),
+      ],
       onGenerateRoute: AppRoutes.onGenerateRoute,
     );
   }
