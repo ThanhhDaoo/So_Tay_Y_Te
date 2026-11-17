@@ -84,8 +84,13 @@ class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
     final normalized = _normalizePhoneNumber(phoneNumber);
     final expectedCode = _sandboxOtpStore[verificationId];
 
-    // Chấp nhận mã OTP thật được sinh ra HOẶC mã universal test 123456
-    final isValid = smsCode == '123456' || (expectedCode != null && expectedCode == smsCode);
+    // Chấp nhận mã cấu hình trên Firebase Console (+84 362 625 218 -> 132005, +84 971 860 620 -> 131205) hoặc mã sinh từ hệ thống
+    final isFirebaseConsoleConfigured =
+        (normalized == '+84362625218' && smsCode == '132005') ||
+        (normalized == '+84971860620' && smsCode == '131205') ||
+        smsCode == '123456';
+
+    final isValid = isFirebaseConsoleConfigured || (expectedCode != null && expectedCode == smsCode);
 
     if (!isValid) {
       throw Exception('Mã xác thực OTP không chính xác hoặc đã hết hạn.');

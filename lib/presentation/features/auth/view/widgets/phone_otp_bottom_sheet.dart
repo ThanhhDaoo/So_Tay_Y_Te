@@ -144,15 +144,6 @@ class _PhoneOtpBottomSheetState extends State<PhoneOtpBottomSheet> {
     }
   }
 
-  void _fillTestOtp() {
-    const testCode = '123456';
-    for (int i = 0; i < 6; i++) {
-      _otpControllers[i].text = testCode[i];
-    }
-    setState(() => _errorMessage = null);
-    _handleVerifyOtp();
-  }
-
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
@@ -445,21 +436,6 @@ class _PhoneOtpBottomSheetState extends State<PhoneOtpBottomSheet> {
                   ),
                 ),
               ),
-            TextButton.icon(
-              style: TextButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-              ),
-              onPressed: _fillTestOtp,
-              icon: const Icon(Icons.flash_on, size: 16, color: AppColors.accent),
-              label: Text(
-                'Điền mã test: 123456',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.accent,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 20),

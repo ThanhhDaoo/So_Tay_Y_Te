@@ -130,15 +130,6 @@ class _RegistrationOtpBottomSheetState extends State<RegistrationOtpBottomSheet>
     }
   }
 
-  void _fillTestOtp() {
-    const testCode = '123456';
-    for (int i = 0; i < 6; i++) {
-      _otpControllers[i].text = testCode[i];
-    }
-    setState(() => _errorMessage = null);
-    _handleVerifyOtp();
-  }
-
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
@@ -257,41 +248,22 @@ class _RegistrationOtpBottomSheetState extends State<RegistrationOtpBottomSheet>
               ),
             ],
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (_secondsRemaining > 0)
-                  Text(
-                    'Gửi lại mã sau (${_secondsRemaining}s)',
-                    style: AppTypography.caption.copyWith(color: AppColors.textMuted),
-                  )
-                else
-                  GestureDetector(
-                    onTap: _handleResend,
-                    child: Text(
-                      'Gửi lại mã OTP',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
+            Center(
+              child: _secondsRemaining > 0
+                  ? Text(
+                      'Gửi lại mã sau (${_secondsRemaining}s)',
+                      style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+                    )
+                  : GestureDetector(
+                      onTap: _handleResend,
+                      child: Text(
+                        'Gửi lại mã OTP',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                TextButton.icon(
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                  ),
-                  onPressed: _fillTestOtp,
-                  icon: const Icon(Icons.flash_on, size: 16, color: AppColors.accent),
-                  label: Text(
-                    'Điền mã test: 123456',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.accent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
             ),
             const SizedBox(height: 20),
             SizedBox(

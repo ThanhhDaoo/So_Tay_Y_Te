@@ -137,7 +137,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Xác Thực Mã OTP'), findsOneWidget);
-      expect(find.text('Điền mã test: 123456'), findsOneWidget);
+      expect(find.text('Xác Nhận & Đăng Nhập'), findsOneWidget);
     });
   });
 }

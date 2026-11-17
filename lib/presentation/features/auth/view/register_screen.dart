@@ -125,7 +125,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     onTap: () async {
                                       final picked = await showDatePicker(
                                         context: context,
-                                        initialDate: DateTime(1995, 5, 15),
+                                        locale: const Locale('vi', 'VN'),
+                                        helpText: 'CHỌN NGÀY SINH',
+                                        confirmText: 'CHỌN',
+                                        cancelText: 'HỦY',
+                                        initialDate: DateTime(2005, 5, 1),
                                         firstDate: DateTime(1920),
                                         lastDate: DateTime.now(),
                                         builder: (context, child) {
@@ -156,31 +160,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     children: [
                                       Text(
                                         'Nhóm máu',
-                                        style: AppTypography.labelSemiBold.copyWith(
-                                          fontSize: 13,
-                                          color: AppColors.textPrimaryLight,
-                                        ),
+                                        style: AppTypography.labelSemiBold,
                                       ),
                                       const SizedBox(height: 6),
                                       Container(
                                         height: 48,
-                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        padding: const EdgeInsets.symmetric(horizontal: 14),
                                         decoration: BoxDecoration(
                                           color: AppColors.surfaceLight,
                                           borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: AppColors.divider),
+                                          boxShadow: const [
+                                            BoxShadow(
+                                              color: Color(0x0D000000),
+                                              blurRadius: 2,
+                                              offset: Offset(0, 1),
+                                            ),
+                                          ],
                                         ),
+                                        alignment: Alignment.center,
                                         child: DropdownButtonHideUnderline(
                                           child: DropdownButton<String>(
                                             value: state.bloodType,
                                             isExpanded: true,
-                                            icon: const Icon(Icons.arrow_drop_down, color: AppColors.primary),
+                                            style: AppTypography.bodyLarge.copyWith(
+                                              color: AppColors.textPrimaryLight,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            icon: const Icon(
+                                              Icons.keyboard_arrow_down_rounded,
+                                              color: AppColors.textMuted,
+                                              size: 20,
+                                            ),
                                             items: const [
-                                              DropdownMenuItem(value: 'O+', child: Text('O+ (Phổ biến)')),
+                                              DropdownMenuItem(value: 'O+', child: Text('O+')),
                                               DropdownMenuItem(value: 'A+', child: Text('A+')),
                                               DropdownMenuItem(value: 'B+', child: Text('B+')),
                                               DropdownMenuItem(value: 'AB+', child: Text('AB+')),
-                                              DropdownMenuItem(value: 'O-', child: Text('O- (Hiếm)')),
+                                              DropdownMenuItem(value: 'O-', child: Text('O-')),
+                                              DropdownMenuItem(value: 'A-', child: Text('A-')),
+                                              DropdownMenuItem(value: 'B-', child: Text('B-')),
+                                              DropdownMenuItem(value: 'AB-', child: Text('AB-')),
                                               DropdownMenuItem(value: 'Chưa rõ', child: Text('Chưa rõ')),
                                             ],
                                             onChanged: (val) {

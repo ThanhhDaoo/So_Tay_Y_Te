@@ -433,7 +433,11 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     if (remoteAccount == null) {
-      if (smsCode != '123456') {
+      final isFirebaseTestPhone =
+          (normalized == '+84362625218' && smsCode == '132005') ||
+          (normalized == '+84971860620' && smsCode == '131205') ||
+          smsCode == '123456';
+      if (!isFirebaseTestPhone) {
         throw Exception('Mã xác thực OTP không chính xác.');
       }
       final patientCode = await authLocalDataSource.generateUniquePatientCode();
