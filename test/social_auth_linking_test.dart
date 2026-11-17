@@ -131,6 +131,25 @@ class MockSocialAuthRepository implements AuthRepository {
     _activeSession = user;
     return user;
   }
+
+  @override
+  Future<UserAccount> syncSupabaseUserSession({
+    required String userId,
+    String? email,
+    String? fullName,
+  }) async {
+    final user = UserAccount(
+      id: userId,
+      patientCode: 'STYT-892410',
+      fullName: fullName ?? 'Bệnh nhân Test',
+      primaryContact: email ?? 'test@example.com',
+      passwordHash: '',
+      salt: '',
+      createdAt: DateTime.now(),
+    );
+    _activeSession = user;
+    return user;
+  }
 }
 
 void main() {

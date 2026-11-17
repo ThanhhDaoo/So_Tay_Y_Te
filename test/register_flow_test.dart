@@ -109,6 +109,23 @@ class MockTestAuthRepository implements AuthRepository {
       createdAt: DateTime.now(),
     );
   }
+
+  @override
+  Future<UserAccount> syncSupabaseUserSession({
+    required String userId,
+    String? email,
+    String? fullName,
+  }) async {
+    return UserAccount(
+      id: userId,
+      patientCode: 'STYT-123456',
+      fullName: fullName ?? 'Bệnh nhân Test',
+      primaryContact: email ?? 'test@example.com',
+      passwordHash: '',
+      salt: '',
+      createdAt: DateTime.now(),
+    );
+  }
 }
 
 void main() {

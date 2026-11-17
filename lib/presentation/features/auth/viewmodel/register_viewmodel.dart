@@ -302,4 +302,21 @@ class _FallbackRegisterAuthRepository implements AuthRepository {
       createdAt: DateTime.now(),
     );
   }
+
+  @override
+  Future<UserAccount> syncSupabaseUserSession({
+    required String userId,
+    String? email,
+    String? fullName,
+  }) async {
+    return UserAccount(
+      id: userId,
+      patientCode: 'STYT-999999',
+      fullName: fullName ?? 'Bệnh nhân',
+      primaryContact: email ?? 'user@test.vn',
+      passwordHash: '',
+      salt: '',
+      createdAt: DateTime.now(),
+    );
+  }
 }

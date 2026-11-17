@@ -1,3 +1,5 @@
+import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/config/firebase_config.dart';
@@ -461,24 +463,23 @@ class AuthRepositoryImpl implements AuthRepository {
         await supabaseAuthRemoteDataSource!.signInWithOAuth(oauthProvider);
         final currentUser = supabaseAuthRemoteDataSource!.currentAuthUser;
         if (currentUser != null) {
-          final account = UserAccountModel(
-            id: currentUser.id,
-            patientCode: 'STYT-${currentUser.id.substring(0, 6).toUpperCase()}',
-            fullName: currentUser.userMetadata?['full_name'] as String? ?? 'Bệnh nhân $providerName',
-            primaryContact: currentUser.email ?? '$providerName-user',
-            passwordHash: '',
-            salt: '',
-            createdAt: DateTime.now(),
+          return await syncSupabaseUserSession(
+            userId: currentUser.id,
+            email: currentUser.email,
+            fullName: currentUser.userMetadata?['full_name'] as String?,
           );
-          await authLocalDataSource.createUser(account);
-          await localDataSource.saveSession(
-            userId: account.id,
-            patientCode: account.patientCode,
-            contact: account.primaryContact,
-            rememberMe: true,
-          );
-          return account;
         }
+
+        // OAuth flow được kích hoạt thành công trên trình duyệt
+        return UserAccountModel(
+          id: 'oauth_in_progress',
+          patientCode: 'STYT-OAUTH',
+          fullName: 'Đang đăng nhập $providerName...',
+          primaryContact: '$providerName-auth',
+          passwordHash: '',
+          salt: '',
+          createdAt: DateTime.now(),
+        );
       } catch (e) {
         final err = e.toString();
         if (err.contains('not enabled') || err.contains('Unsupported provider')) {
@@ -496,5 +497,60 @@ class AuthRepositoryImpl implements AuthRepository {
       'Phương thức $providerName chưa được cấu hình OAuth trên Supabase.\n'
       'Vui lòng sử dụng tính năng "Đăng ký" bằng Email hoặc "Đăng nhập Số Điện Thoại / OTP" để trải nghiệm dữ liệu thật ngay!',
     );
+  }
+
+  @override
+  Future<UserAccount> syncSupabaseUserSession({
+    required String userId,
+    String? email,
+    String? fullName,
+  }) async {
+    final client = SupabaseConfig.client;
+    String patientCode = 'STYT-${userId.substring(0, min(6, userId.length)).toUpperCase()}';
+    String resolvedName = fullName ?? email ?? 'Bệnh nhân';
+
+    if (client != null) {
+      try {
+        final profileRes = await client
+            .from('profiles')
+            .select()
+            .eq('id', userId)
+            .maybeSingle();
+
+        if (profileRes != null) {
+          patientCode = profileRes['patient_code'] as String? ?? patientCode;
+          resolvedName = profileRes['full_name'] as String? ?? resolvedName;
+        } else {
+          await client.from('profiles').upsert({
+            'id': userId,
+            'patient_code': patientCode,
+            'full_name': resolvedName,
+            'primary_phone': email,
+          });
+        }
+      } catch (e) {
+        debugPrint('[Supabase] syncSupabaseUserSession profile error: $e');
+      }
+    }
+
+    final account = UserAccountModel(
+      id: userId,
+      patientCode: patientCode,
+      fullName: resolvedName,
+      primaryContact: email ?? '$userId@auth.supabase',
+      passwordHash: '',
+      salt: '',
+      createdAt: DateTime.now(),
+    );
+
+    await authLocalDataSource.createUser(account);
+    await localDataSource.saveSession(
+      userId: account.id,
+      patientCode: account.patientCode,
+      contact: account.primaryContact,
+      rememberMe: true,
+    );
+
+    return account;
   }
 }

@@ -199,6 +199,38 @@ class LoginViewModel extends ChangeNotifier {
     }
   }
 
+  Future<bool> handleOAuthSessionSuccess({
+    required String userId,
+    String? email,
+    String? fullName,
+  }) async {
+    _state = _state.copyWith(status: LoginStatus.loading, errorMessage: null);
+    notifyListeners();
+
+    try {
+      final user = await _authRepository.syncSupabaseUserSession(
+        userId: userId,
+        email: email,
+        fullName: fullName,
+      );
+
+      _state = _state.copyWith(
+        status: LoginStatus.success,
+        loggedInUser: user,
+        errorMessage: null,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _state = _state.copyWith(
+        status: LoginStatus.error,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<String> sendPhoneOtp(String phoneNumber) async {
     _state = _state.copyWith(status: LoginStatus.loading, errorMessage: null);
     notifyListeners();
@@ -421,6 +453,23 @@ class _FallbackInMemoryAuthRepository implements AuthRepository {
       patientCode: 'STYT-892410',
       fullName: isApple ? 'Bệnh nhân Apple' : 'Bệnh nhân Google',
       primaryContact: isApple ? 'apple_user@icloud.com' : 'google_user@gmail.com',
+      passwordHash: '',
+      salt: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  @override
+  Future<UserAccount> syncSupabaseUserSession({
+    required String userId,
+    String? email,
+    String? fullName,
+  }) async {
+    return UserAccount(
+      id: userId,
+      patientCode: 'STYT-892410',
+      fullName: fullName ?? 'Bệnh nhân Test',
+      primaryContact: email ?? 'test@example.com',
       passwordHash: '',
       salt: '',
       createdAt: DateTime.now(),

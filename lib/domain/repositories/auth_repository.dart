@@ -45,4 +45,10 @@ abstract class AuthRepository {
     String? idToken,
     String? accessToken,
   });
+
+  Future<UserAccount> syncSupabaseUserSession({
+    required String userId,
+    String? email,
+    String? fullName,
+  });
 }
