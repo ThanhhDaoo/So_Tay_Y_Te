@@ -85,6 +85,99 @@ class RegisterViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  String? _verificationId;
+  String? get verificationId => _verificationId;
+
+  bool validateRegistrationForm() {
+    if (!_state.acceptedTerms) {
+      _state = _state.copyWith(
+        status: RegisterStatus.error,
+        errorMessage: 'Vui lòng đồng ý với Điều khoản Dịch vụ & Cam kết Bảo mật HIPAA.',
+      );
+      notifyListeners();
+      return false;
+    }
+
+    final form = formKey.currentState;
+    if (form != null && !form.validate()) {
+      return false;
+    }
+
+    if (passwordController.text != confirmPasswordController.text) {
+      _state = _state.copyWith(
+        status: RegisterStatus.error,
+        errorMessage: 'Mật khẩu xác nhận không khớp. Vui lòng kiểm tra lại.',
+      );
+      notifyListeners();
+      return false;
+    }
+
+    return true;
+  }
+
+  Future<String> sendRegistrationOtp() async {
+    _state = _state.copyWith(status: RegisterStatus.loading, errorMessage: null);
+    notifyListeners();
+
+    try {
+      final contact = contactController.text.trim();
+      final verId = await _authRepository.sendPhoneOtp(contact);
+      _verificationId = verId;
+      _state = _state.copyWith(status: RegisterStatus.initial, errorMessage: null);
+      notifyListeners();
+      return verId;
+    } catch (e) {
+      _state = _state.copyWith(
+        status: RegisterStatus.error,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<bool> verifyOtpAndRegister(String smsCode) async {
+    _state = _state.copyWith(status: RegisterStatus.loading, errorMessage: null);
+    notifyListeners();
+
+    try {
+      final contact = contactController.text.trim();
+      // 1. Xác thực mã OTP trước
+      await _authRepository.verifyPhoneOtp(
+        phoneNumber: contact,
+        verificationId: _verificationId ?? 'ver-init',
+        smsCode: smsCode,
+      );
+
+      // 2. Tạo tài khoản y tế chính thức
+      final user = await _authRepository.register(
+        fullName: fullNameController.text.trim(),
+        contact: contact,
+        password: passwordController.text,
+        dateOfBirth: _state.dateOfBirth != null
+            ? '${_state.dateOfBirth!.year}-${_state.dateOfBirth!.month.toString().padLeft(2, '0')}-${_state.dateOfBirth!.day.toString().padLeft(2, '0')}'
+            : null,
+        gender: _state.gender,
+        bloodType: _state.bloodType,
+      );
+
+      _state = _state.copyWith(
+        status: RegisterStatus.success,
+        createdAccount: user,
+        errorMessage: null,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _state = _state.copyWith(
+        status: RegisterStatus.error,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> submitRegistration() async {
     if (!_state.acceptedTerms) {
       _state = _state.copyWith(

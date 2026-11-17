@@ -15,6 +15,7 @@ import 'widgets/guest_migration_notice_card.dart';
 import 'widgets/password_strength_meter.dart';
 import 'widgets/social_auth_button.dart';
 import 'widgets/cloud_backend_status_badge.dart';
+import 'widgets/registration_otp_bottom_sheet.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -521,13 +522,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onTap: isLoading
               ? null
               : () async {
-                  final ok = await _viewModel.submitRegistration();
-                  if (ok && mounted) {
-                    final account = _viewModel.state.createdAccount;
-                    if (account != null) {
-                      _showSuccessRegistrationDialog(account);
-                    } else {
-                      _navigateToTimeline();
+                  final isValid = _viewModel.validateRegistrationForm();
+                  if (!isValid) return;
+
+                  try {
+                    await _viewModel.sendRegistrationOtp();
+                    if (!mounted) return;
+                    RegistrationOtpBottomSheet.show(
+                      context: context,
+                      viewModel: _viewModel,
+                      onSuccess: (account) {
+                        _showSuccessRegistrationDialog(account);
+                      },
+                    );
+                  } catch (e) {
+                    final ok = await _viewModel.submitRegistration();
+                    if (ok && mounted) {
+                      final account = _viewModel.state.createdAccount;
+                      if (account != null) {
+                        _showSuccessRegistrationDialog(account);
+                      } else {
+                        _navigateToTimeline();
+                      }
                     }
                   }
                 },
