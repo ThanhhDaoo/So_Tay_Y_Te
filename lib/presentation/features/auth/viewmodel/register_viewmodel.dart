@@ -290,6 +290,37 @@ class RegisterViewModel extends ChangeNotifier {
     }
   }
 
+  /// Kiểm tra khi người dùng đã nhấn vào liên kết xác nhận trong Email từ Supabase
+  Future<bool> confirmEmailLinkVerified() async {
+    _state =
+        _state.copyWith(status: RegisterStatus.loading, errorMessage: null);
+    notifyListeners();
+
+    try {
+      final email = contactController.text.trim().toLowerCase();
+      final user = await _authRepository.login(
+        identifier: email,
+        password: passwordController.text,
+        rememberMe: true,
+      );
+      _isPendingEmailOtp = false;
+      _state = _state.copyWith(
+        status: RegisterStatus.success,
+        createdAccount: user,
+        errorMessage: null,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _state = _state.copyWith(
+        status: RegisterStatus.error,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> verifyOtpAndRegister(String otpCode) async {
     _state =
         _state.copyWith(status: RegisterStatus.loading, errorMessage: null);

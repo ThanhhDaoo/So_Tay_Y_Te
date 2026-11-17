@@ -223,7 +223,9 @@ class _RegistrationOtpBottomSheetState
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Nhập mã 6 số gửi tới: $displayContact',
+                        isEmail
+                            ? 'Nhập mã 6 số hoặc mở hộp thư nhấn Link xác nhận: $displayContact'
+                            : 'Nhập mã 6 số gửi tới: $displayContact',
                         style: AppTypography.caption.copyWith(
                           color: AppColors.textMuted,
                           fontWeight: FontWeight.w600,
@@ -450,6 +452,58 @@ class _RegistrationOtpBottomSheetState
                       ),
               ),
             ),
+            if (isEmail) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.check_circle_outline_rounded,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                  label: Text(
+                    'Tôi đã bấm Link xác nhận trong Email',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          setState(() {
+                            _isLoading = true;
+                            _errorMessage = null;
+                          });
+                          final ok = await widget.viewModel
+                              .confirmEmailLinkVerified();
+                          if (!context.mounted) return;
+                          if (ok &&
+                              widget.viewModel.state.createdAccount != null) {
+                            Navigator.pop(context);
+                            widget.onSuccess(
+                              widget.viewModel.state.createdAccount!,
+                            );
+                          } else {
+                            setState(() {
+                              _isLoading = false;
+                              _errorMessage =
+                                  widget.viewModel.state.errorMessage ??
+                                      'Email chưa được xác nhận. Vui lòng mở thư và nhấn vào liên kết xác nhận trước.';
+                            });
+                          }
+                        },
+                ),
+              ),
+            ],
           ],
         ),
       ),

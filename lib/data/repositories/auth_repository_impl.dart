@@ -597,15 +597,18 @@ class AuthRepositoryImpl implements AuthRepository {
         return savedAccount;
       } catch (e) {
         final errStr = e.toString().toLowerCase();
-        if (errStr.contains('email not confirmed')) {
+        final isSyntheticPhoneEmail = resolvedAuthEmail.endsWith('@sotayyte.vn');
+
+        if (errStr.contains('email not confirmed') && !isSyntheticPhoneEmail) {
           throw Exception(
-            'Địa chỉ Email chưa được xác nhận. Vui lòng kiểm tra hộp thư đến (hoặc mục Spam) để kích hoạt tài khoản.',
+            'Địa chỉ Email chưa được xác nhận. Vui lòng mở hộp thư (kiểm tra cả mục Spam) và nhấn vào liên kết xác nhận từ Supabase trước khi đăng nhập.',
           );
         }
 
         final isInvalidCreds = errStr.contains('invalid login credentials') ||
             errStr.contains('invalid_credentials') ||
-            errStr.contains('user not found');
+            errStr.contains('user not found') ||
+            (errStr.contains('email not confirmed') && isSyntheticPhoneEmail);
 
         if (isInvalidCreds) {
           // Kiểm tra xem tài khoản có tồn tại cục bộ (tạo khi offline hoặc vừa đổi mật khẩu qua OTP) không

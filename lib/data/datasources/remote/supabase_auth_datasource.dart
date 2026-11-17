@@ -428,7 +428,7 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
     final launched = await client.auth.signInWithOAuth(
       provider,
       redirectTo: 'io.supabase.sotayyte://login-callback/',
-      authScreenLaunchMode: LaunchMode.externalApplication,
+      authScreenLaunchMode: LaunchMode.inAppBrowserView,
     );
 
     if (!launched) {
