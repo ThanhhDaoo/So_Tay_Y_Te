@@ -30,6 +30,7 @@ class _EmergencyCardScreenState extends State<EmergencyCardScreen> {
   void initState() {
     super.initState();
     _viewModel = EmergencyCardViewModel()..addListener(_onViewModelChanged);
+    _viewModel.loadProfile();
   }
 
   @override

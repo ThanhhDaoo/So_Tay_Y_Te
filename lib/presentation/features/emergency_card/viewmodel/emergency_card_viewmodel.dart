@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../../domain/repositories/auth_repository.dart';
 import 'emergency_card_state.dart';
 
 /// ViewModel quản lý trạng thái và tương tác cho màn hình Thẻ Cấp Cứu Khẩn Cấp (ICE).
@@ -6,6 +8,30 @@ class EmergencyCardViewModel extends ChangeNotifier {
   EmergencyCardState _state = EmergencyCardState.initial();
 
   EmergencyCardState get state => _state;
+
+  Future<void> loadProfile() async {
+    try {
+      if (sl.isRegistered<AuthRepository>()) {
+        final session = await sl<AuthRepository>().getActiveSession();
+        if (session != null) {
+          String demographics = session.gender ?? 'Chưa rõ';
+          if (session.dateOfBirth != null && session.dateOfBirth!.isNotEmpty) {
+            demographics += ' • ${session.dateOfBirth}';
+          }
+          _state = _state.copyWith(
+            patient: _state.patient.copyWith(
+              fullName: session.fullName,
+              demographics: demographics,
+              bloodType: session.bloodType != null && session.bloodType!.isNotEmpty && session.bloodType != 'Chưa rõ'
+                  ? session.bloodType!
+                  : _state.patient.bloodType,
+            ),
+          );
+          notifyListeners();
+        }
+      }
+    } catch (_) {}
+  }
 
   /// Bật/tắt hiển thị thẻ ICE trên màn hình khóa.
   void toggleLockScreenWidget() {

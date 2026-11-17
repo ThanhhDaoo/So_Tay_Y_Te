@@ -32,6 +32,28 @@ class PatientSnapshotInfo {
     required this.organDonorStatus,
     required this.avatarAsset,
   });
+
+  PatientSnapshotInfo copyWith({
+    String? fullName,
+    String? demographics,
+    String? bloodType,
+    String? rhFactor,
+    String? height,
+    String? weight,
+    String? organDonorStatus,
+    String? avatarAsset,
+  }) {
+    return PatientSnapshotInfo(
+      fullName: fullName ?? this.fullName,
+      demographics: demographics ?? this.demographics,
+      bloodType: bloodType ?? this.bloodType,
+      rhFactor: rhFactor ?? this.rhFactor,
+      height: height ?? this.height,
+      weight: weight ?? this.weight,
+      organDonorStatus: organDonorStatus ?? this.organDonorStatus,
+      avatarAsset: avatarAsset ?? this.avatarAsset,
+    );
+  }
 }
 
 /// Cảnh báo dị ứng thuốc nghiêm trọng.
@@ -145,6 +167,7 @@ class EmergencyCardState {
   }
 
   EmergencyCardState copyWith({
+    PatientSnapshotInfo? patient,
     bool? isLockScreenWidgetEnabled,
     int? selectedNavIndex,
     String? lastActionMessage,
@@ -154,7 +177,7 @@ class EmergencyCardState {
       primaryContact: primaryContact,
       doctorContact: doctorContact,
       hotline115: hotline115,
-      patient: patient,
+      patient: patient ?? this.patient,
       allergyWarning: allergyWarning,
       chronicConditions: chronicConditions,
       verifiedFooterText: verifiedFooterText,

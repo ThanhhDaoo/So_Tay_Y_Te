@@ -239,16 +239,8 @@ class RegisterViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final isApple = provider.toLowerCase() == 'apple';
-      final defaultName = isApple ? 'Bệnh nhân Apple' : 'Bệnh nhân Google';
-      final defaultContact = isApple ? 'apple_user@icloud.com' : 'google_user@gmail.com';
-
-      final user = await _authRepository.register(
-        fullName: defaultName,
-        contact: defaultContact,
-        password: 'SocialOAuthSecureToken2026!',
-        gender: _state.gender,
-        bloodType: _state.bloodType,
+      final user = await _authRepository.signInWithSocialProvider(
+        provider: provider,
       );
 
       _state = _state.copyWith(
@@ -259,29 +251,44 @@ class RegisterViewModel extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      // Nếu tài khoản đã tồn tại qua email này, tiến hành login tự động
-      try {
-        final isApple = provider.toLowerCase() == 'apple';
-        final defaultContact = isApple ? 'apple_user@icloud.com' : 'google_user@gmail.com';
-        final user = await _authRepository.login(
-          identifier: defaultContact,
-          password: 'SocialOAuthSecureToken2026!',
-        );
-        _state = _state.copyWith(
-          status: RegisterStatus.success,
-          createdAccount: user,
-          errorMessage: null,
-        );
-        notifyListeners();
-        return true;
-      } catch (_) {
-        _state = _state.copyWith(
-          status: RegisterStatus.error,
-          errorMessage: e.toString().replaceFirst('Exception: ', ''),
-        );
-        notifyListeners();
-        return false;
-      }
+      _state = _state.copyWith(
+        status: RegisterStatus.error,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> handleOAuthSessionSuccess({
+    required String userId,
+    String? email,
+    String? fullName,
+  }) async {
+    _state = _state.copyWith(status: RegisterStatus.loading, errorMessage: null);
+    notifyListeners();
+
+    try {
+      final user = await _authRepository.syncSupabaseUserSession(
+        userId: userId,
+        email: email,
+        fullName: fullName,
+      );
+
+      _state = _state.copyWith(
+        status: RegisterStatus.success,
+        createdAccount: user,
+        errorMessage: null,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _state = _state.copyWith(
+        status: RegisterStatus.error,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+      notifyListeners();
+      return false;
     }
   }
 

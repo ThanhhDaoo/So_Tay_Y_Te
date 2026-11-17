@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/config/supabase_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/input_validators.dart';
@@ -26,15 +29,39 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   late final RegisterViewModel _viewModel;
+  StreamSubscription<AuthState>? _authStateSubscription;
 
   @override
   void initState() {
     super.initState();
     _viewModel = RegisterViewModel();
+    _initOAuthListener();
+  }
+
+  void _initOAuthListener() {
+    final client = SupabaseConfig.client;
+    if (client != null) {
+      _authStateSubscription = client.auth.onAuthStateChange.listen((data) async {
+        final event = data.event;
+        final session = data.session;
+        if (event == AuthChangeEvent.signedIn && session != null && mounted) {
+          final user = session.user;
+          final success = await _viewModel.handleOAuthSessionSuccess(
+            userId: user.id,
+            email: user.email,
+            fullName: user.userMetadata?['full_name'] as String?,
+          );
+          if (success && mounted) {
+            _navigateToTimeline();
+          }
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
+    _authStateSubscription?.cancel();
     _viewModel.dispose();
     super.dispose();
   }
@@ -617,7 +644,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 : () async {
                     final ok = await _viewModel.registerWithSocial('apple');
                     if (ok) {
-                      _navigateToTimeline();
+                      if (_viewModel.state.createdAccount?.id != 'oauth_in_progress') {
+                        _navigateToTimeline();
+                      }
                     } else if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -646,7 +675,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 : () async {
                     final ok = await _viewModel.registerWithSocial('google');
                     if (ok) {
-                      _navigateToTimeline();
+                      if (_viewModel.state.createdAccount?.id != 'oauth_in_progress') {
+                        _navigateToTimeline();
+                      }
                     } else if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

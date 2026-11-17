@@ -107,7 +107,21 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
     });
 
     final identities = await _getIdentitiesForUser(db, user.id);
-    return user.copyWith(identities: identities) as UserAccountModel;
+    return UserAccountModel(
+      id: user.id,
+      patientCode: user.patientCode,
+      fullName: user.fullName,
+      primaryContact: user.primaryContact,
+      passwordHash: user.passwordHash,
+      salt: user.salt,
+      dateOfBirth: user.dateOfBirth,
+      gender: user.gender,
+      bloodType: user.bloodType,
+      avatarUrl: user.avatarUrl,
+      isGuest: user.isGuest,
+      createdAt: user.createdAt,
+      identities: identities,
+    );
   }
 
   @override
