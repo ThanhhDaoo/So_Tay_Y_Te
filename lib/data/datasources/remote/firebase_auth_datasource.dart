@@ -38,12 +38,17 @@ class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
 
   String _normalizePhoneNumber(String phone) {
     String cleaned = phone.replaceAll(RegExp(r'\s+|-|\.'), '');
-    if (cleaned.startsWith('0')) {
-      cleaned = '+84${cleaned.substring(1)}';
-    } else if (!cleaned.startsWith('+')) {
-      cleaned = '+$cleaned';
+    if (cleaned.startsWith('+')) {
+      return cleaned;
     }
-    return cleaned;
+    if (cleaned.startsWith('84')) {
+      return '+$cleaned';
+    }
+    if (cleaned.startsWith('0')) {
+      return '+84${cleaned.substring(1)}';
+    }
+    // Người dùng nhập 9 số bỏ số 0 (ví dụ 362625218)
+    return '+84$cleaned';
   }
 
   @override

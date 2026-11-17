@@ -321,12 +321,22 @@ class AuthRepositoryImpl implements AuthRepository {
     await authLocalDataSource.updatePassword(user.id, newHash, salt);
   }
 
+  String _normalizePhone(String phone) {
+    String cleaned = phone.replaceAll(RegExp(r'\s+|-|\.'), '');
+    if (cleaned.startsWith('+')) return cleaned;
+    if (cleaned.startsWith('84')) return '+$cleaned';
+    if (cleaned.startsWith('0')) return '+84${cleaned.substring(1)}';
+    return '+84$cleaned';
+  }
+
   @override
   Future<String> sendPhoneOtp(String phoneNumber) async {
+    final normalized = _normalizePhone(phoneNumber);
+
     // 1. Ưu tiên Firebase Auth Phone Service nếu đã cấu hình
     if (FirebaseConfig.isConfigured && firebaseAuthRemoteDataSource != null) {
       try {
-        return await firebaseAuthRemoteDataSource!.sendPhoneOtp(phoneNumber);
+        return await firebaseAuthRemoteDataSource!.sendPhoneOtp(normalized);
       } catch (e) {
         throw Exception(e.toString().replaceFirst('Exception: ', ''));
       }
@@ -335,16 +345,21 @@ class AuthRepositoryImpl implements AuthRepository {
     // 2. Kiểm tra Supabase Phone Auth nếu đã cấu hình
     if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
       try {
-        await supabaseAuthRemoteDataSource!.sendPhoneOtp(phone: phoneNumber);
+        await supabaseAuthRemoteDataSource!.sendPhoneOtp(phone: normalized);
         return 'sb-ver-${DateTime.now().millisecondsSinceEpoch}';
       } catch (e) {
-        throw Exception(e.toString().replaceFirst('Exception: ', ''));
+        final err = e.toString().toLowerCase();
+        // Nếu Supabase chưa cấu hình SMS Gateway (phone_provider_disabled), tự động chuyển sang Firebase OTP
+        if (!err.contains('phone_provider_disabled') && !err.contains('unsupported phone provider')) {
+          throw Exception(e.toString().replaceFirst('Exception: ', ''));
+        }
+        debugPrint('[PhoneAuth] Supabase Phone provider disabled, chuyển sang Firebase OTP Sandbox.');
       }
     }
 
     // 3. Fallback Firebase Sandbox / Mock OTP
     if (firebaseAuthRemoteDataSource != null) {
-      return await firebaseAuthRemoteDataSource!.sendPhoneOtp(phoneNumber);
+      return await firebaseAuthRemoteDataSource!.sendPhoneOtp(normalized);
     }
 
     return 'ver-${DateTime.now().millisecondsSinceEpoch}';
@@ -356,13 +371,14 @@ class AuthRepositoryImpl implements AuthRepository {
     required String verificationId,
     required String smsCode,
   }) async {
+    final normalized = _normalizePhone(phoneNumber);
     UserAccountModel? remoteAccount;
 
     // 1. Xác thực qua Firebase
     if (firebaseAuthRemoteDataSource != null) {
       try {
         remoteAccount = await firebaseAuthRemoteDataSource!.verifyPhoneOtp(
-          phoneNumber: phoneNumber,
+          phoneNumber: normalized,
           verificationId: verificationId,
           smsCode: smsCode,
         );
@@ -377,11 +393,11 @@ class AuthRepositoryImpl implements AuthRepository {
     if (remoteAccount == null && SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
       try {
         remoteAccount = await supabaseAuthRemoteDataSource!.verifyPhoneOtp(
-          phone: phoneNumber,
+          phone: normalized,
           token: smsCode,
         );
       } catch (e) {
-        throw Exception(e.toString().replaceFirst('Exception: ', ''));
+        // Fallback to local sandbox verification if remote failed
       }
     }
 
