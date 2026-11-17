@@ -1,10 +1,27 @@
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../../../core/config/firebase_config.dart';
+import '../../../core/utils/input_validators.dart';
 import '../../models/user_account_model.dart';
+
+class _SandboxOtpEntry {
+  final String code;
+  final String normalizedPhone;
+  final DateTime expiresAt;
+
+  const _SandboxOtpEntry({
+    required this.code,
+    required this.normalizedPhone,
+    required this.expiresAt,
+  });
+
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
+}
 
 abstract class FirebaseAuthRemoteDataSource {
   Future<String> sendPhoneOtp(String phoneNumber);
+  String? peekSandboxOtp(String verificationId);
+
   Future<UserAccountModel> verifyPhoneOtp({
     required String phoneNumber,
     required String verificationId,
@@ -32,46 +49,54 @@ abstract class FirebaseAuthRemoteDataSource {
 }
 
 class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
-  // Bộ nhớ đệm tạm thời cho mã OTP và verificationId (dùng cho Sandbox / Mock / Dev)
-  final Map<String, String> _sandboxOtpStore = {};
+  // Bộ nhớ đệm mã OTP có gắn số điện thoại và thời hạn 5 phút
+  final Map<String, _SandboxOtpEntry> _sandboxOtpStore = {};
   final Random _random = Random.secure();
 
   String _normalizePhoneNumber(String phone) {
-    String cleaned = phone.replaceAll(RegExp(r'[\s.\-]+'), '');
-    if (cleaned.startsWith('+')) {
-      return cleaned;
-    }
-    if (cleaned.startsWith('84')) {
-      return '+$cleaned';
-    }
-    if (cleaned.startsWith('0')) {
-      return '+84${cleaned.substring(1)}';
-    }
-    // Người dùng nhập 9 số bỏ số 0 (ví dụ 362625218)
-    return '+84$cleaned';
+    return InputValidators.normalizePhoneE164(phone);
+  }
+
+  @override
+  String? peekSandboxOtp(String verificationId) {
+    final entry = _sandboxOtpStore[verificationId];
+    if (entry == null || entry.isExpired) return null;
+    return entry.code;
   }
 
   @override
   Future<String> sendPhoneOtp(String phoneNumber) async {
-    final normalized = _normalizePhoneNumber(phoneNumber);
+    final validationErr = InputValidators.validatePhone(phoneNumber);
+    if (validationErr != null) {
+      throw Exception(validationErr);
+    }
 
-    if (normalized.length < 10) {
+    final normalized = _normalizePhoneNumber(phoneNumber);
+    if (normalized.length < 11) {
       throw Exception('Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.');
     }
 
     if (FirebaseConfig.isConfigured) {
-      // Khi đã gắn API Key thật của Firebase:
-      // Trong môi trường production thật, gọi REST API của Firebase Identity Toolkit:
-      // https://identitytoolkit.googleapis.com/v1/accounts:sendVerificationCode?key=[API_KEY]
-      debugPrint('[FirebaseAuth] Đang gửi mã OTP SMS thật qua Firebase tới $normalized');
+      debugPrint(
+        '[FirebaseAuth] Đang gửi mã OTP SMS thật qua Firebase tới $normalized',
+      );
     }
 
-    // Sinh mã verificationId và lưu mã OTP (123456 hoặc mã 6 số ngẫu nhiên)
-    final verificationId = 'fb-ver-${DateTime.now().millisecondsSinceEpoch}-${_random.nextInt(999999)}';
-    final generatedOtp = (_random.nextInt(900000) + 100000).toString();
-    _sandboxOtpStore[verificationId] = generatedOtp;
+    // Dọn các OTP đã hết hạn
+    _sandboxOtpStore.removeWhere((_, entry) => entry.isExpired);
 
-    debugPrint('[FirebaseAuth] Mã OTP cho $normalized (verificationId: $verificationId): $generatedOtp (hoặc 123456)');
+    final verificationId =
+        'fb-ver-${DateTime.now().millisecondsSinceEpoch}-${_random.nextInt(999999)}';
+    final generatedOtp = (_random.nextInt(900000) + 100000).toString();
+    _sandboxOtpStore[verificationId] = _SandboxOtpEntry(
+      code: generatedOtp,
+      normalizedPhone: normalized,
+      expiresAt: DateTime.now().add(const Duration(minutes: 5)),
+    );
+
+    debugPrint(
+      '[FirebaseAuth] Mã OTP cho $normalized (verificationId: $verificationId): $generatedOtp',
+    );
     return verificationId;
   }
 
@@ -82,31 +107,41 @@ class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
     required String smsCode,
   }) async {
     final normalized = _normalizePhoneNumber(phoneNumber);
-    final expectedCode = _sandboxOtpStore[verificationId];
+    final cleanCode = smsCode.trim();
+    final entry = _sandboxOtpStore[verificationId];
 
-    // Chấp nhận mã cấu hình trên Firebase Console (+84 362 625 218 -> 132005, +84 971 860 620 -> 131205) hoặc mã sinh từ hệ thống
-    final isFirebaseConsoleConfigured =
-        (normalized == '+84362625218' && smsCode == '132005') ||
-        (normalized == '+84971860620' && smsCode == '131205') ||
-        smsCode == '123456';
-
-    final isValid = isFirebaseConsoleConfigured || (expectedCode != null && expectedCode == smsCode);
-
-    if (!isValid) {
-      throw Exception('Mã xác thực OTP không chính xác hoặc đã hết hạn.');
+    if (entry != null && entry.isExpired) {
+      _sandboxOtpStore.remove(verificationId);
+      throw Exception('Mã xác thực OTP đã hết hạn (quá 5 phút). Vui lòng gửi lại mã mới.');
     }
 
-    // Xóa mã đã dùng
+    if (entry != null && entry.normalizedPhone != normalized) {
+      throw Exception('Mã xác thực OTP không khớp với số điện thoại đã yêu cầu.');
+    }
+
+    // Chấp nhận mã sinh động của phiên hiện tại hoặc mã cấu hình kiểm thử Sandbox
+    final isConfiguredTestPhone =
+        !FirebaseConfig.isConfigured &&
+        ((normalized == '+84362625218' && cleanCode == '132005') ||
+            (normalized == '+84971860620' && cleanCode == '131205') ||
+            cleanCode == '123456');
+
+    final isGeneratedMatch = entry != null && entry.code == cleanCode;
+
+    if (!isGeneratedMatch && !isConfiguredTestPhone) {
+      throw Exception('Mã xác thực OTP không chính xác. Vui lòng kiểm tra lại.');
+    }
+
+    // Xóa mã đã dùng (One-Time Password chỉ dùng 1 lần)
     _sandboxOtpStore.remove(verificationId);
 
-    // Tạo thông tin UserAccount định danh từ Firebase Auth
     final firebaseUid = 'fb-uid-${normalized.replaceAll('+', '')}';
     final patientCode = 'STYT-${(_random.nextInt(899999) + 100000)}';
 
     return UserAccountModel(
       id: firebaseUid,
       patientCode: patientCode,
-      fullName: 'Bệnh nhân ($normalized)',
+      fullName: 'Chủ hồ sơ ($normalized)',
       primaryContact: normalized,
       passwordHash: '',
       salt: '',
@@ -165,8 +200,12 @@ class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
     String? accessToken,
   }) async {
     final isApple = provider.toLowerCase() == 'apple';
-    final uid = isApple ? 'fb-apple-${DateTime.now().millisecondsSinceEpoch}' : 'fb-google-${DateTime.now().millisecondsSinceEpoch}';
-    final email = isApple ? 'apple_patient@privaterelay.appleid.com' : 'google_patient@gmail.com';
+    final uid = isApple
+        ? 'fb-apple-${DateTime.now().millisecondsSinceEpoch}'
+        : 'fb-google-${DateTime.now().millisecondsSinceEpoch}';
+    final email = isApple
+        ? 'apple_patient@privaterelay.appleid.com'
+        : 'google_patient@gmail.com';
     final name = isApple ? 'Bệnh nhân Apple ID' : 'Bệnh nhân Google Account';
 
     return UserAccountModel(

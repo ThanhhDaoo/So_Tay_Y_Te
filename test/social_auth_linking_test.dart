@@ -34,6 +34,7 @@ class MockSocialAuthRepository implements AuthRepository {
     String? dateOfBirth,
     String? gender,
     String? bloodType,
+    bool enableBiometric = false,
   }) async {
     if (_accounts.containsKey(contact)) {
       throw Exception('Tài khoản đã tồn tại.');
@@ -71,6 +72,19 @@ class MockSocialAuthRepository implements AuthRepository {
   Future<UserAccount?> getActiveSession() async => _activeSession;
 
   @override
+  Future<bool> checkAccountExists(String identifier) async =>
+      _accounts.containsKey(identifier);
+
+  @override
+  Future<UserAccount?> getBiometricBoundAccount() async => null;
+
+  @override
+  Future<String?> getLastLoginIdentifier() async => null;
+
+  @override
+  Future<bool> isDeviceAppLockEnabled() async => false;
+
+  @override
   Future<UserProfile?> getCurrentUser() async => null;
 
   @override
@@ -91,11 +105,76 @@ class MockSocialAuthRepository implements AuthRepository {
   Future<void> resetPassword({required String identifier, required String newPassword}) async {}
 
   @override
+  Future<PasswordRecoveryChallenge> sendPasswordRecoveryChallenge(
+    String identifier,
+  ) async {
+    return PasswordRecoveryChallenge(
+      verificationId: 'rec-soc',
+      maskedContact: identifier,
+      targetContact: identifier,
+      sandboxOtpPreview: '123456',
+    );
+  }
+
+  @override
+  Future<void> verifyRecoveryAndResetPassword({
+    required String identifier,
+    required String verificationId,
+    required String otpCode,
+    required String newPassword,
+  }) async {}
+
+  @override
   Future<void> verifyPhoneOtpOnly({
     required String phoneNumber,
     required String verificationId,
     required String smsCode,
   }) async {}
+
+  @override
+  Future<UserAccount> verifyEmailSignupOtp({
+    required String email,
+    required String otpCode,
+    required String password,
+    required String fullName,
+    String? dateOfBirth,
+    String? gender,
+    String? bloodType,
+    bool enableBiometric = false,
+  }) async {
+    return register(
+      fullName: fullName,
+      contact: email,
+      password: password,
+    );
+  }
+
+  @override
+  Future<UserAccount> completePhoneProfileSetup({
+    required String userId,
+    required String fullName,
+    String? bloodType,
+    String? gender,
+    String? dateOfBirth,
+  }) async {
+    final user = UserAccount(
+      id: userId,
+      patientCode: 'STYT-892410',
+      fullName: fullName,
+      primaryContact: '0912345678',
+      passwordHash: '',
+      salt: '',
+      bloodType: bloodType,
+      gender: gender,
+      dateOfBirth: dateOfBirth,
+      createdAt: DateTime.now(),
+    );
+    _activeSession = user;
+    return user;
+  }
+
+  @override
+  String? peekSandboxOtp(String verificationId) => '123456';
 
   @override
   Future<String> sendPhoneOtp(String phoneNumber) async => 'mock-ver-123';
@@ -144,6 +223,8 @@ class MockSocialAuthRepository implements AuthRepository {
     required String userId,
     String? email,
     String? fullName,
+    String? avatarUrl,
+    String? provider,
   }) async {
     final user = UserAccount(
       id: userId,

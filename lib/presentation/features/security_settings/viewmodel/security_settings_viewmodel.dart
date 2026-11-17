@@ -72,6 +72,14 @@ class SecuritySettingsViewModel extends ChangeNotifier {
     }
 
     await _preferencesDataSource.setBiometricLockEnabled(value);
+    if (value) {
+      final sessionUserId = await _preferencesDataSource.getSessionUserId();
+      if (sessionUserId != null && sessionUserId.isNotEmpty) {
+        await _preferencesDataSource.saveBiometricUserId(sessionUserId);
+      }
+    } else {
+      await _preferencesDataSource.saveBiometricUserId(null);
+    }
     _state = _state.copyWith(
       isBiometricLockEnabled: value,
       feedbackMessage: value
@@ -189,6 +197,8 @@ class SecuritySettingsViewModel extends ChangeNotifier {
     await _preferencesDataSource.clearSession();
     await _preferencesDataSource.clearPin();
     await _preferencesDataSource.setBiometricLockEnabled(false);
+    await _preferencesDataSource.saveBiometricUserId(null);
+    await _preferencesDataSource.saveLastLoginIdentifier(null);
 
     _state = _state.copyWith(
       currentOperation: SecurityOperation.none,

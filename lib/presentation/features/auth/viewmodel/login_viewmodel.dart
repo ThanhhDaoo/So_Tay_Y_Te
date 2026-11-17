@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/security/biometric_service.dart';
+import '../../../../core/utils/input_validators.dart';
+import '../../../../data/datasources/local/app_preferences_datasource.dart';
 import '../../../../domain/entities/user_account.dart';
 import '../../../../domain/entities/user_profile.dart';
 import '../../../../domain/repositories/auth_repository.dart';
@@ -17,13 +19,23 @@ class LoginViewModel extends ChangeNotifier {
   LoginState _state = const LoginState();
   LoginState get state => _state;
 
+  bool _isAwaitingOAuth = false;
+  bool get isAwaitingOAuth => _isAwaitingOAuth;
+  String? _pendingOAuthProvider;
+
   UserAccount? get loggedInAccount => _state.loggedInUser;
 
   LoginViewModel({
     AuthRepository? authRepository,
     BiometricService? biometricService,
-  })  : _authRepository = authRepository ?? (sl.isRegistered<AuthRepository>() ? sl<AuthRepository>() : _createFallbackRepo()),
-        _biometricService = biometricService ?? (sl.isRegistered<BiometricService>() ? sl<BiometricService>() : BiometricServiceImpl()),
+  })  : _authRepository = authRepository ??
+            (sl.isRegistered<AuthRepository>()
+                ? sl<AuthRepository>()
+                : _createFallbackRepo()),
+        _biometricService = biometricService ??
+            (sl.isRegistered<BiometricService>()
+                ? sl<BiometricService>()
+                : BiometricServiceImpl()),
         identifierController = TextEditingController(),
         passwordController = TextEditingController();
 
@@ -41,18 +53,45 @@ class LoginViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void cancelPendingOAuth() {
+    if (!_isAwaitingOAuth && _state.status != LoginStatus.awaitingOAuth) return;
+    _isAwaitingOAuth = false;
+    _pendingOAuthProvider = null;
+    _state = _state.copyWith(
+      status: LoginStatus.initial,
+      errorMessage: null,
+    );
+    notifyListeners();
+  }
+
+  Future<void> loadLastLoginIdentifierIfNeeded() async {
+    if (identifierController.text.trim().isNotEmpty) return;
+    try {
+      final lastId = await _authRepository.getLastLoginIdentifier();
+      if (lastId != null &&
+          lastId.trim().isNotEmpty &&
+          identifierController.text.isEmpty) {
+        identifierController.text = lastId.trim();
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
   Future<bool> checkAutoLogin() async {
     try {
       final activeUser = await _authRepository.getActiveSession();
       if (activeUser != null) {
+        final needsLock = await _authRepository.isDeviceAppLockEnabled();
         _state = _state.copyWith(
           status: LoginStatus.success,
           loggedInUser: activeUser,
+          requiresAppLockUnlock: needsLock,
           errorMessage: null,
         );
         notifyListeners();
         return true;
       }
+      await loadLastLoginIdentifierIfNeeded();
     } catch (_) {}
     return false;
   }
@@ -63,10 +102,23 @@ class LoginViewModel extends ChangeNotifier {
       return false;
     }
 
-    if (identifierController.text.trim().isEmpty || passwordController.text.isEmpty) {
+    final idText = identifierController.text.trim();
+    final pwdText = passwordController.text;
+
+    if (idText.isEmpty || pwdText.isEmpty) {
       _state = _state.copyWith(
         status: LoginStatus.error,
-        errorMessage: 'Vui lòng nhập đầy đủ Mã hồ sơ/Email và mật khẩu.',
+        errorMessage: 'Vui lòng nhập đầy đủ SĐT/Email/Mã hồ sơ và mật khẩu.',
+      );
+      notifyListeners();
+      return false;
+    }
+
+    final idErr = InputValidators.validateLoginIdentifier(idText);
+    if (idErr != null) {
+      _state = _state.copyWith(
+        status: LoginStatus.error,
+        errorMessage: idErr,
       );
       notifyListeners();
       return false;
@@ -77,14 +129,15 @@ class LoginViewModel extends ChangeNotifier {
 
     try {
       final user = await _authRepository.login(
-        identifier: identifierController.text.trim(),
-        password: passwordController.text,
+        identifier: idText,
+        password: pwdText,
         rememberMe: _state.rememberMe,
       );
 
       _state = _state.copyWith(
         status: LoginStatus.success,
         loggedInUser: user,
+        requiresAppLockUnlock: false,
         errorMessage: null,
       );
       notifyListeners();
@@ -108,40 +161,64 @@ class LoginViewModel extends ChangeNotifier {
       if (!isAvailable) {
         _state = _state.copyWith(
           status: LoginStatus.error,
-          errorMessage: 'Thiết bị không hỗ trợ hoặc chưa cài đặt Face ID / Vân tay.',
+          errorMessage:
+              'Thiết bị không hỗ trợ hoặc chưa cài đặt Face ID / Vân tay.',
+        );
+        notifyListeners();
+        return false;
+      }
+
+      // Kiểm tra trước xem trên thiết bị đã có tài khoản liên kết hoặc đang điền sẵn thông tin chưa
+      final activeUser = await _authRepository.getActiveSession();
+      final boundUser = activeUser ?? await _authRepository.getBiometricBoundAccount();
+      final id = identifierController.text.trim();
+      final pwd = passwordController.text;
+
+      if (boundUser == null && (id.isEmpty || pwd.isEmpty)) {
+        _state = _state.copyWith(
+          status: LoginStatus.error,
+          errorMessage:
+              'Vui lòng đăng nhập bằng mật khẩu hoặc OTP lần đầu trên thiết bị này để kích hoạt đăng nhập nhanh Face ID.',
         );
         notifyListeners();
         return false;
       }
 
       final authenticated = await _biometricService.authenticate(
-        localizedReason: 'Xác thực Face ID để đăng nhập vào Sổ Tay Y Tế',
+        localizedReason: 'Xác thực sinh trắc học để mở Sổ Tay Y Tế',
       );
 
       if (!authenticated) {
         _state = _state.copyWith(
           status: LoginStatus.error,
-          errorMessage: 'Xác thực sinh trắc học không thành công hoặc đã bị hủy.',
+          errorMessage:
+              'Xác thực sinh trắc học không thành công hoặc đã bị hủy.',
         );
         notifyListeners();
         return false;
       }
 
-      // 1. Kiểm tra phiên đã lưu trước đó
-      final activeUser = await _authRepository.getActiveSession();
-      if (activeUser != null) {
+      // 1. Khôi phục phiên từ tài khoản đã liên kết sinh trắc học trên máy (kể cả sau khi Đăng xuất)
+      if (boundUser != null) {
+        if (sl.isRegistered<AppPreferencesDataSource>()) {
+          await sl<AppPreferencesDataSource>().saveSession(
+            userId: boundUser.id,
+            patientCode: boundUser.patientCode,
+            contact: boundUser.primaryContact,
+            rememberMe: _state.rememberMe,
+          );
+        }
         _state = _state.copyWith(
           status: LoginStatus.success,
-          loggedInUser: activeUser,
+          loggedInUser: boundUser,
+          requiresAppLockUnlock: false,
           errorMessage: null,
         );
         notifyListeners();
         return true;
       }
 
-      // 2. Nếu chưa lưu phiên, đăng nhập với tài khoản đang hiển thị trong ô nhập
-      final id = identifierController.text.trim();
-      final pwd = passwordController.text;
+      // 2. Hoặc xác thực với tài khoản đang nhập trong ô để liên kết Face ID lần đầu
       if (id.isNotEmpty && pwd.isNotEmpty) {
         final user = await _authRepository.login(
           identifier: id,
@@ -151,6 +228,7 @@ class LoginViewModel extends ChangeNotifier {
         _state = _state.copyWith(
           status: LoginStatus.success,
           loggedInUser: user,
+          requiresAppLockUnlock: false,
           errorMessage: null,
         );
         notifyListeners();
@@ -159,7 +237,8 @@ class LoginViewModel extends ChangeNotifier {
 
       _state = _state.copyWith(
         status: LoginStatus.error,
-        errorMessage: 'Vui lòng đăng nhập bằng mật khẩu một lần trước khi dùng Face ID.',
+        errorMessage:
+            'Vui lòng đăng nhập bằng mật khẩu một lần trước khi dùng Face ID.',
       );
       notifyListeners();
       return false;
@@ -174,6 +253,8 @@ class LoginViewModel extends ChangeNotifier {
   }
 
   Future<bool> signInWithSocial(String provider) async {
+    _isAwaitingOAuth = true;
+    _pendingOAuthProvider = provider;
     _state = _state.copyWith(status: LoginStatus.loading, errorMessage: null);
     notifyListeners();
 
@@ -182,9 +263,62 @@ class LoginViewModel extends ChangeNotifier {
         provider: provider,
       );
 
+      if (user.id == 'oauth_in_progress') {
+        _state = _state.copyWith(
+          status: LoginStatus.awaitingOAuth,
+          errorMessage: null,
+        );
+        notifyListeners();
+        return true;
+      }
+
+      _isAwaitingOAuth = false;
+      _pendingOAuthProvider = null;
       _state = _state.copyWith(
         status: LoginStatus.success,
         loggedInUser: user,
+        requiresAppLockUnlock: false,
+        errorMessage: null,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isAwaitingOAuth = false;
+      _pendingOAuthProvider = null;
+      _state = _state.copyWith(
+        status: LoginStatus.error,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> handleOAuthSessionSuccess({
+    required String userId,
+    String? email,
+    String? fullName,
+    String? avatarUrl,
+  }) async {
+    final provider = _pendingOAuthProvider;
+    _isAwaitingOAuth = false;
+    _pendingOAuthProvider = null;
+    _state = _state.copyWith(status: LoginStatus.loading, errorMessage: null);
+    notifyListeners();
+
+    try {
+      final user = await _authRepository.syncSupabaseUserSession(
+        userId: userId,
+        email: email,
+        fullName: fullName,
+        avatarUrl: avatarUrl,
+        provider: provider,
+      );
+
+      _state = _state.copyWith(
+        status: LoginStatus.success,
+        loggedInUser: user,
+        requiresAppLockUnlock: false,
         errorMessage: null,
       );
       notifyListeners();
@@ -199,36 +333,16 @@ class LoginViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> handleOAuthSessionSuccess({
-    required String userId,
-    String? email,
-    String? fullName,
-  }) async {
-    _state = _state.copyWith(status: LoginStatus.loading, errorMessage: null);
-    notifyListeners();
-
+  Future<bool> checkPhoneAccountExists(String phoneNumber) async {
     try {
-      final user = await _authRepository.syncSupabaseUserSession(
-        userId: userId,
-        email: email,
-        fullName: fullName,
-      );
-
-      _state = _state.copyWith(
-        status: LoginStatus.success,
-        loggedInUser: user,
-        errorMessage: null,
-      );
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _state = _state.copyWith(
-        status: LoginStatus.error,
-        errorMessage: e.toString().replaceFirst('Exception: ', ''),
-      );
-      notifyListeners();
+      return await _authRepository.checkAccountExists(phoneNumber);
+    } catch (_) {
       return false;
     }
+  }
+
+  String? peekSandboxOtp(String verificationId) {
+    return _authRepository.peekSandboxOtp(verificationId);
   }
 
   Future<String> sendPhoneOtp(String phoneNumber) async {
@@ -268,6 +382,39 @@ class LoginViewModel extends ChangeNotifier {
       _state = _state.copyWith(
         status: LoginStatus.success,
         loggedInUser: user,
+        requiresAppLockUnlock: false,
+        errorMessage: null,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _state = _state.copyWith(
+        status: LoginStatus.error,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> completeNewPhoneUserProfile({
+    required String fullName,
+    String? bloodType,
+    String? gender,
+  }) async {
+    final current = _state.loggedInUser;
+    if (current == null) return false;
+
+    try {
+      final updated = await _authRepository.completePhoneProfileSetup(
+        userId: current.id,
+        fullName: fullName,
+        bloodType: bloodType,
+        gender: gender,
+      );
+      _state = _state.copyWith(
+        status: LoginStatus.success,
+        loggedInUser: updated,
         errorMessage: null,
       );
       notifyListeners();
@@ -288,10 +435,9 @@ class LoginViewModel extends ChangeNotifier {
 
     try {
       final profile = await _authRepository.loginAnonymous();
-      // Dùng thông tin thật từ loginAnonymous, không hardcode
       final guestAccount = UserAccount(
         id: profile.id,
-        patientCode: profile.id.startsWith('guest-') ? 'STYT-GUEST' : profile.id.substring(0, 11).toUpperCase(),
+        patientCode: 'STYT-GUEST',
         fullName: profile.fullName,
         primaryContact: profile.emergencyContact ?? 'guest@sotayyte.local',
         passwordHash: '',
@@ -303,6 +449,61 @@ class LoginViewModel extends ChangeNotifier {
       _state = _state.copyWith(
         status: LoginStatus.success,
         loggedInUser: guestAccount,
+        requiresAppLockUnlock: false,
+        errorMessage: null,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _state = _state.copyWith(
+        status: LoginStatus.error,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<PasswordRecoveryChallenge> sendPasswordRecoveryChallenge(
+    String identifier,
+  ) async {
+    _state = _state.copyWith(status: LoginStatus.loading, errorMessage: null);
+    notifyListeners();
+
+    try {
+      final challenge =
+          await _authRepository.sendPasswordRecoveryChallenge(identifier);
+      _state = _state.copyWith(status: LoginStatus.initial, errorMessage: null);
+      notifyListeners();
+      return challenge;
+    } catch (e) {
+      _state = _state.copyWith(
+        status: LoginStatus.error,
+        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+      );
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<bool> verifyRecoveryAndResetPassword({
+    required String identifier,
+    required String verificationId,
+    required String otpCode,
+    required String newPassword,
+  }) async {
+    _state = _state.copyWith(status: LoginStatus.loading, errorMessage: null);
+    notifyListeners();
+
+    try {
+      await _authRepository.verifyRecoveryAndResetPassword(
+        identifier: identifier.trim(),
+        verificationId: verificationId,
+        otpCode: otpCode.trim(),
+        newPassword: newPassword,
+      );
+      _state = _state.copyWith(
+        status: LoginStatus.initial,
         errorMessage: null,
       );
       notifyListeners();
@@ -324,7 +525,8 @@ class LoginViewModel extends ChangeNotifier {
     if (identifier.trim().isEmpty || newPassword.length < 6) {
       _state = _state.copyWith(
         status: LoginStatus.error,
-        errorMessage: 'Vui lòng nhập định danh và mật khẩu mới tối thiểu 6 ký tự.',
+        errorMessage:
+            'Vui lòng nhập định danh và mật khẩu mới tối thiểu 6 ký tự.',
       );
       notifyListeners();
       return false;
@@ -370,15 +572,7 @@ class _FallbackInMemoryAuthRepository implements AuthRepository {
     required String password,
     bool rememberMe = true,
   }) async {
-    return UserAccount(
-      id: 'demo-user',
-      patientCode: 'STYT-892410',
-      fullName: 'Bác sĩ Trần Tuấn Tú',
-      primaryContact: 'bacsitu@sotayyte.vn',
-      passwordHash: '',
-      salt: '',
-      createdAt: DateTime.now(),
-    );
+    throw Exception('Tài khoản chưa được đăng ký trong hệ thống.');
   }
 
   @override
@@ -389,6 +583,7 @@ class _FallbackInMemoryAuthRepository implements AuthRepository {
     String? dateOfBirth,
     String? gender,
     String? bloodType,
+    bool enableBiometric = false,
   }) async {
     return UserAccount(
       id: 'reg-user',
@@ -405,13 +600,30 @@ class _FallbackInMemoryAuthRepository implements AuthRepository {
   Future<UserAccount?> getActiveSession() async => null;
 
   @override
+  Future<bool> checkAccountExists(String identifier) async => false;
+
+  @override
+  Future<UserAccount?> getBiometricBoundAccount() async => null;
+
+  @override
+  Future<String?> getLastLoginIdentifier() async => null;
+
+  @override
+  Future<bool> isDeviceAppLockEnabled() async => false;
+
+  @override
   Future<UserProfile?> getCurrentUser() async => null;
 
   @override
-  Future<UserProfile> loginAnonymous() async => const UserProfile(id: 'guest', fullName: 'Guest');
+  Future<UserProfile> loginAnonymous() async =>
+      const UserProfile(id: 'guest', fullName: 'Khách');
 
   @override
-  Future<UserProfile> linkAccount({required String email, required String password}) async => const UserProfile(id: 'link', fullName: 'Link');
+  Future<UserProfile> linkAccount({
+    required String email,
+    required String password,
+  }) async =>
+      const UserProfile(id: 'link', fullName: 'Link');
 
   @override
   Future<bool> checkProStatus() async => false;
@@ -420,7 +632,30 @@ class _FallbackInMemoryAuthRepository implements AuthRepository {
   Future<void> logout() async {}
 
   @override
-  Future<void> resetPassword({required String identifier, required String newPassword}) async {}
+  Future<void> resetPassword({
+    required String identifier,
+    required String newPassword,
+  }) async {}
+
+  @override
+  Future<PasswordRecoveryChallenge> sendPasswordRecoveryChallenge(
+    String identifier,
+  ) async {
+    return PasswordRecoveryChallenge(
+      verificationId: 'rec-fallback',
+      maskedContact: identifier,
+      targetContact: identifier,
+      sandboxOtpPreview: '123456',
+    );
+  }
+
+  @override
+  Future<void> verifyRecoveryAndResetPassword({
+    required String identifier,
+    required String verificationId,
+    required String otpCode,
+    required String newPassword,
+  }) async {}
 
   @override
   Future<void> verifyPhoneOtpOnly({
@@ -428,6 +663,53 @@ class _FallbackInMemoryAuthRepository implements AuthRepository {
     required String verificationId,
     required String smsCode,
   }) async {}
+
+  @override
+  Future<UserAccount> verifyEmailSignupOtp({
+    required String email,
+    required String otpCode,
+    required String password,
+    required String fullName,
+    String? dateOfBirth,
+    String? gender,
+    String? bloodType,
+    bool enableBiometric = false,
+  }) async {
+    return UserAccount(
+      id: 'email-otp-user',
+      patientCode: 'STYT-999999',
+      fullName: fullName,
+      primaryContact: email,
+      passwordHash: '',
+      salt: '',
+      createdAt: DateTime.now(),
+    );
+  }
+
+  @override
+  Future<UserAccount> completePhoneProfileSetup({
+    required String userId,
+    required String fullName,
+    String? bloodType,
+    String? gender,
+    String? dateOfBirth,
+  }) async {
+    return UserAccount(
+      id: userId,
+      patientCode: 'STYT-999999',
+      fullName: fullName,
+      primaryContact: '',
+      passwordHash: '',
+      salt: '',
+      bloodType: bloodType,
+      gender: gender,
+      dateOfBirth: dateOfBirth,
+      createdAt: DateTime.now(),
+    );
+  }
+
+  @override
+  String? peekSandboxOtp(String verificationId) => '123456';
 
   @override
   Future<String> sendPhoneOtp(String phoneNumber) async => 'fb-ver-mock-123';
@@ -440,8 +722,8 @@ class _FallbackInMemoryAuthRepository implements AuthRepository {
   }) async {
     return UserAccount(
       id: 'phone-mock-user',
-      patientCode: 'STYT-892410',
-      fullName: 'Bệnh nhân ($phoneNumber)',
+      patientCode: 'STYT-999999',
+      fullName: 'Chủ hồ sơ ($phoneNumber)',
       primaryContact: phoneNumber,
       passwordHash: '',
       salt: '',
@@ -455,16 +737,7 @@ class _FallbackInMemoryAuthRepository implements AuthRepository {
     String? idToken,
     String? accessToken,
   }) async {
-    final isApple = provider.toLowerCase() == 'apple';
-    return UserAccount(
-      id: 'soc-mock-user',
-      patientCode: 'STYT-892410',
-      fullName: isApple ? 'Bệnh nhân Apple' : 'Bệnh nhân Google',
-      primaryContact: isApple ? 'apple_user@icloud.com' : 'google_user@gmail.com',
-      passwordHash: '',
-      salt: '',
-      createdAt: DateTime.now(),
-    );
+    throw Exception('Chưa cấu hình OAuth.');
   }
 
   @override
@@ -472,12 +745,14 @@ class _FallbackInMemoryAuthRepository implements AuthRepository {
     required String userId,
     String? email,
     String? fullName,
+    String? avatarUrl,
+    String? provider,
   }) async {
     return UserAccount(
       id: userId,
-      patientCode: 'STYT-892410',
-      fullName: fullName ?? 'Bệnh nhân Test',
-      primaryContact: email ?? 'test@example.com',
+      patientCode: 'STYT-999999',
+      fullName: fullName ?? 'Chủ hồ sơ',
+      primaryContact: email ?? 'user@sotayyte.vn',
       passwordHash: '',
       salt: '',
       createdAt: DateTime.now(),

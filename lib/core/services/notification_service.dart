@@ -111,6 +111,8 @@ class NotificationServiceImpl implements NotificationService {
 
     const darwinDetails = DarwinNotificationDetails(
       presentAlert: true,
+      presentBanner: true,
+      presentList: true,
       presentBadge: true,
       presentSound: true,
       interruptionLevel: InterruptionLevel.timeSensitive,

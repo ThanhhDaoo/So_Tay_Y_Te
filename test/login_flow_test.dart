@@ -35,6 +35,7 @@ class MockLoginAuthRepository implements AuthRepository {
   };
 
   UserAccount? activeSession;
+  UserAccount? biometricBoundAccount;
 
   @override
   Future<UserAccount> login({
@@ -63,11 +64,26 @@ class MockLoginAuthRepository implements AuthRepository {
     if (rememberMe) {
       activeSession = user;
     }
+    biometricBoundAccount = user;
     return user;
   }
 
   @override
   Future<UserAccount?> getActiveSession() async => activeSession;
+
+  @override
+  Future<bool> checkAccountExists(String identifier) async =>
+      _passwords.containsKey(identifier);
+
+  @override
+  Future<UserAccount?> getBiometricBoundAccount() async =>
+      biometricBoundAccount;
+
+  @override
+  Future<String?> getLastLoginIdentifier() async => null;
+
+  @override
+  Future<bool> isDeviceAppLockEnabled() async => false;
 
   @override
   Future<void> resetPassword({
@@ -81,11 +97,81 @@ class MockLoginAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<PasswordRecoveryChallenge> sendPasswordRecoveryChallenge(
+    String identifier,
+  ) async {
+    if (!_passwords.containsKey(identifier)) {
+      throw Exception('Không tìm thấy hồ sơ y tế khớp với thông tin đã nhập.');
+    }
+    return PasswordRecoveryChallenge(
+      verificationId: 'rec-test-01',
+      maskedContact: 'bac***@sotayyte.vn',
+      targetContact: identifier,
+      sandboxOtpPreview: '654321',
+    );
+  }
+
+  @override
+  Future<void> verifyRecoveryAndResetPassword({
+    required String identifier,
+    required String verificationId,
+    required String otpCode,
+    required String newPassword,
+  }) async {
+    if (otpCode != '654321' && otpCode != '123456') {
+      throw Exception('Mã xác minh danh tính không chính xác.');
+    }
+    _passwords[identifier] = newPassword;
+  }
+
+  @override
   Future<void> verifyPhoneOtpOnly({
     required String phoneNumber,
     required String verificationId,
     required String smsCode,
   }) async {}
+
+  @override
+  Future<UserAccount> verifyEmailSignupOtp({
+    required String email,
+    required String otpCode,
+    required String password,
+    required String fullName,
+    String? dateOfBirth,
+    String? gender,
+    String? bloodType,
+    bool enableBiometric = false,
+  }) async {
+    return register(
+      fullName: fullName,
+      contact: email,
+      password: password,
+    );
+  }
+
+  @override
+  Future<UserAccount> completePhoneProfileSetup({
+    required String userId,
+    required String fullName,
+    String? bloodType,
+    String? gender,
+    String? dateOfBirth,
+  }) async {
+    return UserAccount(
+      id: userId,
+      patientCode: 'STYT-892410',
+      fullName: fullName,
+      primaryContact: '0912345678',
+      passwordHash: '',
+      salt: '',
+      bloodType: bloodType,
+      gender: gender,
+      createdAt: DateTime.now(),
+    );
+  }
+
+  @override
+  String? peekSandboxOtp(String verificationId) => '123456';
 
   @override
   Future<UserProfile> loginAnonymous() async {
@@ -118,6 +204,7 @@ class MockLoginAuthRepository implements AuthRepository {
     String? dateOfBirth,
     String? gender,
     String? bloodType,
+    bool enableBiometric = false,
   }) async {
     _passwords[contact] = password;
     return UserAccount(
@@ -178,6 +265,8 @@ class MockLoginAuthRepository implements AuthRepository {
     required String userId,
     String? email,
     String? fullName,
+    String? avatarUrl,
+    String? provider,
   }) async {
     final user = UserAccount(
       id: userId,

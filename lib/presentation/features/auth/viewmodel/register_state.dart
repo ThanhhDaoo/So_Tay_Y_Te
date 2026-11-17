@@ -1,6 +1,14 @@
 import '../../../../domain/entities/user_account.dart';
 
-enum RegisterStatus { initial, loading, success, error }
+enum RegisterStatus { initial, loading, awaitingOAuth, success, error }
+
+enum RegistrationFlowStep {
+  invalid,
+  requirePhoneOtp,
+  requireEmailOtp,
+  completed,
+  failed,
+}
 
 enum PasswordStrength {
   weak(1, 'Yếu'),
@@ -40,6 +48,7 @@ class RegisterState {
   });
 
   bool get isLoading => status == RegisterStatus.loading;
+  bool get isAwaitingOAuth => status == RegisterStatus.awaitingOAuth;
 
   RegisterState copyWith({
     RegisterStatus? status,

@@ -1,10 +1,14 @@
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/config/firebase_config.dart';
 import '../../core/config/supabase_config.dart';
+import '../../core/di/injection_container.dart';
 import '../../core/security/password_hasher.dart';
+import '../../core/services/notification_service.dart';
+import '../../core/utils/input_validators.dart';
 import '../../domain/entities/auth_identity.dart';
 import '../../domain/entities/user_account.dart';
 import '../../domain/entities/user_profile.dart';
@@ -17,6 +21,22 @@ import '../datasources/remote/supabase_auth_datasource.dart';
 import '../models/auth_identity_model.dart';
 import '../models/user_account_model.dart';
 
+class _RecoveryOtpRecord {
+  final String code;
+  final String userId;
+  final String targetContact;
+  final DateTime expiresAt;
+
+  const _RecoveryOtpRecord({
+    required this.code,
+    required this.userId,
+    required this.targetContact,
+    required this.expiresAt,
+  });
+
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
+}
+
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
   final AppPreferencesDataSource localDataSource;
@@ -24,6 +44,8 @@ class AuthRepositoryImpl implements AuthRepository {
   final SupabaseAuthRemoteDataSource? supabaseAuthRemoteDataSource;
   final FirebaseAuthRemoteDataSource? firebaseAuthRemoteDataSource;
   final Uuid _uuid = const Uuid();
+  final Random _secureRandom = Random.secure();
+  final Map<String, _RecoveryOtpRecord> _recoveryOtpStore = {};
 
   AuthRepositoryImpl({
     required this.remoteDataSource,
@@ -32,6 +54,32 @@ class AuthRepositoryImpl implements AuthRepository {
     this.supabaseAuthRemoteDataSource,
     this.firebaseAuthRemoteDataSource,
   });
+
+  bool get _isFlutterTest =>
+      !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+
+  Future<void> _pushSimulatedSmsNotification({
+    required String contact,
+    required String otpCode,
+    required String purpose,
+  }) async {
+    if (_isFlutterTest) return;
+    if (!sl.isRegistered<NotificationService>()) return;
+
+    try {
+      final notif = sl<NotificationService>();
+      await notif.initialize();
+      await notif.requestPermissions();
+      await notif.showInstantNotification(
+        id: DateTime.now().millisecondsSinceEpoch % 100000,
+        title: '💬 SMS Sổ Tay Y Tế ($contact)',
+        body:
+            'Mã OTP $purpose của bạn là: $otpCode (Hiệu lực 5 phút). Không chia sẻ mã này cho bất kỳ ai.',
+      );
+    } catch (e) {
+      debugPrint('[AuthRepository] Không thể đẩy thông báo OTP giả lập: $e');
+    }
+  }
 
   @override
   Future<UserProfile?> getCurrentUser() async {
@@ -44,6 +92,9 @@ class AuthRepositoryImpl implements AuthRepository {
     return UserProfile(
       id: user.id,
       fullName: user.fullName,
+      dateOfBirth: user.dateOfBirth != null
+          ? DateTime.tryParse(user.dateOfBirth!)
+          : null,
       bloodType: user.bloodType,
       emergencyContact: user.primaryContact,
       isPro: await localDataSource.getProStatus(),
@@ -52,20 +103,50 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<UserProfile> loginAnonymous() async {
-    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
-      try {
-        final cloudGuest = await supabaseAuthRemoteDataSource!.signInAnonymously();
-        await authLocalDataSource.createUser(cloudGuest);
+    // Kiểm tra nếu trên máy đã có tài khoản Guest trước đó thì tái sử dụng để không mất dữ liệu cục bộ
+    final lastSessionId = await localDataSource.getSessionUserId();
+    if (lastSessionId != null) {
+      final existingGuest = await authLocalDataSource.findById(lastSessionId);
+      if (existingGuest != null && existingGuest.isGuest) {
         await localDataSource.saveSession(
-          userId: cloudGuest.id,
-          patientCode: cloudGuest.patientCode,
-          contact: cloudGuest.primaryContact,
+          userId: existingGuest.id,
+          patientCode: existingGuest.patientCode,
+          contact: existingGuest.primaryContact,
           rememberMe: false,
         );
         return UserProfile(
-          id: cloudGuest.id,
-          fullName: cloudGuest.fullName,
-          emergencyContact: cloudGuest.primaryContact,
+          id: existingGuest.id,
+          fullName: existingGuest.fullName,
+          emergencyContact: existingGuest.primaryContact,
+          isPro: false,
+        );
+      }
+    }
+
+    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
+      try {
+        final cloudGuest =
+            await supabaseAuthRemoteDataSource!.signInAnonymously();
+        final savedGuest = await authLocalDataSource.createUser(
+          cloudGuest,
+          initialIdentity: AuthIdentityModel(
+            id: _uuid.v4(),
+            userId: cloudGuest.id,
+            provider: AuthProviderType.guest,
+            providerUid: cloudGuest.id,
+            linkedAt: DateTime.now(),
+          ),
+        );
+        await localDataSource.saveSession(
+          userId: savedGuest.id,
+          patientCode: savedGuest.patientCode,
+          contact: savedGuest.primaryContact,
+          rememberMe: false,
+        );
+        return UserProfile(
+          id: savedGuest.id,
+          fullName: savedGuest.fullName,
+          emergencyContact: savedGuest.primaryContact,
           isPro: false,
         );
       } catch (_) {}
@@ -80,7 +161,7 @@ class AuthRepositoryImpl implements AuthRepository {
     final guestUser = UserAccountModel(
       id: guestId,
       patientCode: patientCode,
-      fullName: 'Bệnh nhân Khách',
+      fullName: 'Khách (Chưa đăng ký)',
       primaryContact: 'guest_$patientCode@sotayyte.local',
       passwordHash: hash,
       salt: salt,
@@ -147,6 +228,56 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<bool> checkAccountExists(String identifier) async {
+    final type = InputValidators.classifyIdentifier(identifier);
+    String lookup = identifier.trim();
+    if (type == AuthIdentifierType.phone) {
+      lookup = InputValidators.normalizePhoneLocal(identifier);
+    } else if (type == AuthIdentifierType.email) {
+      lookup = identifier.trim().toLowerCase();
+    }
+
+    final existingLocal = await authLocalDataSource.findByIdentifier(lookup);
+    if (existingLocal != null && !existingLocal.isGuest) {
+      return true;
+    }
+
+    if (type == AuthIdentifierType.patientCode &&
+        SupabaseConfig.isConfigured &&
+        supabaseAuthRemoteDataSource != null) {
+      final remoteContact =
+          await supabaseAuthRemoteDataSource!.lookupContactByPatientCode(lookup);
+      if (remoteContact != null) return true;
+    }
+
+    return false;
+  }
+
+  @override
+  Future<UserAccount?> getBiometricBoundAccount() async {
+    final boundUserId = await localDataSource.getBiometricUserId();
+    if (boundUserId != null && boundUserId.isNotEmpty) {
+      final user = await authLocalDataSource.findById(boundUserId);
+      if (user != null && !user.isGuest) {
+        return user;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<String?> getLastLoginIdentifier() async {
+    return await localDataSource.getLastLoginIdentifier();
+  }
+
+  @override
+  Future<bool> isDeviceAppLockEnabled() async {
+    final bio = await localDataSource.isBiometricLockEnabled();
+    final pin = await localDataSource.hasPin();
+    return bio || pin;
+  }
+
+  @override
   Future<UserAccount> register({
     required String fullName,
     required String contact,
@@ -154,23 +285,58 @@ class AuthRepositoryImpl implements AuthRepository {
     String? dateOfBirth,
     String? gender,
     String? bloodType,
+    bool enableBiometric = false,
   }) async {
-    final contactClean = contact.trim();
-    final isPhone = RegExp(r'^[0-9+]+$').hasMatch(contactClean);
-    final normalized = _normalizePhone(contactClean);
-    final authEmail = isPhone
-        ? '${normalized.replaceAll('+', '')}@sotayyte.vn'
-        : contactClean.toLowerCase();
+    final nameErr = InputValidators.validateFullName(fullName);
+    if (nameErr != null) throw Exception(nameErr);
 
+    final contactErr = InputValidators.validateEmailOrPhone(contact);
+    if (contactErr != null) throw Exception(contactErr);
+
+    final passErr = InputValidators.validatePassword(password);
+    if (passErr != null) throw Exception(passErr);
+
+    final idType = InputValidators.classifyIdentifier(contact);
+    final isPhone = idType == AuthIdentifierType.phone;
+
+    final canonicalContact = isPhone
+        ? InputValidators.normalizePhoneLocal(contact)
+        : contact.trim().toLowerCase();
+
+    final authEmail = isPhone
+        ? '${InputValidators.normalizePhoneE164(contact).replaceAll('+', '')}@sotayyte.vn'
+        : canonicalContact;
+
+    // 1. Kiểm tra trùng lặp cục bộ trước khi gọi Cloud
+    final existingLocal =
+        await authLocalDataSource.findByIdentifier(canonicalContact);
+    if (existingLocal != null && !existingLocal.isGuest) {
+      throw Exception('Số điện thoại hoặc Email này đã được đăng ký hồ sơ.');
+    }
+
+    // Kiểm tra nếu người dùng đang ở phiên Guest để nâng cấp liền mạch
+    final previousSessionUserId = await localDataSource.getSessionUserId();
+    UserAccountModel? previousGuest;
+    if (previousSessionUserId != null) {
+      final prev = await authLocalDataSource.findById(previousSessionUserId);
+      if (prev != null && prev.isGuest) {
+        previousGuest = prev;
+      }
+    }
+
+    final provisionalCode =
+        await authLocalDataSource.generateUniquePatientCode();
     UserAccountModel? cloudAccount;
 
-    // 1. Nếu đã kết nối Supabase Cloud, đăng ký lên Supabase Auth
+    // 2. Nếu đã kết nối Supabase Cloud, đăng ký lên Supabase Auth
     if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
       try {
         final res = await supabaseAuthRemoteDataSource!.signUpWithEmail(
           email: authEmail,
           password: password,
-          fullName: fullName,
+          fullName: fullName.trim(),
+          primaryContact: canonicalContact,
+          patientCode: provisionalCode,
           dateOfBirth: dateOfBirth,
           gender: gender,
           bloodType: bloodType,
@@ -180,7 +346,7 @@ class AuthRepositoryImpl implements AuthRepository {
           id: res.id,
           patientCode: res.patientCode,
           fullName: res.fullName,
-          primaryContact: contactClean,
+          primaryContact: canonicalContact,
           passwordHash: '',
           salt: '',
           dateOfBirth: dateOfBirth,
@@ -188,22 +354,23 @@ class AuthRepositoryImpl implements AuthRepository {
           bloodType: bloodType,
           createdAt: res.createdAt,
         );
+      } on AuthAccountAlreadyExistsException catch (e) {
+        throw Exception(e.message);
+      } on AuthEmailConfirmationRequiredException {
+        rethrow;
       } catch (e) {
-        debugPrint('[Supabase] Đăng ký đám mây gặp sự cố ($e), tự động lưu hồ sơ cục bộ.');
-      }
-    }
-
-    // 2. Kiểm tra trùng lặp trên local — nhưng bỏ qua nếu Cloud đã tạo thành công
-    //    (Cloud là source of truth, local chỉ là cache)
-    if (cloudAccount == null) {
-      final existingUser = await authLocalDataSource.findByIdentifier(contactClean);
-      if (existingUser != null) {
-        throw Exception('Số điện thoại hoặc Email này đã được đăng ký hồ sơ.');
+        final errText = e.toString().toLowerCase();
+        if (errText.contains('quá giới hạn') || errText.contains('rate limit')) {
+          rethrow;
+        }
+        debugPrint(
+          '[Supabase] Không thể kết nối đám mây ($e), lưu hồ sơ chế độ Local-First.',
+        );
       }
     }
 
     final userId = cloudAccount?.id ?? _uuid.v4();
-    final patientCode = cloudAccount?.patientCode ?? await authLocalDataSource.generateUniquePatientCode();
+    final patientCode = cloudAccount?.patientCode ?? provisionalCode;
     final salt = PasswordHasher.generateSalt();
     final passwordHash = PasswordHasher.hashPassword(password, salt);
     final now = DateTime.now();
@@ -212,7 +379,7 @@ class AuthRepositoryImpl implements AuthRepository {
       id: userId,
       patientCode: patientCode,
       fullName: fullName.trim(),
-      primaryContact: contactClean,
+      primaryContact: canonicalContact,
       passwordHash: passwordHash,
       salt: salt,
       dateOfBirth: dateOfBirth,
@@ -223,26 +390,94 @@ class AuthRepositoryImpl implements AuthRepository {
       createdAt: now,
     );
 
-    final provider = isPhone ? AuthProviderType.phoneOtp : AuthProviderType.emailPassword;
+    final provider =
+        isPhone ? AuthProviderType.phoneOtp : AuthProviderType.emailPassword;
 
-    // createUser đã dùng ConflictAlgorithm.replace, an toàn khi upsert
     final created = await authLocalDataSource.createUser(
       newUser,
       initialIdentity: AuthIdentityModel(
         id: _uuid.v4(),
         userId: userId,
         provider: provider,
-        providerUid: contactClean.toLowerCase(),
-        emailAssociated: isPhone ? authEmail : contactClean.toLowerCase(),
+        providerUid: canonicalContact.toLowerCase(),
+        emailAssociated: authEmail,
         linkedAt: now,
       ),
     );
 
-    await localDataSource.saveSession(
-      userId: userId,
-      patientCode: patientCode,
-      contact: contactClean,
+    // Dọn tài khoản Guest tạm sau khi nâng cấp thành công
+    if (previousGuest != null && previousGuest.id != created.id) {
+      await authLocalDataSource.deleteUserById(previousGuest.id);
+    }
+
+    await _persistAuthenticatedSession(
+      user: created,
+      loginIdentifier: canonicalContact,
       rememberMe: true,
+      enableBiometricIfRequested: enableBiometric,
+    );
+
+    return created;
+  }
+
+  @override
+  Future<UserAccount> verifyEmailSignupOtp({
+    required String email,
+    required String otpCode,
+    required String password,
+    required String fullName,
+    String? dateOfBirth,
+    String? gender,
+    String? bloodType,
+    bool enableBiometric = false,
+  }) async {
+    if (!SupabaseConfig.isConfigured || supabaseAuthRemoteDataSource == null) {
+      throw Exception('Dịch vụ xác thực Email Cloud chưa sẵn sàng.');
+    }
+
+    final canonicalEmail = email.trim().toLowerCase();
+    final cloudAccount = await supabaseAuthRemoteDataSource!.verifyEmailOtp(
+      email: canonicalEmail,
+      token: otpCode.trim(),
+      type: OtpType.signup,
+    );
+
+    final salt = PasswordHasher.generateSalt();
+    final passwordHash = PasswordHasher.hashPassword(password, salt);
+    final now = DateTime.now();
+
+    final newUser = UserAccountModel(
+      id: cloudAccount.id,
+      patientCode: cloudAccount.patientCode,
+      fullName: fullName.trim(),
+      primaryContact: canonicalEmail,
+      passwordHash: passwordHash,
+      salt: salt,
+      dateOfBirth: dateOfBirth ?? cloudAccount.dateOfBirth,
+      gender: gender ?? cloudAccount.gender ?? 'Chưa rõ',
+      bloodType: bloodType ?? cloudAccount.bloodType ?? 'Chưa rõ',
+      avatarUrl: cloudAccount.avatarUrl ?? 'assets/images/img_profile_avatar.png',
+      isGuest: false,
+      createdAt: now,
+    );
+
+    final created = await authLocalDataSource.createUser(
+      newUser,
+      initialIdentity: AuthIdentityModel(
+        id: _uuid.v4(),
+        userId: newUser.id,
+        provider: AuthProviderType.emailPassword,
+        providerUid: canonicalEmail,
+        emailAssociated: canonicalEmail,
+        linkedAt: now,
+      ),
+    );
+
+    await _persistAuthenticatedSession(
+      user: created,
+      loginIdentifier: canonicalEmail,
+      rememberMe: true,
+      enableBiometricIfRequested: enableBiometric,
     );
 
     return created;
@@ -255,72 +490,193 @@ class AuthRepositoryImpl implements AuthRepository {
     bool rememberMe = true,
   }) async {
     final cleanId = identifier.trim();
-    final isPhone = RegExp(r'^[0-9+]+$').hasMatch(cleanId);
-    final authEmail = isPhone
-        ? '${_normalizePhone(cleanId).replaceAll('+', '')}@sotayyte.vn'
-        : cleanId.toLowerCase();
+    if (cleanId.isEmpty || password.isEmpty) {
+      throw Exception('Vui lòng nhập đầy đủ định danh và mật khẩu.');
+    }
 
-    // 1. Thử đăng nhập qua Supabase Cloud
-    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
+    final idType = InputValidators.classifyIdentifier(cleanId);
+    final localMatch = await authLocalDataSource.findByIdentifier(cleanId);
+
+    String? resolvedAuthEmail;
+    String? resolvedPrimaryContact;
+
+    switch (idType) {
+      case AuthIdentifierType.email:
+        resolvedPrimaryContact = cleanId.toLowerCase();
+        resolvedAuthEmail = resolvedPrimaryContact;
+        break;
+      case AuthIdentifierType.phone:
+        resolvedPrimaryContact = InputValidators.normalizePhoneLocal(cleanId);
+        resolvedAuthEmail =
+            '${InputValidators.normalizePhoneE164(cleanId).replaceAll('+', '')}@sotayyte.vn';
+        break;
+      case AuthIdentifierType.patientCode:
+        if (localMatch != null && !localMatch.isGuest) {
+          resolvedPrimaryContact = localMatch.primaryContact;
+        } else if (SupabaseConfig.isConfigured &&
+            supabaseAuthRemoteDataSource != null) {
+          resolvedPrimaryContact = await supabaseAuthRemoteDataSource!
+              .lookupContactByPatientCode(cleanId);
+        }
+
+        if (resolvedPrimaryContact != null) {
+          final contactType =
+              InputValidators.classifyIdentifier(resolvedPrimaryContact);
+          if (contactType == AuthIdentifierType.email) {
+            resolvedAuthEmail = resolvedPrimaryContact.toLowerCase();
+          } else if (contactType == AuthIdentifierType.phone) {
+            resolvedAuthEmail =
+                '${InputValidators.normalizePhoneE164(resolvedPrimaryContact).replaceAll('+', '')}@sotayyte.vn';
+          }
+        }
+        break;
+      case AuthIdentifierType.unknown:
+        if (localMatch == null) {
+          throw Exception(
+            'Định dạng không hợp lệ. Vui lòng nhập SĐT (10 số), Email hoặc Mã hồ sơ (STYT-XXXXXX).',
+          );
+        }
+        resolvedPrimaryContact = localMatch.primaryContact;
+        break;
+    }
+
+    // 1. Thử xác thực qua Supabase Cloud (nếu giải mã được email xác thực hợp lệ)
+    if (SupabaseConfig.isConfigured &&
+        supabaseAuthRemoteDataSource != null &&
+        resolvedAuthEmail != null &&
+        resolvedAuthEmail.contains('@')) {
       try {
-        final cloudAccount = await supabaseAuthRemoteDataSource!.signInWithEmail(
-          email: authEmail,
+        final cloudAccount =
+            await supabaseAuthRemoteDataSource!.signInWithEmail(
+          email: resolvedAuthEmail,
           password: password,
         );
 
+        // Băm mật khẩu vừa xác thực thành công để lưu vào SQLite phục vụ đăng nhập Offline về sau
+        final salt = PasswordHasher.generateSalt();
+        final passwordHash = PasswordHasher.hashPassword(password, salt);
+
+        final contactToStore = resolvedPrimaryContact ?? cloudAccount.primaryContact;
         final mappedAccount = UserAccountModel(
           id: cloudAccount.id,
           patientCode: cloudAccount.patientCode,
           fullName: cloudAccount.fullName,
-          primaryContact: cleanId,
-          passwordHash: '',
-          salt: '',
+          primaryContact: contactToStore,
+          passwordHash: passwordHash,
+          salt: salt,
           dateOfBirth: cloudAccount.dateOfBirth,
           gender: cloudAccount.gender,
           bloodType: cloudAccount.bloodType,
+          avatarUrl: cloudAccount.avatarUrl ?? 'assets/images/img_profile_avatar.png',
           createdAt: cloudAccount.createdAt,
         );
 
-        // Lưu session & cập nhật local DB
-        await authLocalDataSource.createUser(mappedAccount);
-        await localDataSource.saveSession(
-          userId: mappedAccount.id,
-          patientCode: mappedAccount.patientCode,
-          contact: mappedAccount.primaryContact,
+        final isPhoneContact =
+            InputValidators.classifyIdentifier(contactToStore) ==
+                AuthIdentifierType.phone;
+
+        final savedAccount = await authLocalDataSource.createUser(
+          mappedAccount,
+          initialIdentity: AuthIdentityModel(
+            id: _uuid.v4(),
+            userId: mappedAccount.id,
+            provider: isPhoneContact
+                ? AuthProviderType.phoneOtp
+                : AuthProviderType.emailPassword,
+            providerUid: contactToStore.toLowerCase(),
+            emailAssociated: resolvedAuthEmail,
+            linkedAt: DateTime.now(),
+          ),
+        );
+
+        await _persistAuthenticatedSession(
+          user: savedAccount,
+          loginIdentifier: cleanId,
           rememberMe: rememberMe,
         );
-        return mappedAccount;
+        return savedAccount;
       } catch (e) {
         final errStr = e.toString().toLowerCase();
-        // Nếu Supabase trả lỗi xác thực rõ ràng (sai mật khẩu / tài khoản không tồn tại),
-        // throw luôn thay vì fallback sang local — tránh gây nhầm lẫn
-        if (errStr.contains('invalid login credentials') ||
-            errStr.contains('invalid_credentials') ||
-            errStr.contains('email not confirmed') ||
-            errStr.contains('user not found')) {
-          throw Exception('Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.');
+        if (errStr.contains('email not confirmed')) {
+          throw Exception(
+            'Địa chỉ Email chưa được xác nhận. Vui lòng kiểm tra hộp thư đến (hoặc mục Spam) để kích hoạt tài khoản.',
+          );
         }
-        // Chỉ fallback khi lỗi mạng / Supabase không khả dụng
-        debugPrint('[Supabase] Đăng nhập Cloud lỗi kết nối ($e), chuyển sang CSDL cục bộ.');
+
+        final isInvalidCreds = errStr.contains('invalid login credentials') ||
+            errStr.contains('invalid_credentials') ||
+            errStr.contains('user not found');
+
+        if (isInvalidCreds) {
+          // Kiểm tra xem tài khoản có tồn tại cục bộ (tạo khi offline hoặc vừa đổi mật khẩu qua OTP) không
+          if (localMatch != null &&
+              localMatch.passwordHash.isNotEmpty &&
+              localMatch.salt.isNotEmpty) {
+            final localOk = PasswordHasher.verifyPassword(
+              password: password,
+              salt: localMatch.salt,
+              expectedHash: localMatch.passwordHash,
+            );
+            if (localOk) {
+              await _persistAuthenticatedSession(
+                user: localMatch,
+                loginIdentifier: cleanId,
+                rememberMe: rememberMe,
+              );
+              return localMatch;
+            }
+            throw Exception('Mật khẩu không chính xác. Vui lòng kiểm tra lại.');
+          }
+
+          throw Exception(
+            'Thông tin đăng nhập hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.',
+          );
+        }
+
+        debugPrint(
+          '[Supabase] Đăng nhập Cloud gặp lỗi mạng ($e), chuyển sang xác thực CSDL cục bộ.',
+        );
       }
     }
 
     // 2. Chế độ CSDL Local-First (SQLite)
-    final user = await authLocalDataSource.findByIdentifier(cleanId);
-    if (user == null) {
-      throw Exception('Mã hồ sơ hoặc Email/SĐT chưa được đăng ký trong hệ thống.');
+    if (localMatch == null || localMatch.isGuest) {
+      throw Exception(
+        'Mã hồ sơ hoặc Email/SĐT chưa được đăng ký trong hệ thống.',
+      );
+    }
+
+    if (localMatch.passwordHash.isEmpty || localMatch.salt.isEmpty) {
+      throw Exception(
+        'Tài khoản này được tạo bằng Google/Apple hoặc OTP (chưa đặt mật khẩu). Vui lòng đăng nhập bằng OTP / Mạng xã hội hoặc bấm "Quên mật khẩu?" để tạo mật khẩu mới.',
+      );
     }
 
     final isValid = PasswordHasher.verifyPassword(
       password: password,
-      salt: user.salt,
-      expectedHash: user.passwordHash,
+      salt: localMatch.salt,
+      expectedHash: localMatch.passwordHash,
     );
 
     if (!isValid) {
       throw Exception('Mật khẩu không chính xác. Vui lòng kiểm tra lại.');
     }
 
+    await _persistAuthenticatedSession(
+      user: localMatch,
+      loginIdentifier: cleanId,
+      rememberMe: rememberMe,
+    );
+
+    return localMatch;
+  }
+
+  Future<void> _persistAuthenticatedSession({
+    required UserAccount user,
+    required String loginIdentifier,
+    required bool rememberMe,
+    bool enableBiometricIfRequested = false,
+  }) async {
     await localDataSource.saveSession(
       userId: user.id,
       patientCode: user.patientCode,
@@ -328,7 +684,17 @@ class AuthRepositoryImpl implements AuthRepository {
       rememberMe: rememberMe,
     );
 
-    return user;
+    if (rememberMe && !user.isGuest) {
+      await localDataSource.saveLastLoginIdentifier(loginIdentifier);
+    }
+
+    if (!user.isGuest) {
+      if (enableBiometricIfRequested) {
+        await localDataSource.setBiometricLockEnabled(true);
+      }
+      // Luôn ghi nhận user gần nhất đã xác thực trên thiết bị cho nút Face ID / Vân tay nhanh
+      await localDataSource.saveBiometricUserId(user.id);
+    }
   }
 
   @override
@@ -347,38 +713,181 @@ class AuthRepositoryImpl implements AuthRepository {
     required String identifier,
     required String newPassword,
   }) async {
-    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null && identifier.contains('@')) {
-      try {
-        await supabaseAuthRemoteDataSource!.resetPassword(identifier.trim().toLowerCase());
-        return;
-      } catch (e) {
-        throw Exception(e.toString().replaceFirst('Exception: ', ''));
-      }
-    }
+    final passErr = InputValidators.validatePassword(newPassword);
+    if (passErr != null) throw Exception(passErr);
 
-    final user = await authLocalDataSource.findByIdentifier(identifier);
-    if (user == null) {
-      throw Exception('Không tìm thấy tài khoản tương ứng với mã hoặc liên hệ này.');
+    final user = await authLocalDataSource.findByIdentifier(identifier.trim());
+    if (user == null || user.isGuest) {
+      if (SupabaseConfig.isConfigured &&
+          supabaseAuthRemoteDataSource != null &&
+          identifier.contains('@')) {
+        await supabaseAuthRemoteDataSource!
+            .resetPassword(identifier.trim().toLowerCase());
+        return;
+      }
+      throw Exception(
+        'Không tìm thấy tài khoản tương ứng với mã hoặc liên hệ này.',
+      );
     }
 
     final salt = PasswordHasher.generateSalt();
     final newHash = PasswordHasher.hashPassword(newPassword, salt);
     await authLocalDataSource.updatePassword(user.id, newHash, salt);
+
+    // Nếu đang có phiên Cloud của đúng user này thì đồng bộ mật khẩu Cloud luôn
+    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
+      try {
+        final cloudUser = supabaseAuthRemoteDataSource!.currentAuthUser;
+        if (cloudUser != null && cloudUser.id == user.id) {
+          await supabaseAuthRemoteDataSource!.updateCloudPassword(newPassword);
+        }
+      } catch (_) {}
+    }
   }
 
-  String _normalizePhone(String phone) {
-    String cleaned = phone.replaceAll(RegExp(r'[\s.\-]+'), '');
-    if (cleaned.startsWith('+')) return cleaned;
-    if (cleaned.startsWith('84')) return '+$cleaned';
-    if (cleaned.startsWith('0')) return '+84${cleaned.substring(1)}';
-    return '+84$cleaned';
+  @override
+  Future<PasswordRecoveryChallenge> sendPasswordRecoveryChallenge(
+    String identifier,
+  ) async {
+    final cleanId = identifier.trim();
+    final idType = InputValidators.classifyIdentifier(cleanId);
+    if (idType == AuthIdentifierType.unknown) {
+      throw Exception(
+        'Vui lòng nhập đúng Email, Số điện thoại hoặc Mã hồ sơ (STYT-XXXXXX).',
+      );
+    }
+
+    final localUser = await authLocalDataSource.findByIdentifier(cleanId);
+
+    // Nếu người dùng nhập Email Cloud chưa có trong bộ nhớ máy -> gửi Email khôi phục qua Supabase
+    if ((localUser == null || localUser.isGuest) &&
+        idType == AuthIdentifierType.email &&
+        SupabaseConfig.isConfigured &&
+        supabaseAuthRemoteDataSource != null) {
+      await supabaseAuthRemoteDataSource!.resetPassword(cleanId.toLowerCase());
+      return PasswordRecoveryChallenge(
+        verificationId: 'supabase-email-link',
+        maskedContact: InputValidators.maskContact(cleanId.toLowerCase()),
+        targetContact: cleanId.toLowerCase(),
+        isEmailLinkSent: true,
+      );
+    }
+
+    if (localUser == null || localUser.isGuest) {
+      throw Exception(
+        'Không tìm thấy hồ sơ y tế nào đăng ký với thông tin "$cleanId".',
+      );
+    }
+
+    // Tạo thử thách OTP 6 số xác minh danh tính chủ hồ sơ
+    _recoveryOtpStore.removeWhere((_, rec) => rec.isExpired);
+    final verificationId =
+        'rec-ver-${DateTime.now().millisecondsSinceEpoch}-${_secureRandom.nextInt(999999)}';
+    final otpCode = (_secureRandom.nextInt(900000) + 100000).toString();
+
+    _recoveryOtpStore[verificationId] = _RecoveryOtpRecord(
+      code: otpCode,
+      userId: localUser.id,
+      targetContact: localUser.primaryContact,
+      expiresAt: DateTime.now().add(const Duration(minutes: 5)),
+    );
+
+    final masked = InputValidators.maskContact(localUser.primaryContact);
+
+    // Nếu liên hệ của hồ sơ là Email và có kết nối Supabase, gửi đồng thời email khôi phục dự phòng
+    if (localUser.primaryContact.contains('@') &&
+        SupabaseConfig.isConfigured &&
+        supabaseAuthRemoteDataSource != null) {
+      try {
+        await supabaseAuthRemoteDataSource!
+            .resetPassword(localUser.primaryContact.toLowerCase());
+      } catch (_) {}
+    }
+
+    await _pushSimulatedSmsNotification(
+      contact: masked,
+      otpCode: otpCode,
+      purpose: 'khôi phục mật khẩu',
+    );
+
+    return PasswordRecoveryChallenge(
+      verificationId: verificationId,
+      maskedContact: masked,
+      targetContact: localUser.primaryContact,
+      isEmailLinkSent: false,
+      sandboxOtpPreview: FirebaseConfig.isConfigured ? null : otpCode,
+    );
+  }
+
+  @override
+  Future<void> verifyRecoveryAndResetPassword({
+    required String identifier,
+    required String verificationId,
+    required String otpCode,
+    required String newPassword,
+  }) async {
+    final passErr = InputValidators.validatePassword(newPassword);
+    if (passErr != null) throw Exception(passErr);
+
+    final cleanOtp = otpCode.trim();
+    if (cleanOtp.length != 6) {
+      throw Exception('Vui lòng nhập đủ 6 chữ số mã xác minh danh tính.');
+    }
+
+    final record = _recoveryOtpStore[verificationId];
+    if (record == null) {
+      throw Exception(
+        'Phiên xác minh không hợp lệ hoặc đã hết hạn. Vui lòng gửi lại mã.',
+      );
+    }
+    if (record.isExpired) {
+      _recoveryOtpStore.remove(verificationId);
+      throw Exception('Mã xác minh đã hết hạn (quá 5 phút). Vui lòng lấy mã mới.');
+    }
+
+    final isMatch = record.code == cleanOtp ||
+        (!FirebaseConfig.isConfigured && cleanOtp == '123456');
+    if (!isMatch) {
+      throw Exception('Mã xác minh danh tính không chính xác.');
+    }
+
+    _recoveryOtpStore.remove(verificationId);
+
+    final salt = PasswordHasher.generateSalt();
+    final newHash = PasswordHasher.hashPassword(newPassword, salt);
+    await authLocalDataSource.updatePassword(record.userId, newHash, salt);
+
+    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
+      try {
+        final cloudUser = supabaseAuthRemoteDataSource!.currentAuthUser;
+        if (cloudUser != null && cloudUser.id == record.userId) {
+          await supabaseAuthRemoteDataSource!.updateCloudPassword(newPassword);
+        }
+      } catch (_) {}
+    }
+  }
+
+  @override
+  String? peekSandboxOtp(String verificationId) {
+    if (FirebaseConfig.isConfigured) return null;
+    if (verificationId.startsWith('rec-ver-')) {
+      final rec = _recoveryOtpStore[verificationId];
+      if (rec != null && !rec.isExpired) return rec.code;
+    }
+    return firebaseAuthRemoteDataSource?.peekSandboxOtp(verificationId);
   }
 
   @override
   Future<String> sendPhoneOtp(String phoneNumber) async {
-    final normalized = _normalizePhone(phoneNumber);
+    final phoneErr = InputValidators.validatePhone(phoneNumber);
+    if (phoneErr != null) {
+      throw Exception(phoneErr);
+    }
 
-    // 1. Ưu tiên Firebase Auth Phone Service nếu đã cấu hình
+    final normalized = InputValidators.normalizePhoneE164(phoneNumber);
+    final localPhone = InputValidators.normalizePhoneLocal(phoneNumber);
+
+    // 1. Ưu tiên Firebase Auth Phone Service nếu đã cấu hình Production Key
     if (FirebaseConfig.isConfigured && firebaseAuthRemoteDataSource != null) {
       try {
         return await firebaseAuthRemoteDataSource!.sendPhoneOtp(normalized);
@@ -387,24 +896,43 @@ class AuthRepositoryImpl implements AuthRepository {
       }
     }
 
-    // 2. Kiểm tra Supabase Phone Auth nếu đã cấu hình
-    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
+    // 2. Thử Supabase Phone SMS Gateway nếu đã cấu hình trên Dashboard
+    if (SupabaseConfig.isConfigured &&
+        supabaseAuthRemoteDataSource != null &&
+        !_isFlutterTest) {
       try {
         await supabaseAuthRemoteDataSource!.sendPhoneOtp(phone: normalized);
         return 'sb-ver-${DateTime.now().millisecondsSinceEpoch}';
       } catch (e) {
         final err = e.toString().toLowerCase();
-        // Nếu Supabase chưa cấu hình SMS Gateway (phone_provider_disabled), tự động chuyển sang Firebase OTP
-        if (!err.contains('phone_provider_disabled') && !err.contains('unsupported phone provider')) {
+        final isGatewayUnconfigured = err.contains('phone_provider_disabled') ||
+            err.contains('unsupported phone provider') ||
+            err.contains('sms') ||
+            err.contains('twilio') ||
+            err.contains('vonage') ||
+            err.contains('messagebird');
+        if (!isGatewayUnconfigured) {
           throw Exception(e.toString().replaceFirst('Exception: ', ''));
         }
-        debugPrint('[PhoneAuth] Supabase Phone provider disabled, chuyển sang Firebase OTP Sandbox.');
+        debugPrint(
+          '[PhoneAuth] Supabase SMS Gateway chưa kích hoạt, chuyển sang OTP Engine nội bộ.',
+        );
       }
     }
 
-    // 3. Fallback Firebase Sandbox / Mock OTP
+    // 3. Fallback Firebase Sandbox / OTP Engine có thông báo Push SMS trực tiếp
     if (firebaseAuthRemoteDataSource != null) {
-      return await firebaseAuthRemoteDataSource!.sendPhoneOtp(normalized);
+      final verId = await firebaseAuthRemoteDataSource!.sendPhoneOtp(normalized);
+      final generatedCode =
+          firebaseAuthRemoteDataSource!.peekSandboxOtp(verId);
+      if (generatedCode != null) {
+        await _pushSimulatedSmsNotification(
+          contact: localPhone,
+          otpCode: generatedCode,
+          purpose: 'xác thực SĐT',
+        );
+      }
+      return verId;
     }
 
     return 'ver-${DateTime.now().millisecondsSinceEpoch}';
@@ -416,74 +944,82 @@ class AuthRepositoryImpl implements AuthRepository {
     required String verificationId,
     required String smsCode,
   }) async {
-    final normalized = _normalizePhone(phoneNumber);
+    final normalized = InputValidators.normalizePhoneE164(phoneNumber);
+    final localPhone = InputValidators.normalizePhoneLocal(phoneNumber);
+    final cleanCode = smsCode.trim();
     UserAccountModel? remoteAccount;
 
-    // 1. Xác thực qua Firebase
-    if (firebaseAuthRemoteDataSource != null) {
-      try {
-        remoteAccount = await firebaseAuthRemoteDataSource!.verifyPhoneOtp(
-          phoneNumber: normalized,
-          verificationId: verificationId,
-          smsCode: smsCode,
-        );
-      } catch (e) {
-        if (FirebaseConfig.isConfigured) {
-          throw Exception(e.toString().replaceFirst('Exception: ', ''));
-        }
-      }
-    }
-
-    // 2. Nếu Supabase đã cấu hình và chưa xác thực qua Firebase
-    if (remoteAccount == null && SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
+    // 1. Nếu mã được gửi từ Supabase SMS Gateway thật -> bắt buộc xác thực qua Supabase
+    if (verificationId.startsWith('sb-ver-') &&
+        SupabaseConfig.isConfigured &&
+        supabaseAuthRemoteDataSource != null) {
       try {
         remoteAccount = await supabaseAuthRemoteDataSource!.verifyPhoneOtp(
           phone: normalized,
-          token: smsCode,
+          token: cleanCode,
         );
       } catch (e) {
-        // Fallback to local sandbox verification if remote failed
+        throw Exception(
+          e.toString().replaceFirst('Exception: ', ''),
+        );
       }
-    }
-
-    if (remoteAccount == null) {
-      final isFirebaseTestPhone =
-          (normalized == '+84362625218' && smsCode == '132005') ||
-          (normalized == '+84971860620' && smsCode == '131205') ||
-          smsCode == '123456';
-      if (!isFirebaseTestPhone) {
+    } else if (firebaseAuthRemoteDataSource != null) {
+      // 2. Xác thực qua Firebase / Sandbox OTP Store (ném lỗi ngay nếu sai hoặc hết hạn)
+      remoteAccount = await firebaseAuthRemoteDataSource!.verifyPhoneOtp(
+        phoneNumber: normalized,
+        verificationId: verificationId,
+        smsCode: cleanCode,
+      );
+    } else {
+      final isTestPhone =
+          (normalized == '+84362625218' && cleanCode == '132005') ||
+              (normalized == '+84971860620' && cleanCode == '131205') ||
+              cleanCode == '123456';
+      if (!isTestPhone) {
         throw Exception('Mã xác thực OTP không chính xác.');
       }
-      final patientCode = await authLocalDataSource.generateUniquePatientCode();
+      final patientCode =
+          await authLocalDataSource.generateUniquePatientCode();
       remoteAccount = UserAccountModel(
         id: 'usr-phone-${DateTime.now().millisecondsSinceEpoch}',
         patientCode: patientCode,
-        fullName: 'Bệnh nhân ($phoneNumber)',
-        primaryContact: phoneNumber,
+        fullName: 'Chủ hồ sơ ($localPhone)',
+        primaryContact: localPhone,
         passwordHash: '',
         salt: '',
         createdAt: DateTime.now(),
       );
     }
 
-    // 3. Tra cứu hoặc khởi tạo trong CSDL Cục bộ (SQLite Local-First)
-    final existingUser = await authLocalDataSource.findByIdentifier(phoneNumber);
+    // 3. Tra cứu tài khoản hiện có theo SĐT để bảo toàn hồ sơ cũ, hoặc khởi tạo mới
+    final existingUser = await authLocalDataSource.findByIdentifier(localPhone);
     UserAccount finalUser;
 
-    if (existingUser != null) {
+    if (existingUser != null && !existingUser.isGuest) {
       finalUser = existingUser;
     } else {
-      final patientCode = await authLocalDataSource.generateUniquePatientCode();
-      final userId = _uuid.v4();
+      final patientCode = remoteAccount.patientCode.isNotEmpty
+          ? remoteAccount.patientCode
+          : await authLocalDataSource.generateUniquePatientCode();
+      final userId =
+          remoteAccount.id.startsWith('fb-uid-') || remoteAccount.id.startsWith('usr-phone-')
+              ? _uuid.v4()
+              : remoteAccount.id;
       final now = DateTime.now();
 
       final newUser = UserAccountModel(
         id: userId,
         patientCode: patientCode,
-        fullName: remoteAccount.fullName,
-        primaryContact: phoneNumber,
+        fullName: remoteAccount.fullName.contains('+84')
+            ? 'Chủ hồ sơ ($localPhone)'
+            : remoteAccount.fullName,
+        primaryContact: localPhone,
         passwordHash: '',
         salt: '',
+        dateOfBirth: remoteAccount.dateOfBirth,
+        gender: remoteAccount.gender,
+        bloodType: remoteAccount.bloodType,
+        avatarUrl: 'assets/images/img_profile_avatar.png',
         isGuest: false,
         createdAt: now,
       );
@@ -494,18 +1030,16 @@ class AuthRepositoryImpl implements AuthRepository {
           id: _uuid.v4(),
           userId: userId,
           provider: AuthProviderType.phoneOtp,
-          providerUid: phoneNumber,
-          emailAssociated: phoneNumber,
+          providerUid: localPhone,
+          emailAssociated: normalized,
           linkedAt: now,
         ),
       );
     }
 
-    // 4. Lưu phiên đăng nhập
-    await localDataSource.saveSession(
-      userId: finalUser.id,
-      patientCode: finalUser.patientCode,
-      contact: phoneNumber,
+    await _persistAuthenticatedSession(
+      user: finalUser,
+      loginIdentifier: localPhone,
       rememberMe: true,
     );
 
@@ -518,45 +1052,71 @@ class AuthRepositoryImpl implements AuthRepository {
     required String verificationId,
     required String smsCode,
   }) async {
-    final normalized = _normalizePhone(phoneNumber);
+    final normalized = InputValidators.normalizePhoneE164(phoneNumber);
+    final cleanCode = smsCode.trim();
 
-    // 1. Xác thực qua Firebase (chỉ verify, không tạo user)
+    if (verificationId.startsWith('sb-ver-') &&
+        SupabaseConfig.isConfigured &&
+        supabaseAuthRemoteDataSource != null) {
+      await supabaseAuthRemoteDataSource!.verifyPhoneOtp(
+        phone: normalized,
+        token: cleanCode,
+      );
+      return;
+    }
+
     if (firebaseAuthRemoteDataSource != null) {
-      try {
-        await firebaseAuthRemoteDataSource!.verifyPhoneOtp(
-          phoneNumber: normalized,
-          verificationId: verificationId,
-          smsCode: smsCode,
-        );
-        return; // OTP hợp lệ
-      } catch (e) {
-        if (FirebaseConfig.isConfigured) {
-          throw Exception(e.toString().replaceFirst('Exception: ', ''));
-        }
-      }
+      await firebaseAuthRemoteDataSource!.verifyPhoneOtp(
+        phoneNumber: normalized,
+        verificationId: verificationId,
+        smsCode: cleanCode,
+      );
+      return;
     }
 
-    // 2. Xác thực qua Supabase
-    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
-      try {
-        await supabaseAuthRemoteDataSource!.verifyPhoneOtp(
-          phone: normalized,
-          token: smsCode,
-        );
-        return; // OTP hợp lệ
-      } catch (e) {
-        // Fallback sang sandbox
-      }
-    }
-
-    // 3. Sandbox test codes
     final isTestPhone =
-        (normalized == '+84362625218' && smsCode == '132005') ||
-        (normalized == '+84971860620' && smsCode == '131205') ||
-        smsCode == '123456';
+        (normalized == '+84362625218' && cleanCode == '132005') ||
+            (normalized == '+84971860620' && cleanCode == '131205') ||
+            cleanCode == '123456';
     if (!isTestPhone) {
       throw Exception('Mã xác thực OTP không chính xác.');
     }
+  }
+
+  @override
+  Future<UserAccount> completePhoneProfileSetup({
+    required String userId,
+    required String fullName,
+    String? bloodType,
+    String? gender,
+    String? dateOfBirth,
+  }) async {
+    final nameErr = InputValidators.validateFullName(fullName);
+    if (nameErr != null) throw Exception(nameErr);
+
+    final updated = await authLocalDataSource.updateProfileFields(
+      userId: userId,
+      fullName: fullName.trim(),
+      bloodType: bloodType,
+      gender: gender,
+      dateOfBirth: dateOfBirth,
+    );
+
+    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
+      try {
+        await supabaseAuthRemoteDataSource!.updateCloudUserMetadata({
+          'full_name': fullName.trim(),
+          'blood_type': ?bloodType,
+          'gender': ?gender,
+          'date_of_birth': ?dateOfBirth,
+        });
+      } catch (_) {}
+    }
+
+    if (updated == null) {
+      throw Exception('Không thể cập nhật thông tin chủ hồ sơ.');
+    }
+    return updated;
   }
 
   @override
@@ -566,27 +1126,35 @@ class AuthRepositoryImpl implements AuthRepository {
     String? accessToken,
   }) async {
     final isApple = provider.toLowerCase() == 'apple';
-    final providerName = isApple ? 'Apple' : 'Google';
+    final providerName = isApple ? 'Apple ID' : 'Google';
+    final oauthProvider = isApple ? OAuthProvider.apple : OAuthProvider.google;
 
-    // 1. Nếu đã kết nối Supabase Cloud:
     if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
       try {
-        final oauthProvider = isApple ? OAuthProvider.apple : OAuthProvider.google;
-        await supabaseAuthRemoteDataSource!.signInWithOAuth(oauthProvider);
-        final currentUser = supabaseAuthRemoteDataSource!.currentAuthUser;
-        if (currentUser != null) {
+        // Nếu đã có native ID Token (VD: từ Sign in with Apple / Google SDK), xác thực trực tiếp
+        if (idToken != null && idToken.isNotEmpty) {
+          final cloudUser =
+              await supabaseAuthRemoteDataSource!.signInWithIdToken(
+            provider: oauthProvider,
+            idToken: idToken,
+            accessToken: accessToken,
+          );
           return await syncSupabaseUserSession(
-            userId: currentUser.id,
-            email: currentUser.email,
-            fullName: currentUser.userMetadata?['full_name'] as String?,
+            userId: cloudUser.id,
+            email: cloudUser.primaryContact,
+            fullName: cloudUser.fullName,
+            avatarUrl: cloudUser.avatarUrl,
+            provider: provider,
           );
         }
 
-        // OAuth flow được kích hoạt thành công trên trình duyệt
+        // Mở luồng OAuth 2.0 PKCE trên trình duyệt hệ thống và chờ Deep Link callback
+        await supabaseAuthRemoteDataSource!.signInWithOAuth(oauthProvider);
+
         return UserAccountModel(
           id: 'oauth_in_progress',
           patientCode: 'STYT-OAUTH',
-          fullName: 'Đang đăng nhập $providerName...',
+          fullName: 'Đang xác thực $providerName...',
           primaryContact: '$providerName-auth',
           passwordHash: '',
           salt: '',
@@ -594,20 +1162,20 @@ class AuthRepositoryImpl implements AuthRepository {
         );
       } catch (e) {
         final err = e.toString();
-        if (err.contains('not enabled') || err.contains('Unsupported provider')) {
+        if (err.contains('not enabled') ||
+            err.contains('Unsupported provider')) {
           throw Exception(
-            'Phương thức đăng nhập với $providerName chưa được kích hoạt trên Supabase Console.\n'
-            'Vui lòng vào Authentication -> Providers để cấu hình Client ID, hoặc sử dụng Đăng ký / Đăng nhập bằng Email & Mật khẩu.',
+            'Đăng nhập bằng $providerName chưa được bật trên Supabase Console.\n'
+            'Vui lòng bật $providerName trong Authentication -> Providers hoặc đăng nhập bằng SĐT / Email.',
           );
         }
-        throw Exception(e.toString().replaceFirst('Exception: ', ''));
+        throw Exception(err.replaceFirst('Exception: ', ''));
       }
     }
 
-    // 2. Chế độ thông báo rõ ràng cho môi trường chưa cấu hình OAuth
     throw Exception(
-      'Phương thức $providerName chưa được cấu hình OAuth trên Supabase.\n'
-      'Vui lòng sử dụng tính năng "Đăng ký" bằng Email hoặc "Đăng nhập Số Điện Thoại / OTP" để trải nghiệm dữ liệu thật ngay!',
+      'Phương thức $providerName cần kết nối đám mây Supabase OAuth.\n'
+      'Vui lòng sử dụng Đăng ký / Đăng nhập bằng Số điện thoại hoặc Email.',
     );
   }
 
@@ -616,13 +1184,49 @@ class AuthRepositoryImpl implements AuthRepository {
     required String userId,
     String? email,
     String? fullName,
+    String? avatarUrl,
+    String? provider,
   }) async {
     final client = SupabaseConfig.client;
-    String patientCode = 'STYT-${userId.substring(0, min(6, userId.length)).toUpperCase()}';
-    String resolvedName = fullName ?? email ?? 'Bệnh nhân';
+    final cleanEmail = email?.trim().toLowerCase();
+
+    // Kiểm tra xem email này đã có hồ sơ cục bộ trước đó chưa để giữ nguyên Mã STYT-XXXXXX
+    final existingLocal = cleanEmail != null
+        ? await authLocalDataSource.findByIdentifier(cleanEmail)
+        : await authLocalDataSource.findById(userId);
+
+    String patientCode = existingLocal != null && !existingLocal.isGuest
+        ? existingLocal.patientCode
+        : SupabaseAuthRemoteDataSourceImpl.derivePatientCodeFromUserId(userId);
+
+    String resolvedName = (fullName != null && fullName.trim().isNotEmpty)
+        ? fullName.trim()
+        : (existingLocal?.fullName ??
+            (cleanEmail != null ? cleanEmail.split('@').first : 'Chủ hồ sơ'));
+
+    String? dob = existingLocal?.dateOfBirth;
+    String? gender = existingLocal?.gender;
+    String? bloodType = existingLocal?.bloodType;
 
     if (client != null) {
       try {
+        final authUser = client.auth.currentUser;
+        final meta = authUser?.userMetadata ?? const <String, dynamic>{};
+        if (meta['patient_code'] is String &&
+            (meta['patient_code'] as String).trim().isNotEmpty) {
+          patientCode = (meta['patient_code'] as String).trim().toUpperCase();
+        } else {
+          try {
+            await client.auth.updateUser(
+              UserAttributes(data: {'patient_code': patientCode}),
+            );
+          } catch (_) {}
+        }
+
+        dob ??= meta['date_of_birth'] as String?;
+        gender ??= meta['gender'] as String?;
+        bloodType ??= meta['blood_type'] as String?;
+
         final profileRes = await client
             .from('profiles')
             .select()
@@ -630,39 +1234,64 @@ class AuthRepositoryImpl implements AuthRepository {
             .maybeSingle();
 
         if (profileRes != null) {
-          patientCode = profileRes['patient_code'] as String? ?? patientCode;
-          resolvedName = profileRes['full_name'] as String? ?? resolvedName;
+          patientCode =
+              (profileRes['patient_code'] as String?) ?? patientCode;
+          resolvedName =
+              (profileRes['full_name'] as String?) ?? resolvedName;
+          dob ??= profileRes['date_of_birth'] as String?;
+          gender ??= profileRes['gender'] as String?;
+          bloodType ??= profileRes['blood_type'] as String?;
         } else {
           await client.from('profiles').upsert({
             'id': userId,
             'patient_code': patientCode,
             'full_name': resolvedName,
-            'primary_phone': email,
+            'primary_phone': cleanEmail,
           });
         }
       } catch (e) {
-        debugPrint('[Supabase] syncSupabaseUserSession profile error: $e');
+        debugPrint('[Supabase] syncSupabaseUserSession metadata/profile sync: $e');
       }
     }
 
+    final resolvedContact = cleanEmail ?? '$userId@auth.supabase';
     final account = UserAccountModel(
       id: userId,
       patientCode: patientCode,
       fullName: resolvedName,
-      primaryContact: email ?? '$userId@auth.supabase',
-      passwordHash: '',
-      salt: '',
-      createdAt: DateTime.now(),
+      primaryContact: resolvedContact,
+      passwordHash: existingLocal?.passwordHash ?? '',
+      salt: existingLocal?.salt ?? '',
+      dateOfBirth: dob,
+      gender: gender,
+      bloodType: bloodType,
+      avatarUrl:
+          avatarUrl ?? existingLocal?.avatarUrl ?? 'assets/images/img_profile_avatar.png',
+      createdAt: existingLocal?.createdAt ?? DateTime.now(),
     );
 
-    await authLocalDataSource.createUser(account);
-    await localDataSource.saveSession(
-      userId: account.id,
-      patientCode: account.patientCode,
-      contact: account.primaryContact,
+    final authProviderType = provider?.toLowerCase() == 'apple'
+        ? AuthProviderType.apple
+        : AuthProviderType.google;
+
+    final saved = await authLocalDataSource.createUser(
+      account,
+      initialIdentity: AuthIdentityModel(
+        id: _uuid.v4(),
+        userId: userId,
+        provider: authProviderType,
+        providerUid: userId,
+        emailAssociated: cleanEmail,
+        linkedAt: DateTime.now(),
+      ),
+    );
+
+    await _persistAuthenticatedSession(
+      user: saved,
+      loginIdentifier: resolvedContact,
       rememberMe: true,
     );
 
-    return account;
+    return saved;
   }
 }

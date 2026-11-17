@@ -8,17 +8,18 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/input_validators.dart';
 import '../../../../domain/entities/user_account.dart';
 import '../../../routes/app_routes.dart';
+import '../viewmodel/register_state.dart';
 import '../viewmodel/register_viewmodel.dart';
 import 'widgets/auth_ambient_background.dart';
 import 'widgets/auth_animated_entrance.dart';
 import 'widgets/auth_divider.dart';
 import 'widgets/auth_header.dart';
 import 'widgets/auth_text_field.dart';
+import 'widgets/cloud_backend_status_badge.dart';
 import 'widgets/guest_migration_notice_card.dart';
 import 'widgets/password_strength_meter.dart';
-import 'widgets/social_auth_button.dart';
-import 'widgets/cloud_backend_status_badge.dart';
 import 'widgets/registration_otp_bottom_sheet.dart';
+import 'widgets/social_auth_button.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -27,32 +28,59 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends State<RegisterScreen>
+    with WidgetsBindingObserver {
   late final RegisterViewModel _viewModel;
   StreamSubscription<AuthState>? _authStateSubscription;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _viewModel = RegisterViewModel();
     _initOAuthListener();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _viewModel.isAwaitingOAuth) {
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted && _viewModel.isAwaitingOAuth) {
+          _viewModel.cancelPendingOAuth();
+        }
+      });
+    }
   }
 
   void _initOAuthListener() {
     final client = SupabaseConfig.client;
     if (client != null) {
-      _authStateSubscription = client.auth.onAuthStateChange.listen((data) async {
+      _authStateSubscription =
+          client.auth.onAuthStateChange.listen((data) async {
         final event = data.event;
         final session = data.session;
-        if (event == AuthChangeEvent.signedIn && session != null && mounted) {
+        // CHỈ bắt sự kiện signedIn khi người dùng chủ động nhấn Đăng ký bằng Google / Apple
+        if (event == AuthChangeEvent.signedIn &&
+            session != null &&
+            mounted &&
+            _viewModel.isAwaitingOAuth) {
           final user = session.user;
+          final meta = user.userMetadata ?? const <String, dynamic>{};
           final success = await _viewModel.handleOAuthSessionSuccess(
             userId: user.id,
             email: user.email,
-            fullName: user.userMetadata?['full_name'] as String?,
+            fullName:
+                (meta['full_name'] as String?) ?? (meta['name'] as String?),
+            avatarUrl:
+                (meta['avatar_url'] as String?) ?? (meta['picture'] as String?),
           );
           if (success && mounted) {
-            _navigateToTimeline();
+            final account = _viewModel.state.createdAccount;
+            if (account != null) {
+              _showSuccessRegistrationDialog(account);
+            } else {
+              _navigateToTimeline();
+            }
           }
         }
       });
@@ -61,6 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _authStateSubscription?.cancel();
     _viewModel.dispose();
     super.dispose();
@@ -117,7 +146,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               hintText: 'Nguyễn Văn An',
                               prefixIconAsset: 'assets/icons/ic_user_badge.svg',
                               controller: _viewModel.fullNameController,
-                              validator: InputValidators.validateRequired,
+                              validator: InputValidators.validateFullName,
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -126,120 +155,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: AuthTextField(
                               label: 'Số điện thoại hoặc Email',
                               isRequired: true,
-                              hintText: 'example@sotayyte.vn hoặc 0912...',
+                              hintText: '0912345678 hoặc ten@gmail.com',
                               hintColor: AppColors.textHintAlt,
-                              prefixIconAsset: 'assets/icons/ic_contact_mail.svg',
+                              prefixIconAsset:
+                                  'assets/icons/ic_contact_mail.svg',
                               prefixIconWidth: 20,
                               prefixIconHeight: 15,
                               controller: _viewModel.contactController,
-                              validator: InputValidators.validateRequired,
+                              validator: InputValidators.validateEmailOrPhone,
                             ),
                           ),
                           const SizedBox(height: 16),
                           AuthAnimatedEntrance(
                             delay: const Duration(milliseconds: 230),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  flex: 6,
-                                  child: AuthTextField(
-                                    label: 'Ngày tháng năm sinh',
-                                    isRequired: false,
-                                    hintText: 'Chọn ngày sinh',
-                                    prefixIconAsset: 'assets/icons/ic_prof_cake_dob.svg',
-                                    controller: _viewModel.dobController,
-                                    onTap: () async {
-                                      final picked = await showDatePicker(
-                                        context: context,
-                                        locale: const Locale('vi', 'VN'),
-                                        helpText: 'CHỌN NGÀY SINH',
-                                        confirmText: 'CHỌN',
-                                        cancelText: 'HỦY',
-                                        initialDate: DateTime(2005, 5, 1),
-                                        firstDate: DateTime(1920),
-                                        lastDate: DateTime.now(),
-                                        builder: (context, child) {
-                                          return Theme(
-                                            data: Theme.of(context).copyWith(
-                                              colorScheme: const ColorScheme.light(
-                                                primary: AppColors.primary,
-                                                onPrimary: Colors.white,
-                                                surface: Colors.white,
-                                                onSurface: AppColors.textPrimaryLight,
-                                              ),
-                                            ),
-                                            child: child!,
-                                          );
-                                        },
-                                      );
-                                      if (picked != null) {
-                                        _viewModel.setDateOfBirth(picked);
-                                      }
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  flex: 4,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Nhóm máu',
-                                        style: AppTypography.labelSemiBold,
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Container(
-                                        height: 48,
-                                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.surfaceLight,
-                                          borderRadius: BorderRadius.circular(8),
-                                          boxShadow: const [
-                                            BoxShadow(
-                                              color: Color(0x0D000000),
-                                              blurRadius: 2,
-                                              offset: Offset(0, 1),
-                                            ),
-                                          ],
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: DropdownButtonHideUnderline(
-                                          child: DropdownButton<String>(
-                                            value: state.bloodType,
-                                            isExpanded: true,
-                                            style: AppTypography.bodyLarge.copyWith(
-                                              color: AppColors.textPrimaryLight,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                            icon: const Icon(
-                                              Icons.keyboard_arrow_down_rounded,
-                                              color: AppColors.textMuted,
-                                              size: 20,
-                                            ),
-                                            items: const [
-                                              DropdownMenuItem(value: 'O+', child: Text('O+')),
-                                              DropdownMenuItem(value: 'A+', child: Text('A+')),
-                                              DropdownMenuItem(value: 'B+', child: Text('B+')),
-                                              DropdownMenuItem(value: 'AB+', child: Text('AB+')),
-                                              DropdownMenuItem(value: 'O-', child: Text('O-')),
-                                              DropdownMenuItem(value: 'A-', child: Text('A-')),
-                                              DropdownMenuItem(value: 'B-', child: Text('B-')),
-                                              DropdownMenuItem(value: 'AB-', child: Text('AB-')),
-                                              DropdownMenuItem(value: 'Chưa rõ', child: Text('Chưa rõ')),
-                                            ],
-                                            onChanged: (val) {
-                                              if (val != null) _viewModel.setBloodType(val);
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                            child: _buildDemographicsRow(state),
+                          ),
+                          const SizedBox(height: 14),
+                          AuthAnimatedEntrance(
+                            delay: const Duration(milliseconds: 245),
+                            child: _buildGenderSelector(state.gender),
                           ),
                           const SizedBox(height: 16),
                           AuthAnimatedEntrance(
@@ -261,11 +195,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   obscureText: state.obscurePassword,
                                   onToggleObscure:
                                       _viewModel.togglePasswordVisibility,
-                                  suffixIconAsset: 'assets/icons/ic_eye_toggle.svg',
+                                  suffixIconAsset:
+                                      'assets/icons/ic_eye_toggle.svg',
                                   suffixIconWidth: 26.33,
                                   suffixIconHeight: 26.5,
                                   onChanged: _viewModel.onPasswordChanged,
-                                  validator: InputValidators.validateRequired,
+                                  validator: InputValidators.validatePassword,
                                 ),
                                 const SizedBox(height: 8),
                                 PasswordStrengthMeter(
@@ -284,7 +219,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               hintColor: AppColors.textHintAlt,
                               prefixIconAsset: 'assets/icons/ic_lock_reset.svg',
                               controller: _viewModel.confirmPasswordController,
-                              obscureText: true,
+                              obscureText: state.obscureConfirmPassword,
+                              onToggleObscure:
+                                  _viewModel.toggleConfirmPasswordVisibility,
+                              suffixIconAsset: 'assets/icons/ic_eye_toggle.svg',
+                              suffixIconWidth: 26.33,
+                              suffixIconHeight: 26.5,
                               validator: (val) {
                                 if (val == null || val.isEmpty) {
                                   return 'Vui lòng xác nhận mật khẩu';
@@ -307,6 +247,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         acceptedTerms: state.acceptedTerms,
                       ),
                     ),
+                    if (state.isAwaitingOAuth) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.secondary.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.iceOlive),
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Đang chờ xác thực tài khoản trên trình duyệt...',
+                                style: AppTypography.caption.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimaryLight,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _viewModel.cancelPendingOAuth,
+                              child: const Text('Hủy'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     if (state.errorMessage != null) ...[
                       const SizedBox(height: 12),
                       Container(
@@ -324,7 +305,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               children: [
                                 const Padding(
                                   padding: EdgeInsets.only(top: 2),
-                                  child: Icon(Icons.info_outline, size: 16, color: AppColors.error),
+                                  child: Icon(
+                                    Icons.info_outline,
+                                    size: 16,
+                                    color: AppColors.error,
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
@@ -338,7 +323,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ],
                             ),
-                            if (state.errorMessage!.contains('đã được đăng ký')) ...[
+                            if (state.errorMessage!
+                                .contains('đã được đăng ký')) ...[
                               const SizedBox(height: 10),
                               SizedBox(
                                 width: double.infinity,
@@ -347,18 +333,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     backgroundColor: AppColors.primary,
                                     foregroundColor: Colors.white,
                                     elevation: 0,
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 8),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                   ),
                                   icon: const Icon(Icons.login, size: 16),
-                                  label: const Text('Chuyển sang Đăng Nhập ngay'),
+                                  label:
+                                      const Text('Chuyển sang Đăng Nhập ngay'),
                                   onPressed: () {
                                     Navigator.pushReplacementNamed(
                                       context,
                                       AppRoutes.login,
-                                      arguments: _viewModel.contactController.text.trim(),
+                                      arguments: _viewModel
+                                          .contactController.text
+                                          .trim(),
                                     );
                                   },
                                 ),
@@ -410,6 +400,165 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDemographicsRow(RegisterState state) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 6,
+          child: AuthTextField(
+            label: 'Ngày tháng năm sinh',
+            isRequired: false,
+            hintText: 'Chọn ngày sinh',
+            prefixIconAsset: 'assets/icons/ic_prof_cake_dob.svg',
+            controller: _viewModel.dobController,
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                locale: const Locale('vi', 'VN'),
+                helpText: 'CHỌN NGÀY SINH',
+                confirmText: 'CHỌN',
+                cancelText: 'HỦY',
+                initialDate: state.dateOfBirth ?? DateTime(2000, 1, 1),
+                firstDate: DateTime(1920),
+                lastDate: DateTime.now(),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.light(
+                        primary: AppColors.primary,
+                        onPrimary: Colors.white,
+                        surface: Colors.white,
+                        onSurface: AppColors.textPrimaryLight,
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
+              );
+              if (picked != null) {
+                _viewModel.setDateOfBirth(picked);
+              }
+            },
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 4,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Nhóm máu',
+                style: AppTypography.labelSemiBold,
+              ),
+              const SizedBox(height: 6),
+              Container(
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x0D000000),
+                      blurRadius: 2,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: state.bloodType,
+                    isExpanded: true,
+                    style: AppTypography.bodyLarge.copyWith(
+                      color: AppColors.textPrimaryLight,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textMuted,
+                      size: 20,
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'O+', child: Text('O+')),
+                      DropdownMenuItem(value: 'A+', child: Text('A+')),
+                      DropdownMenuItem(value: 'B+', child: Text('B+')),
+                      DropdownMenuItem(value: 'AB+', child: Text('AB+')),
+                      DropdownMenuItem(value: 'O-', child: Text('O-')),
+                      DropdownMenuItem(value: 'A-', child: Text('A-')),
+                      DropdownMenuItem(value: 'B-', child: Text('B-')),
+                      DropdownMenuItem(value: 'AB-', child: Text('AB-')),
+                      DropdownMenuItem(
+                        value: 'Chưa rõ',
+                        child: Text('Chưa rõ'),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) _viewModel.setBloodType(val);
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGenderSelector(String selectedGender) {
+    const genders = ['Nam', 'Nữ', 'Khác'];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Giới tính sinh học',
+          style: AppTypography.labelSemiBold,
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            for (int i = 0; i < genders.length; i++) ...[
+              if (i > 0) const SizedBox(width: 10),
+              Expanded(
+                child: InkWell(
+                  onTap: () => _viewModel.setGender(genders[i]),
+                  borderRadius: BorderRadius.circular(8),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 160),
+                    height: 42,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: selectedGender == genders[i]
+                          ? AppColors.primary
+                          : AppColors.surfaceLight,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: selectedGender == genders[i]
+                            ? AppColors.primary
+                            : AppColors.secCardBorder,
+                      ),
+                    ),
+                    child: Text(
+                      genders[i],
+                      style: AppTypography.labelSmallSemiBold.copyWith(
+                        color: selectedGender == genders[i]
+                            ? Colors.white
+                            : AppColors.textPrimaryLight,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
     );
   }
 
@@ -619,35 +768,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onTap: isLoading
               ? null
               : () async {
-                  final isValid = _viewModel.validateRegistrationForm();
-                  if (!isValid) return;
+                  final nextStep =
+                      await _viewModel.initiateRegistrationFlow();
+                  if (!mounted) return;
 
-                  final rawContact = _viewModel.contactController.text.trim().replaceAll(RegExp(r'\s+'), '');
-                  final isPhone = RegExp(r'^[0-9+]+$').hasMatch(rawContact);
-
-                  if (isPhone) {
-                    try {
-                      await _viewModel.sendRegistrationOtp();
-                      if (!mounted) return;
-                      RegistrationOtpBottomSheet.show(
-                        context: context,
-                        viewModel: _viewModel,
-                        onSuccess: (account) {
+                  if (nextStep == RegistrationFlowStep.requirePhoneOtp ||
+                      nextStep == RegistrationFlowStep.requireEmailOtp) {
+                    RegistrationOtpBottomSheet.show(
+                      context: context,
+                      viewModel: _viewModel,
+                      onSuccess: (account) {
+                        if (mounted) {
                           _showSuccessRegistrationDialog(account);
-                        },
-                      );
-                    } catch (e) {
-                      // Lỗi hiển thị qua state.errorMessage
-                    }
-                  } else {
-                    final ok = await _viewModel.submitRegistration();
-                    if (ok && mounted) {
-                      final account = _viewModel.state.createdAccount;
-                      if (account != null) {
-                        _showSuccessRegistrationDialog(account);
-                      } else {
-                        _navigateToTimeline();
-                      }
+                        }
+                      },
+                    );
+                  } else if (nextStep == RegistrationFlowStep.completed) {
+                    final account = _viewModel.state.createdAccount;
+                    if (account != null) {
+                      _showSuccessRegistrationDialog(account);
+                    } else {
+                      _navigateToTimeline();
                     }
                   }
                 },
@@ -702,13 +843,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 : () async {
                     final ok = await _viewModel.registerWithSocial('apple');
                     if (ok) {
-                      if (_viewModel.state.createdAccount?.id != 'oauth_in_progress') {
-                        _navigateToTimeline();
+                      if (!_viewModel.state.isAwaitingOAuth &&
+                          _viewModel.state.createdAccount != null) {
+                        _showSuccessRegistrationDialog(
+                          _viewModel.state.createdAccount!,
+                        );
                       }
                     } else if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(_viewModel.state.errorMessage ?? 'Chưa cấu hình Apple OAuth trên Supabase.'),
+                          content: Text(
+                            _viewModel.state.errorMessage ??
+                                'Chưa cấu hình Apple OAuth trên Supabase.',
+                          ),
                           backgroundColor: AppColors.error,
                         ),
                       );
@@ -733,13 +880,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 : () async {
                     final ok = await _viewModel.registerWithSocial('google');
                     if (ok) {
-                      if (_viewModel.state.createdAccount?.id != 'oauth_in_progress') {
-                        _navigateToTimeline();
+                      if (!_viewModel.state.isAwaitingOAuth &&
+                          _viewModel.state.createdAccount != null) {
+                        _showSuccessRegistrationDialog(
+                          _viewModel.state.createdAccount!,
+                        );
                       }
                     } else if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(_viewModel.state.errorMessage ?? 'Chưa cấu hình Google OAuth trên Supabase.'),
+                          content: Text(
+                            _viewModel.state.errorMessage ??
+                                'Chưa cấu hình Google OAuth trên Supabase.',
+                          ),
                           backgroundColor: AppColors.error,
                         ),
                       );
@@ -796,7 +949,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       barrierDismissible: false,
       builder: (dialogContext) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           backgroundColor: AppColors.surfaceLight,
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -806,7 +960,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Container(
                   width: 64,
                   height: 64,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColors.primaryLight,
                     shape: BoxShape.circle,
                   ),
@@ -846,7 +1000,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.backgroundLight,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.iceOlive.withAlpha(120)),
+                    border:
+                        Border.all(color: AppColors.iceOlive.withAlpha(120)),
                   ),
                   child: Column(
                     children: [
@@ -872,10 +1027,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('Chủ thẻ:', style: AppTypography.caption),
-                          Text(
-                            account.fullName,
-                            style: AppTypography.caption.copyWith(
-                              fontWeight: FontWeight.bold,
+                          Flexible(
+                            child: Text(
+                              account.fullName,
+                              textAlign: TextAlign.right,
+                              style: AppTypography.caption.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Liên hệ:', style: AppTypography.caption),
+                          Flexible(
+                            child: Text(
+                              account.primaryContact,
+                              textAlign: TextAlign.right,
+                              style: AppTypography.caption.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],

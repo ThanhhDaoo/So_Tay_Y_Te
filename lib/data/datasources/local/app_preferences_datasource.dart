@@ -13,6 +13,10 @@ abstract class AppPreferencesDataSource {
   Future<String?> getSessionPatientCode();
   Future<bool> getRememberMe();
   Future<void> clearSession();
+  Future<void> saveBiometricUserId(String? userId);
+  Future<String?> getBiometricUserId();
+  Future<void> saveLastLoginIdentifier(String? identifier);
+  Future<String?> getLastLoginIdentifier();
   Future<void> setProStatus(bool isPro);
   Future<bool> getProStatus();
   Future<void> setBiometricLockEnabled(bool enabled);
@@ -34,6 +38,8 @@ class AppPreferencesDataSourceImpl implements AppPreferencesDataSource {
   static const String _keyPatientCode = 'auth_patient_code';
   static const String _keyContact = 'auth_contact';
   static const String _keyRememberMe = 'auth_remember_me';
+  static const String _keyBiometricUserId = 'auth_biometric_user_id';
+  static const String _keyLastLoginIdentifier = 'auth_last_login_identifier';
   static const String _keyIsPro = 'is_pro_member';
   static const String _keyBiometricEnabled = 'security_biometric_enabled';
   static const String _keyPinHash = 'security_pin_hash';
@@ -95,6 +101,38 @@ class AppPreferencesDataSourceImpl implements AppPreferencesDataSource {
     await prefs.remove(_keyPatientCode);
     await prefs.remove(_keyContact);
     await prefs.remove(_keyRememberMe);
+  }
+
+  @override
+  Future<void> saveBiometricUserId(String? userId) async {
+    final prefs = await _prefs;
+    if (userId == null || userId.isEmpty) {
+      await prefs.remove(_keyBiometricUserId);
+    } else {
+      await prefs.setString(_keyBiometricUserId, userId);
+    }
+  }
+
+  @override
+  Future<String?> getBiometricUserId() async {
+    final prefs = await _prefs;
+    return prefs.getString(_keyBiometricUserId);
+  }
+
+  @override
+  Future<void> saveLastLoginIdentifier(String? identifier) async {
+    final prefs = await _prefs;
+    if (identifier == null || identifier.trim().isEmpty) {
+      await prefs.remove(_keyLastLoginIdentifier);
+    } else {
+      await prefs.setString(_keyLastLoginIdentifier, identifier.trim());
+    }
+  }
+
+  @override
+  Future<String?> getLastLoginIdentifier() async {
+    final prefs = await _prefs;
+    return prefs.getString(_keyLastLoginIdentifier);
   }
 
   @override

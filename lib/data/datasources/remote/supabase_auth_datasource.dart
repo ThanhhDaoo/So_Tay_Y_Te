@@ -1,14 +1,41 @@
-import 'dart:math';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/supabase_config.dart';
+import '../../../core/utils/input_validators.dart';
 import '../../models/user_account_model.dart';
+
+class AuthAccountAlreadyExistsException implements Exception {
+  final String message;
+  const AuthAccountAlreadyExistsException([
+    this.message = 'Số điện thoại hoặc Email này đã được đăng ký hồ sơ.',
+  ]);
+
+  @override
+  String toString() => message;
+}
+
+class AuthEmailConfirmationRequiredException implements Exception {
+  final String email;
+  final UserAccountModel pendingAccount;
+  const AuthEmailConfirmationRequiredException({
+    required this.email,
+    required this.pendingAccount,
+  });
+
+  @override
+  String toString() =>
+      'Vui lòng nhập mã xác thực 6 chữ số đã gửi tới hộp thư $email.';
+}
 
 abstract class SupabaseAuthRemoteDataSource {
   Future<UserAccountModel> signUpWithEmail({
     required String email,
     required String password,
     required String fullName,
+    String? primaryContact,
+    String? patientCode,
     String? dateOfBirth,
     String? gender,
     String? bloodType,
@@ -19,11 +46,24 @@ abstract class SupabaseAuthRemoteDataSource {
     required String password,
   });
 
+  Future<void> sendEmailOtp({
+    required String email,
+    bool shouldCreateUser = false,
+  });
+
+  Future<UserAccountModel> verifyEmailOtp({
+    required String email,
+    required String token,
+    OtpType type = OtpType.signup,
+  });
+
   Future<void> sendPhoneOtp({required String phone});
   Future<UserAccountModel> verifyPhoneOtp({
     required String phone,
     required String token,
   });
+
+  Future<String?> lookupContactByPatientCode(String patientCode);
 
   Future<void> signInWithOAuth(OAuthProvider provider);
   Future<UserAccountModel> signInWithIdToken({
@@ -34,6 +74,8 @@ abstract class SupabaseAuthRemoteDataSource {
 
   Future<UserAccountModel> signInAnonymously();
   Future<void> resetPassword(String email);
+  Future<void> updateCloudPassword(String newPassword);
+  Future<void> updateCloudUserMetadata(Map<String, dynamic> metadata);
   Future<void> signOut();
   User? get currentAuthUser;
 }
@@ -44,11 +86,42 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
   @override
   User? get currentAuthUser => _client?.auth.currentUser;
 
+  /// Sinh mã hồ sơ STYT-XXXXXX nhất quán từ UUID người dùng khi chưa có sẵn
+  static String derivePatientCodeFromUserId(String userId) {
+    final hash = userId.codeUnits.fold<int>(
+      17,
+      (prev, elem) => (prev * 31 + elem) & 0x7fffffff,
+    );
+    final sixDigits = 100000 + (hash % 900000);
+    return 'STYT-$sixDigits';
+  }
+
+  String _resolvePatientCode(
+    User user,
+    Map<String, dynamic>? profileRes, {
+    String? preferredCode,
+  }) {
+    final fromProfile = profileRes?['patient_code'] as String?;
+    if (fromProfile != null && fromProfile.trim().isNotEmpty) {
+      return fromProfile.trim().toUpperCase();
+    }
+    final fromMeta = user.userMetadata?['patient_code'] as String?;
+    if (fromMeta != null && fromMeta.trim().isNotEmpty) {
+      return fromMeta.trim().toUpperCase();
+    }
+    if (preferredCode != null && preferredCode.trim().isNotEmpty) {
+      return preferredCode.trim().toUpperCase();
+    }
+    return derivePatientCodeFromUserId(user.id);
+  }
+
   @override
   Future<UserAccountModel> signUpWithEmail({
     required String email,
     required String password,
     required String fullName,
+    String? primaryContact,
+    String? patientCode,
     String? dateOfBirth,
     String? gender,
     String? bloodType,
@@ -58,55 +131,100 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
       throw Exception('Supabase chưa được cấu hình URL hoặc Anon Key.');
     }
 
-    final res = await client.auth.signUp(
-      email: email,
-      password: password,
-      data: {
-        'full_name': fullName,
-        'date_of_birth': dateOfBirth,
-        'gender': gender ?? 'Chưa rõ',
-        'blood_type': bloodType ?? 'Chưa rõ',
-      },
-    );
+    final cleanContact = (primaryContact ?? email).trim();
+    final provisionalCode =
+        (patientCode != null && patientCode.trim().isNotEmpty)
+            ? patientCode.trim().toUpperCase()
+            : null;
+
+    AuthResponse res;
+    try {
+      res = await client.auth.signUp(
+        email: email.trim().toLowerCase(),
+        password: password,
+        data: {
+          'full_name': fullName.trim(),
+          'primary_contact': cleanContact,
+          'patient_code': ?provisionalCode,
+          'date_of_birth': dateOfBirth,
+          'gender': gender ?? 'Chưa rõ',
+          'blood_type': bloodType ?? 'Chưa rõ',
+        },
+      );
+    } on AuthException catch (e) {
+      final lower = e.message.toLowerCase();
+      if (lower.contains('already registered') ||
+          lower.contains('already been registered') ||
+          lower.contains('user_already_exists')) {
+        throw const AuthAccountAlreadyExistsException();
+      }
+      if (lower.contains('rate limit') || lower.contains('over_email_send_rate_limit')) {
+        throw Exception(
+          'Hệ thống gửi xác thực quá giới hạn tạm thời. Vui lòng đợi ít phút rồi thử lại.',
+        );
+      }
+      throw Exception('Đăng ký thất bại: ${e.message}');
+    }
 
     final user = res.user;
     if (user == null) {
       throw Exception('Không thể tạo tài khoản trên máy chủ Supabase.');
     }
 
-    // Tra cứu hoặc tạo mới bản ghi trong public.profiles
-    final profileRes = await client
-        .from('profiles')
-        .select()
-        .eq('id', user.id)
-        .maybeSingle();
+    // Khi Supabase bật Confirm Email, nếu email đã tồn tại sẽ trả về identities rỗng
+    if (user.identities != null && user.identities!.isEmpty) {
+      throw const AuthAccountAlreadyExistsException();
+    }
 
-    final generatedCode = 'STYT-${Random().nextInt(899999) + 100000}';
-    final patientCode = profileRes != null
-        ? (profileRes['patient_code'] as String? ?? generatedCode)
-        : generatedCode;
-
-    if (profileRes == null) {
+    Map<String, dynamic>? profileRes;
+    if (res.session != null) {
       try {
-        await client.from('profiles').upsert({
-          'id': user.id,
-          'patient_code': patientCode,
-          'full_name': fullName,
-          'date_of_birth': dateOfBirth,
-          'gender': gender ?? 'Chưa rõ',
-          'blood_type': bloodType ?? 'Chưa rõ',
-          'primary_phone': email,
-        });
-      } catch (e) {
-        debugPrint('[Supabase] Không thể chèn profile: $e');
+        profileRes = await client
+            .from('profiles')
+            .select()
+            .eq('id', user.id)
+            .maybeSingle();
+      } catch (_) {}
+    }
+
+    final finalPatientCode = _resolvePatientCode(
+      user,
+      profileRes,
+      preferredCode: provisionalCode,
+    );
+
+    // Đồng bộ patient_code vào user_metadata và public.profiles nếu đã có phiên
+    if (res.session != null) {
+      if (user.userMetadata?['patient_code'] != finalPatientCode) {
+        try {
+          await client.auth.updateUser(
+            UserAttributes(data: {'patient_code': finalPatientCode}),
+          );
+        } catch (_) {}
+      }
+
+      if (profileRes == null) {
+        try {
+          await client.from('profiles').upsert({
+            'id': user.id,
+            'patient_code': finalPatientCode,
+            'full_name': fullName.trim(),
+            'date_of_birth': dateOfBirth,
+            'gender': gender ?? 'Chưa rõ',
+            'blood_type': bloodType ?? 'Chưa rõ',
+            'primary_phone': cleanContact,
+          });
+        } catch (e) {
+          debugPrint('[Supabase] Bỏ qua ghi bảng profiles (có thể chưa tạo bảng): $e');
+        }
       }
     }
 
-    return UserAccountModel(
+    final accountModel = UserAccountModel(
       id: user.id,
-      patientCode: patientCode,
-      fullName: fullName,
-      primaryContact: email,
+      patientCode: finalPatientCode,
+      fullName: fullName.trim(),
+      primaryContact: cleanContact,
       passwordHash: '',
       salt: '',
       dateOfBirth: dateOfBirth,
@@ -114,6 +232,17 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
       bloodType: bloodType,
       createdAt: DateTime.now(),
     );
+
+    // Nếu dự án Supabase bật Confirm Email (res.session == null) đối với email thật
+    final isSyntheticPhoneEmail = email.endsWith('@sotayyte.vn');
+    if (res.session == null && !isSyntheticPhoneEmail) {
+      throw AuthEmailConfirmationRequiredException(
+        email: email.trim().toLowerCase(),
+        pendingAccount: accountModel,
+      );
+    }
+
+    return accountModel;
   }
 
   @override
@@ -127,7 +256,7 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
     }
 
     final res = await client.auth.signInWithPassword(
-      email: email,
+      email: email.trim().toLowerCase(),
       password: password,
     );
 
@@ -136,31 +265,55 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
       throw Exception('Đăng nhập thất bại.');
     }
 
-    final profileRes = await client
-        .from('profiles')
-        .select()
-        .eq('id', user.id)
-        .maybeSingle();
+    return await _buildAccountFromSupabaseUser(
+      client,
+      user,
+      fallbackContact: email.trim().toLowerCase(),
+    );
+  }
 
-    final fullName = profileRes != null
-        ? (profileRes['full_name'] as String? ?? user.email ?? 'Bệnh nhân')
-        : (user.userMetadata?['full_name'] as String? ?? user.email ?? 'Bệnh nhân');
+  @override
+  Future<void> sendEmailOtp({
+    required String email,
+    bool shouldCreateUser = false,
+  }) async {
+    final client = _client;
+    if (client == null) {
+      throw Exception('Supabase chưa được cấu hình.');
+    }
 
-    final patientCode = profileRes != null
-        ? (profileRes['patient_code'] as String? ?? 'STYT-892410')
-        : 'STYT-892410';
+    await client.auth.signInWithOtp(
+      email: email.trim().toLowerCase(),
+      shouldCreateUser: shouldCreateUser,
+    );
+  }
 
-    return UserAccountModel(
-      id: user.id,
-      patientCode: patientCode,
-      fullName: fullName,
-      primaryContact: user.email ?? email,
-      passwordHash: '',
-      salt: '',
-      dateOfBirth: profileRes?['date_of_birth'] as String?,
-      gender: profileRes?['gender'] as String?,
-      bloodType: profileRes?['blood_type'] as String?,
-      createdAt: DateTime.now(),
+  @override
+  Future<UserAccountModel> verifyEmailOtp({
+    required String email,
+    required String token,
+    OtpType type = OtpType.signup,
+  }) async {
+    final client = _client;
+    if (client == null) {
+      throw Exception('Supabase chưa được cấu hình.');
+    }
+
+    final res = await client.auth.verifyOTP(
+      email: email.trim().toLowerCase(),
+      token: token.trim(),
+      type: type,
+    );
+
+    final user = res.user;
+    if (user == null) {
+      throw Exception('Mã xác thực Email OTP không hợp lệ hoặc đã hết hạn.');
+    }
+
+    return await _buildAccountFromSupabaseUser(
+      client,
+      user,
+      fallbackContact: email.trim().toLowerCase(),
     );
   }
 
@@ -188,34 +341,72 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
 
     final res = await client.auth.verifyOTP(
       phone: phone,
-      token: token,
+      token: token.trim(),
       type: OtpType.sms,
     );
 
     final user = res.user;
     if (user == null) {
-      throw Exception('Mã OTP xác thực Supabase không hợp lệ.');
+      throw Exception('Mã OTP xác thực không hợp lệ hoặc đã hết hạn.');
     }
 
-    final profileRes = await client
-        .from('profiles')
-        .select()
-        .eq('id', user.id)
-        .maybeSingle();
-
-    final patientCode = profileRes != null
-        ? (profileRes['patient_code'] as String? ?? 'STYT-892410')
-        : 'STYT-892410';
-
-    return UserAccountModel(
-      id: user.id,
-      patientCode: patientCode,
-      fullName: 'Bệnh nhân ($phone)',
-      primaryContact: phone,
-      passwordHash: '',
-      salt: '',
-      createdAt: DateTime.now(),
+    final localPhone = InputValidators.normalizePhoneLocal(phone);
+    return await _buildAccountFromSupabaseUser(
+      client,
+      user,
+      fallbackContact: localPhone,
     );
+  }
+
+  @override
+  Future<String?> lookupContactByPatientCode(String patientCode) async {
+    final client = _client;
+    if (client == null) return null;
+
+    try {
+      final profileRes = await client
+          .from('profiles')
+          .select('primary_phone')
+          .ilike('patient_code', patientCode.trim())
+          .maybeSingle();
+
+      final contact = profileRes?['primary_phone'] as String?;
+      if (contact != null && contact.trim().isNotEmpty) {
+        return contact.trim();
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Kiểm tra nhanh trên Supabase Auth Settings xem OAuth Provider đã được bật chưa
+  Future<bool> _isOAuthProviderEnabledOnCloud(OAuthProvider provider) async {
+    if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
+      return true;
+    }
+
+    final httpClient = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 3);
+    try {
+      final uri = Uri.parse('${SupabaseConfig.supabaseUrl}/auth/v1/settings');
+      final req = await httpClient.getUrl(uri);
+      req.headers.set('apikey', SupabaseConfig.supabaseAnonKey);
+      final resp = await req.close().timeout(const Duration(seconds: 3));
+      if (resp.statusCode == 200) {
+        final body = await resp.transform(utf8.decoder).join();
+        final data = jsonDecode(body) as Map<String, dynamic>;
+        final external = data['external'] as Map<String, dynamic>?;
+        if (external != null) {
+          final key = provider == OAuthProvider.apple ? 'apple' : 'google';
+          return external[key] == true;
+        }
+      }
+    } catch (_) {
+      // Nếu mạng chậm hoặc không đọc được settings, cho phép thử mở trình duyệt bình thường
+      return true;
+    } finally {
+      httpClient.close(force: true);
+    }
+    return true;
   }
 
   @override
@@ -225,10 +416,26 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
       throw Exception('Supabase chưa được cấu hình.');
     }
 
-    await client.auth.signInWithOAuth(
+    final providerLabel = provider == OAuthProvider.apple ? 'Apple ID' : 'Google';
+    final isEnabled = await _isOAuthProviderEnabledOnCloud(provider);
+    if (!isEnabled) {
+      throw Exception(
+        'Đăng nhập bằng $providerLabel chưa được bật trên Supabase Console (Authentication -> Providers -> $providerLabel).\n'
+        'Vui lòng bật Provider này trên Dashboard hoặc đăng nhập bằng Số điện thoại / Email.',
+      );
+    }
+
+    final launched = await client.auth.signInWithOAuth(
       provider,
       redirectTo: 'io.supabase.sotayyte://login-callback/',
+      authScreenLaunchMode: LaunchMode.externalApplication,
     );
+
+    if (!launched) {
+      throw Exception(
+        'Không thể mở trình duyệt xác thực $providerLabel. Vui lòng thử lại.',
+      );
+    }
   }
 
   @override
@@ -253,24 +460,10 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
       throw Exception('Đăng nhập qua OAuth thất bại.');
     }
 
-    final profileRes = await client
-        .from('profiles')
-        .select()
-        .eq('id', user.id)
-        .maybeSingle();
-
-    final patientCode = profileRes != null
-        ? (profileRes['patient_code'] as String? ?? 'STYT-892410')
-        : 'STYT-892410';
-
-    return UserAccountModel(
-      id: user.id,
-      patientCode: patientCode,
-      fullName: user.userMetadata?['full_name'] as String? ?? user.email ?? 'Bệnh nhân',
-      primaryContact: user.email ?? user.id,
-      passwordHash: '',
-      salt: '',
-      createdAt: DateTime.now(),
+    return await _buildAccountFromSupabaseUser(
+      client,
+      user,
+      fallbackContact: user.email ?? user.id,
     );
   }
 
@@ -287,11 +480,12 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
       throw Exception('Không thể tạo phiên ẩn danh.');
     }
 
+    final guestCode = derivePatientCodeFromUserId(user.id);
     return UserAccountModel(
       id: user.id,
-      patientCode: 'STYT-GUEST',
-      fullName: 'Bệnh nhân Khách',
-      primaryContact: 'guest@sotayyte.local',
+      patientCode: guestCode,
+      fullName: 'Khách (Chưa đăng ký)',
+      primaryContact: 'guest_${user.id.substring(0, 8)}@sotayyte.local',
       passwordHash: '',
       salt: '',
       isGuest: true,
@@ -306,12 +500,99 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
       throw Exception('Supabase chưa được cấu hình.');
     }
 
-    await client.auth.resetPasswordForEmail(email);
+    await client.auth.resetPasswordForEmail(
+      email.trim().toLowerCase(),
+      redirectTo: 'io.supabase.sotayyte://login-callback/',
+    );
+  }
+
+  @override
+  Future<void> updateCloudPassword(String newPassword) async {
+    final client = _client;
+    if (client == null || client.auth.currentSession == null) return;
+    await client.auth.updateUser(UserAttributes(password: newPassword));
+  }
+
+  @override
+  Future<void> updateCloudUserMetadata(Map<String, dynamic> metadata) async {
+    final client = _client;
+    if (client == null || client.auth.currentSession == null) return;
+    await client.auth.updateUser(UserAttributes(data: metadata));
   }
 
   @override
   Future<void> signOut() async {
     final client = _client;
     await client?.auth.signOut();
+  }
+
+  Future<UserAccountModel> _buildAccountFromSupabaseUser(
+    SupabaseClient client,
+    User user, {
+    required String fallbackContact,
+  }) async {
+    Map<String, dynamic>? profileRes;
+    try {
+      profileRes = await client
+          .from('profiles')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+    } catch (_) {}
+
+    final meta = user.userMetadata ?? const <String, dynamic>{};
+    final patientCode = _resolvePatientCode(user, profileRes);
+
+    // Chuẩn hóa liên hệ gốc (nếu là email giả lập SĐT 849xxx@sotayyte.vn thì trả lại SĐT 09xxx)
+    String resolvedContact = (profileRes?['primary_phone'] as String?) ??
+        (meta['primary_contact'] as String?) ??
+        user.email ??
+        user.phone ??
+        fallbackContact;
+    if (resolvedContact.endsWith('@sotayyte.vn')) {
+      final phonePrefix = resolvedContact.split('@').first;
+      if (RegExp(r'^[0-9]+$').hasMatch(phonePrefix)) {
+        resolvedContact = InputValidators.normalizePhoneLocal(phonePrefix);
+      }
+    }
+
+    final fullName = (profileRes?['full_name'] as String?) ??
+        (meta['full_name'] as String?) ??
+        (meta['name'] as String?) ??
+        (user.email != null && !user.email!.endsWith('@sotayyte.vn')
+            ? user.email!.split('@').first
+            : 'Chủ hồ sơ ($resolvedContact)');
+
+    final dob = (profileRes?['date_of_birth'] as String?) ??
+        (meta['date_of_birth'] as String?);
+    final gender = (profileRes?['gender'] as String?) ??
+        (meta['gender'] as String?);
+    final bloodType = (profileRes?['blood_type'] as String?) ??
+        (meta['blood_type'] as String?);
+    final avatarUrl = (meta['avatar_url'] as String?) ??
+        (meta['picture'] as String?);
+
+    // Nếu user_metadata chưa lưu patient_code (VD: lần đầu đăng nhập Google/Apple), lưu lại để cố định mãi mãi
+    if (meta['patient_code'] == null) {
+      try {
+        await client.auth.updateUser(
+          UserAttributes(data: {'patient_code': patientCode}),
+        );
+      } catch (_) {}
+    }
+
+    return UserAccountModel(
+      id: user.id,
+      patientCode: patientCode,
+      fullName: fullName,
+      primaryContact: resolvedContact,
+      passwordHash: '',
+      salt: '',
+      dateOfBirth: dob,
+      gender: gender,
+      bloodType: bloodType,
+      avatarUrl: avatarUrl,
+      createdAt: DateTime.tryParse(user.createdAt) ?? DateTime.now(),
+    );
   }
 }

@@ -13,11 +13,12 @@ import 'widgets/auth_animated_entrance.dart';
 import 'widgets/auth_divider.dart';
 import 'widgets/auth_header.dart';
 import 'widgets/auth_text_field.dart';
+import 'widgets/cloud_backend_status_badge.dart';
+import 'widgets/forgot_password_bottom_sheet.dart';
 import 'widgets/guest_mode_card.dart';
+import 'widgets/phone_otp_bottom_sheet.dart';
 import 'widgets/pulsing_biometric_button.dart';
 import 'widgets/social_auth_button.dart';
-import 'widgets/phone_otp_bottom_sheet.dart';
-import 'widgets/cloud_backend_status_badge.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? initialIdentifier;
@@ -31,15 +32,17 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   late final LoginViewModel _viewModel;
   StreamSubscription<AuthState>? _authStateSubscription;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _viewModel = LoginViewModel();
-    if (widget.initialIdentifier != null && widget.initialIdentifier!.isNotEmpty) {
+    if (widget.initialIdentifier != null &&
+        widget.initialIdentifier!.isNotEmpty) {
       _viewModel.identifierController.text = widget.initialIdentifier!;
     }
     _initOAuthListener();
@@ -48,21 +51,42 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _viewModel.isAwaitingOAuth) {
+      // Đợi ngắn để Deep Link OAuth callback kịp xử lý nếu người dùng vừa xác thực xong
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted && _viewModel.isAwaitingOAuth) {
+          _viewModel.cancelPendingOAuth();
+        }
+      });
+    }
+  }
+
   void _initOAuthListener() {
     final client = SupabaseConfig.client;
     if (client != null) {
-      _authStateSubscription = client.auth.onAuthStateChange.listen((data) async {
+      _authStateSubscription =
+          client.auth.onAuthStateChange.listen((data) async {
         final event = data.event;
         final session = data.session;
-        if (event == AuthChangeEvent.signedIn && session != null && mounted) {
+        // CHỈ bắt sự kiện signedIn khi màn hình này đang chủ động chờ OAuth callback
+        if (event == AuthChangeEvent.signedIn &&
+            session != null &&
+            mounted &&
+            _viewModel.isAwaitingOAuth) {
           final user = session.user;
+          final meta = user.userMetadata ?? const <String, dynamic>{};
           final success = await _viewModel.handleOAuthSessionSuccess(
             userId: user.id,
             email: user.email,
-            fullName: user.userMetadata?['full_name'] as String?,
+            fullName:
+                (meta['full_name'] as String?) ?? (meta['name'] as String?),
+            avatarUrl:
+                (meta['avatar_url'] as String?) ?? (meta['picture'] as String?),
           );
           if (success && mounted) {
-            _handleLoginSuccess();
+            await _handleLoginSuccess();
           }
         }
       });
@@ -71,13 +95,26 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _checkAutoLogin() async {
     final hasActiveSession = await _viewModel.checkAutoLogin();
-    if (hasActiveSession && mounted) {
-      _handleLoginSuccess();
+    if (!hasActiveSession || !mounted) return;
+
+    if (_viewModel.state.requiresAppLockUnlock) {
+      Navigator.pushNamed(
+        context,
+        AppRoutes.appLock,
+        arguments: () {
+          if (mounted) {
+            _handleLoginSuccess();
+          }
+        },
+      );
+    } else {
+      await _handleLoginSuccess();
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _authStateSubscription?.cancel();
     _viewModel.dispose();
     super.dispose();
@@ -85,7 +122,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleLoginSuccess() async {
     if (!mounted) return;
-    Navigator.pushReplacementNamed(context, AppRoutes.mainShell);
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.mainShell,
+      (route) => false,
+    );
   }
 
   @override
@@ -126,12 +167,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             delay: const Duration(milliseconds: 140),
                             child: AuthTextField(
                               label: 'Số điện thoại, Email hoặc Mã hồ sơ',
-                              trailingLabel: 'VD: 0971... hoặc STYT',
+                              trailingLabel: 'VD: 0912... hoặc STYT',
                               trailingLabelColor: AppColors.textMuted,
-                              hintText: '0912... hoặc example@sotayyte.vn',
+                              hintText: '0912345678 hoặc ten@gmail.com',
                               prefixIconAsset: 'assets/icons/ic_badge_id.svg',
                               controller: _viewModel.identifierController,
-                              validator: InputValidators.validateRequired,
+                              validator: InputValidators.validateLoginIdentifier,
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -139,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             delay: const Duration(milliseconds: 200),
                             child: AuthTextField(
                               label: 'Mật khẩu hồ sơ',
-                              hintText: 'Nhập mật khẩu an toàn',
+                              hintText: 'Nhập mật khẩu bảo mật',
                               prefixIconAsset: 'assets/icons/ic_lock.svg',
                               prefixIconWidth: 13.33,
                               prefixIconHeight: 17.5,
@@ -150,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               suffixIconAsset: 'assets/icons/ic_eye.svg',
                               suffixIconWidth: 18.33,
                               suffixIconHeight: 12.5,
-                              validator: InputValidators.validateRequired,
+                              validator: InputValidators.validatePassword,
                             ),
                           ),
                           const SizedBox(height: 14),
@@ -158,6 +199,47 @@ class _LoginScreenState extends State<LoginScreen> {
                             delay: const Duration(milliseconds: 260),
                             child: _buildRememberAndForgot(state.rememberMe),
                           ),
+                          if (state.isAwaitingOAuth) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.secondary.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: AppColors.iceOlive),
+                              ),
+                              child: Row(
+                                children: [
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Đang chờ xác thực tài khoản trên trình duyệt...',
+                                      style: AppTypography.caption.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimaryLight,
+                                      ),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: _viewModel.cancelPendingOAuth,
+                                    child: const Text('Hủy'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           if (state.errorMessage != null) ...[
                             const SizedBox(height: 12),
                             Container(
@@ -170,7 +252,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: AppColors.iceDangerBg,
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: AppColors.error.withValues(alpha: 0.35),
+                                  color:
+                                      AppColors.error.withValues(alpha: 0.35),
                                 ),
                               ),
                               child: Text(
@@ -282,14 +365,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     : () async {
                         final ok = await _viewModel.signInWithSocial('apple');
                         if (ok) {
-                          if (_viewModel.state.loggedInUser?.id != 'oauth_in_progress') {
+                          if (!_viewModel.state.isAwaitingOAuth &&
+                              _viewModel.state.loggedInUser != null) {
                             await _handleLoginSuccess();
                           }
                         } else if (mounted) {
                           _showSocialAuthNotice(
                             context,
                             title: 'Đăng nhập Apple ID',
-                            message: _viewModel.state.errorMessage ?? 'Chưa kích hoạt Apple Sign-In.',
+                            message: _viewModel.state.errorMessage ??
+                                'Chưa kích hoạt Apple Sign-In.',
                           );
                         }
                       },
@@ -310,14 +395,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     : () async {
                         final ok = await _viewModel.signInWithSocial('google');
                         if (ok) {
-                          if (_viewModel.state.loggedInUser?.id != 'oauth_in_progress') {
+                          if (!_viewModel.state.isAwaitingOAuth &&
+                              _viewModel.state.loggedInUser != null) {
                             await _handleLoginSuccess();
                           }
                         } else if (mounted) {
                           _showSocialAuthNotice(
                             context,
                             title: 'Đăng nhập Google Account',
-                            message: _viewModel.state.errorMessage ?? 'Chưa kích hoạt Google Sign-In.',
+                            message: _viewModel.state.errorMessage ??
+                                'Chưa kích hoạt Google Sign-In.',
                           );
                         }
                       },
@@ -345,7 +432,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            'Đăng nhập thành công! Mã hồ sơ: ${account.patientCode}',
+                            'Xin chào ${account.fullName}! Mã hồ sơ: ${account.patientCode}',
                           ),
                           backgroundColor: AppColors.success,
                         ),
@@ -395,7 +482,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         GestureDetector(
-          onTap: () => _showForgotPasswordDialog(),
+          onTap: _openForgotPasswordFlow,
           child: Text(
             'Quên mật khẩu?',
             style: AppTypography.labelSmallSemiBold.copyWith(
@@ -530,132 +617,22 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _showForgotPasswordDialog() {
-    final idController = TextEditingController();
-    final newPassController = TextEditingController();
-    final confirmPassController = TextEditingController();
-    String? localError;
-
-    showDialog(
+  void _openForgotPasswordFlow() {
+    ForgotPasswordBottomSheet.show(
       context: context,
-      builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              backgroundColor: AppColors.surfaceLight,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.lock_reset, color: AppColors.primary),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Đặt Lại Mật Khẩu Hồ Sơ',
-                          style: AppTypography.heading3,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Nhập Mã hồ sơ (STYT-XXXXXX) hoặc Email/SĐT đã đăng ký để tạo mật khẩu mới.',
-                      style: AppTypography.caption,
-                    ),
-                    const SizedBox(height: 14),
-                    TextField(
-                      controller: idController,
-                      decoration: InputDecoration(
-                        labelText: 'Mã hồ sơ hoặc Email/SĐT',
-                        hintText: 'VD: STYT-892410 hoặc 0912...',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: newPassController,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: 'Mật khẩu mới (tối thiểu 6 ký tự)',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: confirmPassController,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: 'Xác nhận mật khẩu mới',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      ),
-                    ),
-                    if (localError != null) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        localError!,
-                        style: const TextStyle(color: AppColors.error, fontSize: 12),
-                      ),
-                    ],
-                    const SizedBox(height: 18),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(dialogCtx),
-                          child: const Text('Hủy'),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          onPressed: () async {
-                            if (newPassController.text != confirmPassController.text) {
-                              setDialogState(() {
-                                localError = 'Mật khẩu xác nhận không khớp.';
-                              });
-                              return;
-                            }
-
-                            final ok = await _viewModel.resetPassword(
-                              identifier: idController.text.trim(),
-                              newPassword: newPassController.text,
-                            );
-
-                            if (ok) {
-                              if (dialogCtx.mounted) {
-                                Navigator.pop(dialogCtx);
-                              }
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay.'),
-                                    backgroundColor: AppColors.success,
-                                  ),
-                                );
-                              }
-                            } else {
-                              setDialogState(() {
-                                localError = _viewModel.state.errorMessage ?? 'Không tìm thấy tài khoản.';
-                              });
-                            }
-                          },
-                          child: const Text('Xác Nhận Đổi', style: TextStyle(color: Colors.white)),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+      viewModel: _viewModel,
+      initialIdentifier: _viewModel.identifierController.text.trim(),
+      onPasswordResetSuccess: (recoveredId) {
+        if (!mounted) return;
+        _viewModel.identifierController.text = recoveredId;
+        _viewModel.passwordController.clear();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Đã xác minh danh tính và cập nhật mật khẩu mới thành công! Vui lòng đăng nhập.',
+            ),
+            backgroundColor: AppColors.success,
+          ),
         );
       },
     );
@@ -696,8 +673,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                '💡 Mẹo: Bạn có thể bấm "Tạo Tài Khoản Mới" ở dưới để đăng ký Email thật lên Supabase ngay lập tức!',
-                style: AppTypography.caption.copyWith(fontWeight: FontWeight.w600),
+                '💡 Gợi ý: Bạn có thể sử dụng "Đăng nhập với Số Điện Thoại / OTP" hoặc tạo tài khoản Email để đồng bộ dữ liệu ngay lập tức.',
+                style: AppTypography.caption
+                    .copyWith(fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -710,13 +688,18 @@ class _LoginScreenState extends State<LoginScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onPressed: () {
               Navigator.pop(ctx);
               Navigator.pushNamed(context, AppRoutes.register);
             },
-            child: const Text('Tạo Tài Khoản Email', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Đăng Ký Tài Khoản',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
