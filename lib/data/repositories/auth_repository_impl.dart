@@ -362,12 +362,29 @@ class AuthRepositoryImpl implements AuthRepository {
         }
       } catch (e) {
         final errText = e.toString().toLowerCase();
-        if (errText.contains('quá giới hạn') || errText.contains('rate limit')) {
-          rethrow;
+        if (!isPhone &&
+            (errText.contains('quá giới hạn') ||
+                errText.contains('rate limit'))) {
+          // Khi gói miễn phí của Supabase chạm giới hạn 2 email/giờ:
+          // Thử kiểm tra xem tài khoản đã tồn tại sẵn trên Cloud với mật khẩu này chưa,
+          // nếu chưa thì lưu hồ sơ an toàn ở chế độ Local-First để không chặn người dùng.
+          try {
+            final existingCloud =
+                await supabaseAuthRemoteDataSource!.signInWithEmail(
+              email: authEmail,
+              password: password,
+            );
+            cloudAccount = existingCloud;
+          } catch (_) {
+            debugPrint(
+              '[Supabase] Hạn mức gửi email xác thực miễn phí của Supabase tạm đầy, lưu hồ sơ chế độ Local-First.',
+            );
+          }
+        } else {
+          debugPrint(
+            '[Supabase] Không thể kết nối đám mây ($e), lưu hồ sơ chế độ Local-First.',
+          );
         }
-        debugPrint(
-          '[Supabase] Không thể kết nối đám mây ($e), lưu hồ sơ chế độ Local-First.',
-        );
       }
     }
 
@@ -602,6 +619,24 @@ class AuthRepositoryImpl implements AuthRepository {
         final isSyntheticPhoneEmail = resolvedAuthEmail.endsWith('@sotayyte.vn');
 
         if (errStr.contains('email not confirmed') && !isSyntheticPhoneEmail) {
+          if (localMatch != null &&
+              localMatch.passwordHash.isNotEmpty &&
+              localMatch.salt.isNotEmpty) {
+            final localOk = PasswordHasher.verifyPassword(
+              password: password,
+              salt: localMatch.salt,
+              expectedHash: localMatch.passwordHash,
+            );
+            if (localOk) {
+              await _persistAuthenticatedSession(
+                user: localMatch,
+                loginIdentifier: cleanId,
+                rememberMe: rememberMe,
+              );
+              return localMatch;
+            }
+            throw Exception('Mật khẩu không chính xác. Vui lòng kiểm tra lại.');
+          }
           throw Exception(
             'Địa chỉ Email chưa được xác nhận. Vui lòng mở hộp thư (kiểm tra cả mục Spam) và nhấn vào liên kết xác nhận từ Supabase trước khi đăng nhập.',
           );
