@@ -60,7 +60,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         (data) async {
           final event = data.event;
           final session = data.session;
-          if (_isProcessingOAuth || !mounted || session == null) return;
+          if (_isProcessingOAuth ||
+              _viewModel.isSocialCallInFlight ||
+              !mounted ||
+              session == null) {
+            return;
+          }
 
           final isCurrentScreen = ModalRoute.of(context)?.isCurrent ?? true;
           final shouldHandle = event == AuthChangeEvent.signedIn &&
@@ -871,13 +876,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           _viewModel.state.createdAccount!,
                         );
                       }
-                    } else if (mounted) {
+                    } else if (mounted &&
+                        _viewModel.state.errorMessage != null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(
-                            _viewModel.state.errorMessage ??
-                                'Chưa cấu hình Apple OAuth trên Supabase.',
-                          ),
+                          content: Text(_viewModel.state.errorMessage!),
                           backgroundColor: AppColors.error,
                         ),
                       );
@@ -908,13 +911,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           _viewModel.state.createdAccount!,
                         );
                       }
-                    } else if (mounted) {
+                    } else if (mounted &&
+                        _viewModel.state.errorMessage != null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(
-                            _viewModel.state.errorMessage ??
-                                'Chưa cấu hình Google OAuth trên Supabase.',
-                          ),
+                          content: Text(_viewModel.state.errorMessage!),
                           backgroundColor: AppColors.error,
                         ),
                       );

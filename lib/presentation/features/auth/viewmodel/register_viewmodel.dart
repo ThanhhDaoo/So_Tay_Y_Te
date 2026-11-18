@@ -23,6 +23,8 @@ class RegisterViewModel extends ChangeNotifier {
 
   bool _isAwaitingOAuth = false;
   bool get isAwaitingOAuth => _isAwaitingOAuth;
+  bool _isSocialCallInFlight = false;
+  bool get isSocialCallInFlight => _isSocialCallInFlight;
   String? _pendingOAuthProvider;
 
   bool _isPendingEmailOtp = false;
@@ -444,7 +446,8 @@ class RegisterViewModel extends ChangeNotifier {
   }
 
   Future<bool> registerWithSocial(String provider) async {
-    _isAwaitingOAuth = true;
+    _isSocialCallInFlight = true;
+    _isAwaitingOAuth = false;
     _pendingOAuthProvider = provider;
     _state =
         _state.copyWith(status: RegisterStatus.loading, errorMessage: null);
@@ -456,6 +459,8 @@ class RegisterViewModel extends ChangeNotifier {
       );
 
       if (user.id == 'oauth_in_progress') {
+        _isSocialCallInFlight = false;
+        _isAwaitingOAuth = true;
         _state = _state.copyWith(
           status: RegisterStatus.awaitingOAuth,
           errorMessage: null,
@@ -464,6 +469,7 @@ class RegisterViewModel extends ChangeNotifier {
         return true;
       }
 
+      _isSocialCallInFlight = false;
       _isAwaitingOAuth = false;
       _pendingOAuthProvider = null;
       _state = _state.copyWith(
@@ -473,7 +479,18 @@ class RegisterViewModel extends ChangeNotifier {
       );
       notifyListeners();
       return true;
+    } on AuthOAuthCancelledException {
+      _isSocialCallInFlight = false;
+      _isAwaitingOAuth = false;
+      _pendingOAuthProvider = null;
+      _state = _state.copyWith(
+        status: RegisterStatus.initial,
+        errorMessage: null,
+      );
+      notifyListeners();
+      return false;
     } catch (e) {
+      _isSocialCallInFlight = false;
       _isAwaitingOAuth = false;
       _pendingOAuthProvider = null;
       _state = _state.copyWith(

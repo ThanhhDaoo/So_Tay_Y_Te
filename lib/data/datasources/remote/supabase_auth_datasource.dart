@@ -1,10 +1,18 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/supabase_config.dart';
 import '../../../core/utils/input_validators.dart';
 import '../../models/user_account_model.dart';
+
+class AuthOAuthCancelledException implements Exception {
+  const AuthOAuthCancelledException();
+
+  @override
+  String toString() => 'Đã hủy đăng nhập.';
+}
 
 class AuthAccountAlreadyExistsException implements Exception {
   final String message;
@@ -65,7 +73,7 @@ abstract class SupabaseAuthRemoteDataSource {
 
   Future<String?> lookupContactByPatientCode(String patientCode);
 
-  Future<void> signInWithOAuth(OAuthProvider provider);
+  Future<UserAccountModel?> signInWithOAuth(OAuthProvider provider);
   Future<UserAccountModel> signInWithIdToken({
     required OAuthProvider provider,
     required String idToken,
@@ -409,8 +417,11 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
     return true;
   }
 
+  static const MethodChannel _webAuthChannel =
+      MethodChannel('com.sotayyte/web_auth');
+
   @override
-  Future<void> signInWithOAuth(OAuthProvider provider) async {
+  Future<UserAccountModel?> signInWithOAuth(OAuthProvider provider) async {
     final client = _client;
     if (client == null) {
       throw Exception('Supabase chưa được cấu hình.');
@@ -425,10 +436,72 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
       );
     }
 
+    const redirectUri = 'io.supabase.sotayyte://login-callback/';
+    final oauthQueryParams = provider == OAuthProvider.google
+        ? const <String, String>{'prompt': 'select_account'}
+        : null;
+
+    // Trên iOS: sử dụng ASWebAuthenticationSession chuẩn của Apple để tự động bắt callback scheme
+    // ngay ở tầng hệ điều hành (không bị kẹt màn hình trắng SFSafariViewController khi 302 redirect)
+    if (!kIsWeb &&
+        Platform.isIOS &&
+        !Platform.environment.containsKey('FLUTTER_TEST')) {
+      try {
+        final oauthUrlRes = await client.auth.getOAuthSignInUrl(
+          provider: provider,
+          redirectTo: redirectUri,
+          queryParams: oauthQueryParams,
+        );
+
+        final callbackUrl = await _webAuthChannel.invokeMethod<String>(
+          'authenticate',
+          <String, dynamic>{
+            'url': oauthUrlRes.url,
+            'callbackScheme': 'io.supabase.sotayyte',
+          },
+        );
+
+        if (callbackUrl == null || callbackUrl.trim().isEmpty) {
+          throw const AuthOAuthCancelledException();
+        }
+
+        final callbackUri = Uri.parse(callbackUrl);
+        final errDesc = callbackUri.queryParameters['error_description'] ??
+            callbackUri.queryParameters['error'];
+        if (errDesc != null && errDesc.isNotEmpty) {
+          final decoded = Uri.decodeQueryComponent(errDesc);
+          if (decoded.contains('Unable to exchange external code')) {
+            throw Exception(
+              'Máy chủ Supabase không đổi được mã xác thực Google (Client Secret trên Supabase chưa khớp với Google Cloud Console).',
+            );
+          }
+          throw Exception('Xác thực $providerLabel thất bại: $decoded');
+        }
+
+        final sessionRes = await client.auth.getSessionFromUrl(callbackUri);
+        final authUser = sessionRes.session.user;
+        return await _buildAccountFromSupabaseUser(
+          client,
+          authUser,
+          fallbackContact: authUser.email ?? authUser.id,
+        );
+      } on PlatformException catch (e) {
+        if (e.code == 'CANCELED') {
+          throw const AuthOAuthCancelledException();
+        }
+        throw Exception(
+          e.message ?? 'Không thể hoàn tất xác thực $providerLabel.',
+        );
+      } on MissingPluginException {
+        // Fallback nếu ứng dụng chưa được biên dịch lại mã gốc iOS
+      }
+    }
+
     final launched = await client.auth.signInWithOAuth(
       provider,
-      redirectTo: 'io.supabase.sotayyte://login-callback/',
-      authScreenLaunchMode: LaunchMode.inAppBrowserView,
+      redirectTo: redirectUri,
+      queryParams: oauthQueryParams,
+      authScreenLaunchMode: LaunchMode.externalApplication,
     );
 
     if (!launched) {
@@ -436,6 +509,7 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
         'Không thể mở trình duyệt xác thực $providerLabel. Vui lòng thử lại.',
       );
     }
+    return null;
   }
 
   @override

@@ -77,7 +77,12 @@ class _LoginScreenState extends State<LoginScreen> {
         (data) async {
           final event = data.event;
           final session = data.session;
-          if (_isProcessingOAuth || !mounted || session == null) return;
+          if (_isProcessingOAuth ||
+              _viewModel.isSocialCallInFlight ||
+              !mounted ||
+              session == null) {
+            return;
+          }
 
           final isCurrentScreen = ModalRoute.of(context)?.isCurrent ?? true;
           final shouldHandle = event == AuthChangeEvent.signedIn &&
@@ -397,12 +402,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               _viewModel.state.loggedInUser != null) {
                             await _handleLoginSuccess();
                           }
-                        } else if (mounted) {
+                        } else if (mounted &&
+                            _viewModel.state.errorMessage != null) {
                           _showSocialAuthNotice(
                             context,
                             title: 'Đăng nhập Apple ID',
-                            message: _viewModel.state.errorMessage ??
-                                'Chưa kích hoạt Apple Sign-In.',
+                            message: _viewModel.state.errorMessage!,
                           );
                         }
                       },
@@ -427,12 +432,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               _viewModel.state.loggedInUser != null) {
                             await _handleLoginSuccess();
                           }
-                        } else if (mounted) {
+                        } else if (mounted &&
+                            _viewModel.state.errorMessage != null) {
                           _showSocialAuthNotice(
                             context,
                             title: 'Đăng nhập Google Account',
-                            message: _viewModel.state.errorMessage ??
-                                'Chưa kích hoạt Google Sign-In.',
+                            message: _viewModel.state.errorMessage!,
                           );
                         }
                       },

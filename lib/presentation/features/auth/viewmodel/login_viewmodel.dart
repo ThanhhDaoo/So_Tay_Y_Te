@@ -3,6 +3,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/security/biometric_service.dart';
 import '../../../../core/utils/input_validators.dart';
 import '../../../../data/datasources/local/app_preferences_datasource.dart';
+import '../../../../data/datasources/remote/supabase_auth_datasource.dart';
 import '../../../../domain/entities/user_account.dart';
 import '../../../../domain/entities/user_profile.dart';
 import '../../../../domain/repositories/auth_repository.dart';
@@ -21,6 +22,8 @@ class LoginViewModel extends ChangeNotifier {
 
   bool _isAwaitingOAuth = false;
   bool get isAwaitingOAuth => _isAwaitingOAuth;
+  bool _isSocialCallInFlight = false;
+  bool get isSocialCallInFlight => _isSocialCallInFlight;
   String? _pendingOAuthProvider;
 
   UserAccount? get loggedInAccount => _state.loggedInUser;
@@ -267,7 +270,8 @@ class LoginViewModel extends ChangeNotifier {
   }
 
   Future<bool> signInWithSocial(String provider) async {
-    _isAwaitingOAuth = true;
+    _isSocialCallInFlight = true;
+    _isAwaitingOAuth = false;
     _pendingOAuthProvider = provider;
     _state = _state.copyWith(status: LoginStatus.loading, errorMessage: null);
     notifyListeners();
@@ -278,6 +282,8 @@ class LoginViewModel extends ChangeNotifier {
       );
 
       if (user.id == 'oauth_in_progress') {
+        _isSocialCallInFlight = false;
+        _isAwaitingOAuth = true;
         _state = _state.copyWith(
           status: LoginStatus.awaitingOAuth,
           errorMessage: null,
@@ -286,6 +292,7 @@ class LoginViewModel extends ChangeNotifier {
         return true;
       }
 
+      _isSocialCallInFlight = false;
       _isAwaitingOAuth = false;
       _pendingOAuthProvider = null;
       _state = _state.copyWith(
@@ -296,7 +303,18 @@ class LoginViewModel extends ChangeNotifier {
       );
       notifyListeners();
       return true;
+    } on AuthOAuthCancelledException {
+      _isSocialCallInFlight = false;
+      _isAwaitingOAuth = false;
+      _pendingOAuthProvider = null;
+      _state = _state.copyWith(
+        status: LoginStatus.initial,
+        errorMessage: null,
+      );
+      notifyListeners();
+      return false;
     } catch (e) {
+      _isSocialCallInFlight = false;
       _isAwaitingOAuth = false;
       _pendingOAuthProvider = null;
       _state = _state.copyWith(

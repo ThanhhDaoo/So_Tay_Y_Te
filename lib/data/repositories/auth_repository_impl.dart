@@ -357,7 +357,9 @@ class AuthRepositoryImpl implements AuthRepository {
       } on AuthAccountAlreadyExistsException catch (e) {
         throw Exception(e.message);
       } on AuthEmailConfirmationRequiredException {
-        rethrow;
+        if (!isPhone) {
+          rethrow;
+        }
       } catch (e) {
         final errText = e.toString().toLowerCase();
         if (errText.contains('quá giới hạn') || errText.contains('rate limit')) {
@@ -1166,8 +1168,19 @@ class AuthRepositoryImpl implements AuthRepository {
           );
         }
 
-        // Mở luồng OAuth 2.0 PKCE trên trình duyệt hệ thống và chờ Deep Link callback
-        await supabaseAuthRemoteDataSource!.signInWithOAuth(oauthProvider);
+        // Mở luồng OAuth 2.0 PKCE (trên iOS trả kết quả trực tiếp qua ASWebAuthenticationSession)
+        final directCloudUser =
+            await supabaseAuthRemoteDataSource!.signInWithOAuth(oauthProvider);
+
+        if (directCloudUser != null) {
+          return await syncSupabaseUserSession(
+            userId: directCloudUser.id,
+            email: directCloudUser.primaryContact,
+            fullName: directCloudUser.fullName,
+            avatarUrl: directCloudUser.avatarUrl,
+            provider: provider,
+          );
+        }
 
         return UserAccountModel(
           id: 'oauth_in_progress',
@@ -1178,6 +1191,8 @@ class AuthRepositoryImpl implements AuthRepository {
           salt: '',
           createdAt: DateTime.now(),
         );
+      } on AuthOAuthCancelledException {
+        rethrow;
       } catch (e) {
         final err = e.toString();
         if (err.contains('not enabled') ||
