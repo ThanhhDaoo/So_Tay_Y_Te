@@ -35,14 +35,14 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
+class _LoginScreenState extends State<LoginScreen> {
   late final LoginViewModel _viewModel;
   StreamSubscription<AuthState>? _authStateSubscription;
+  bool _isProcessingOAuth = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _viewModel = LoginViewModel();
     if (widget.initialIdentifier != null &&
         widget.initialIdentifier!.isNotEmpty) {
@@ -58,16 +58,16 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     });
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _viewModel.isAwaitingOAuth) {
-      // Đợi ngắn để Deep Link OAuth callback kịp xử lý nếu người dùng vừa xác thực xong
-      Future.delayed(const Duration(milliseconds: 1500), () {
-        if (mounted && _viewModel.isAwaitingOAuth) {
-          _viewModel.cancelPendingOAuth();
-        }
-      });
+  bool _isSocialOAuthUser(User user) {
+    final provider = user.appMetadata['provider'] as String?;
+    if (provider == 'google' || provider == 'apple') return true;
+    final identities = user.identities;
+    if (identities != null) {
+      return identities.any(
+        (i) => i.provider == 'google' || i.provider == 'apple',
+      );
     }
+    return false;
   }
 
   void _initOAuthListener() {
@@ -77,32 +77,41 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
         (data) async {
           final event = data.event;
           final session = data.session;
-          // CHỈ bắt sự kiện signedIn khi màn hình này đang chủ động chờ OAuth callback
-          if (event == AuthChangeEvent.signedIn &&
-              session != null &&
-              mounted &&
-              _viewModel.isAwaitingOAuth) {
+          if (_isProcessingOAuth || !mounted || session == null) return;
+
+          final isCurrentScreen = ModalRoute.of(context)?.isCurrent ?? true;
+          final shouldHandle = event == AuthChangeEvent.signedIn &&
+              (_viewModel.isAwaitingOAuth ||
+                  (isCurrentScreen && _isSocialOAuthUser(session.user)));
+
+          if (shouldHandle) {
+            _isProcessingOAuth = true;
             try {
               await closeInAppWebView();
             } catch (_) {}
-            final user = session.user;
-            final meta = user.userMetadata ?? const <String, dynamic>{};
-            final success = await _viewModel.handleOAuthSessionSuccess(
-              userId: user.id,
-              email: user.email,
-              fullName:
-                  (meta['full_name'] as String?) ?? (meta['name'] as String?),
-              avatarUrl: (meta['avatar_url'] as String?) ??
-                  (meta['picture'] as String?),
-            );
-            if (success && mounted) {
-              await _handleLoginSuccess();
+            try {
+              final user = session.user;
+              final meta = user.userMetadata ?? const <String, dynamic>{};
+              final success = await _viewModel.handleOAuthSessionSuccess(
+                userId: user.id,
+                email: user.email,
+                fullName:
+                    (meta['full_name'] as String?) ?? (meta['name'] as String?),
+                avatarUrl: (meta['avatar_url'] as String?) ??
+                    (meta['picture'] as String?),
+              );
+              if (success && mounted) {
+                await _handleLoginSuccess();
+              }
+            } finally {
+              _isProcessingOAuth = false;
             }
           }
         },
         onError: (Object error) async {
           if (!mounted) return;
-          if (_viewModel.isAwaitingOAuth) {
+          final isCurrentScreen = ModalRoute.of(context)?.isCurrent ?? true;
+          if (_viewModel.isAwaitingOAuth || isCurrentScreen) {
             try {
               await closeInAppWebView();
             } catch (_) {}
@@ -134,7 +143,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _authStateSubscription?.cancel();
     _viewModel.dispose();
     super.dispose();

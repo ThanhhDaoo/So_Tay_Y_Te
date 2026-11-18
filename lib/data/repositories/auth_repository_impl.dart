@@ -631,6 +631,12 @@ class AuthRepositoryImpl implements AuthRepository {
             throw Exception('Mật khẩu không chính xác. Vui lòng kiểm tra lại.');
           }
 
+          if (localMatch != null && localMatch.passwordHash.isEmpty) {
+            throw Exception(
+              'Tài khoản này được tạo bằng Google / OTP (chưa đặt mật khẩu riêng). Vui lòng bấm nút "Google" hoặc "Số Điện Thoại / OTP" ở dưới để đăng nhập, hoặc bấm "Quên mật khẩu?" để tạo mật khẩu.',
+            );
+          }
+
           throw Exception(
             'Thông tin đăng nhập hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.',
           );
@@ -786,7 +792,14 @@ class AuthRepositoryImpl implements AuthRepository {
     _recoveryOtpStore.removeWhere((_, rec) => rec.isExpired);
     final verificationId =
         'rec-ver-${DateTime.now().millisecondsSinceEpoch}-${_secureRandom.nextInt(999999)}';
-    final otpCode = (_secureRandom.nextInt(900000) + 100000).toString();
+
+    final normalizedTargetE164 = localUser.primaryContact.contains('@')
+        ? ''
+        : InputValidators.normalizePhoneE164(localUser.primaryContact);
+    final fixedFirebaseOtp = FirebaseAuthRemoteDataSourceImpl
+        .firebaseConsoleTestPhones[normalizedTargetE164];
+    final otpCode = fixedFirebaseOtp ??
+        (_secureRandom.nextInt(900000) + 100000).toString();
 
     _recoveryOtpStore[verificationId] = _RecoveryOtpRecord(
       code: otpCode,
@@ -807,18 +820,20 @@ class AuthRepositoryImpl implements AuthRepository {
       } catch (_) {}
     }
 
-    await _pushSimulatedSmsNotification(
-      contact: masked,
-      otpCode: otpCode,
-      purpose: 'khôi phục mật khẩu',
-    );
+    if (fixedFirebaseOtp == null) {
+      await _pushSimulatedSmsNotification(
+        contact: masked,
+        otpCode: otpCode,
+        purpose: 'khôi phục mật khẩu',
+      );
+    }
 
     return PasswordRecoveryChallenge(
       verificationId: verificationId,
       maskedContact: masked,
       targetContact: localUser.primaryContact,
       isEmailLinkSent: false,
-      sandboxOtpPreview: FirebaseConfig.isConfigured ? null : otpCode,
+      sandboxOtpPreview: null,
     );
   }
 

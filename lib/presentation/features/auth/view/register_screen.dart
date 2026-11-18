@@ -29,28 +29,28 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen>
-    with WidgetsBindingObserver {
+class _RegisterScreenState extends State<RegisterScreen> {
   late final RegisterViewModel _viewModel;
   StreamSubscription<AuthState>? _authStateSubscription;
+  bool _isProcessingOAuth = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _viewModel = RegisterViewModel();
     _initOAuthListener();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _viewModel.isAwaitingOAuth) {
-      Future.delayed(const Duration(milliseconds: 1500), () {
-        if (mounted && _viewModel.isAwaitingOAuth) {
-          _viewModel.cancelPendingOAuth();
-        }
-      });
+  bool _isSocialOAuthUser(User user) {
+    final provider = user.appMetadata['provider'] as String?;
+    if (provider == 'google' || provider == 'apple') return true;
+    final identities = user.identities;
+    if (identities != null) {
+      return identities.any(
+        (i) => i.provider == 'google' || i.provider == 'apple',
+      );
     }
+    return false;
   }
 
   void _initOAuthListener() {
@@ -60,37 +60,46 @@ class _RegisterScreenState extends State<RegisterScreen>
         (data) async {
           final event = data.event;
           final session = data.session;
-          // CHỈ bắt sự kiện signedIn khi người dùng chủ động nhấn Đăng ký bằng Google / Apple
-          if (event == AuthChangeEvent.signedIn &&
-              session != null &&
-              mounted &&
-              _viewModel.isAwaitingOAuth) {
+          if (_isProcessingOAuth || !mounted || session == null) return;
+
+          final isCurrentScreen = ModalRoute.of(context)?.isCurrent ?? true;
+          final shouldHandle = event == AuthChangeEvent.signedIn &&
+              (_viewModel.isAwaitingOAuth ||
+                  (isCurrentScreen && _isSocialOAuthUser(session.user)));
+
+          if (shouldHandle) {
+            _isProcessingOAuth = true;
             try {
               await closeInAppWebView();
             } catch (_) {}
-            final user = session.user;
-            final meta = user.userMetadata ?? const <String, dynamic>{};
-            final success = await _viewModel.handleOAuthSessionSuccess(
-              userId: user.id,
-              email: user.email,
-              fullName:
-                  (meta['full_name'] as String?) ?? (meta['name'] as String?),
-              avatarUrl: (meta['avatar_url'] as String?) ??
-                  (meta['picture'] as String?),
-            );
-            if (success && mounted) {
-              final account = _viewModel.state.createdAccount;
-              if (account != null) {
-                _showSuccessRegistrationDialog(account);
-              } else {
-                _navigateToTimeline();
+            try {
+              final user = session.user;
+              final meta = user.userMetadata ?? const <String, dynamic>{};
+              final success = await _viewModel.handleOAuthSessionSuccess(
+                userId: user.id,
+                email: user.email,
+                fullName:
+                    (meta['full_name'] as String?) ?? (meta['name'] as String?),
+                avatarUrl: (meta['avatar_url'] as String?) ??
+                    (meta['picture'] as String?),
+              );
+              if (success && mounted) {
+                final account = _viewModel.state.createdAccount;
+                if (account != null) {
+                  _showSuccessRegistrationDialog(account);
+                } else {
+                  _navigateToTimeline();
+                }
               }
+            } finally {
+              _isProcessingOAuth = false;
             }
           }
         },
         onError: (Object error) async {
           if (!mounted) return;
-          if (_viewModel.isAwaitingOAuth) {
+          final isCurrentScreen = ModalRoute.of(context)?.isCurrent ?? true;
+          if (_viewModel.isAwaitingOAuth || isCurrentScreen) {
             try {
               await closeInAppWebView();
             } catch (_) {}
@@ -103,7 +112,6 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _authStateSubscription?.cancel();
     _viewModel.dispose();
     super.dispose();

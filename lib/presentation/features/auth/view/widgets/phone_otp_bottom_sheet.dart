@@ -48,7 +48,6 @@ class _PhoneOtpBottomSheetState extends State<PhoneOtpBottomSheet> {
 
   _PhoneAuthStep _step = _PhoneAuthStep.enterPhone;
   String _verificationId = '';
-  String? _sandboxOtpCode;
   bool _isExistingAccount = false;
   String _selectedGender = 'Nam';
   String _selectedBloodType = 'Chưa rõ';
@@ -115,7 +114,6 @@ class _PhoneOtpBottomSheetState extends State<PhoneOtpBottomSheet> {
     try {
       final exists = await widget.viewModel.checkPhoneAccountExists(phone);
       final verId = await widget.viewModel.sendPhoneOtp(phone);
-      final preview = widget.viewModel.peekSandboxOtp(verId);
       if (!mounted) return;
 
       for (final c in _otpControllers) {
@@ -124,7 +122,6 @@ class _PhoneOtpBottomSheetState extends State<PhoneOtpBottomSheet> {
       setState(() {
         _isExistingAccount = exists;
         _verificationId = verId;
-        _sandboxOtpCode = preview;
         _step = _PhoneAuthStep.verifyOtp;
         _isLoading = false;
       });
@@ -474,47 +471,6 @@ class _PhoneOtpBottomSheetState extends State<PhoneOtpBottomSheet> {
             ),
           ],
         ),
-        if (_sandboxOtpCode != null) ...[
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.secondary.withValues(alpha: 0.45),
-              borderRadius: BorderRadius.circular(8),
-              border:
-                  Border.all(color: AppColors.iceOlive.withValues(alpha: 0.5)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.sms_outlined,
-                    size: 16, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'SMS OTP vừa nhận: $_sandboxOtpCode',
-                    style: AppTypography.caption.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimaryLight,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  onPressed: () => _fillOtpDigits(_sandboxOtpCode!),
-                  child: const Text(
-                    'Điền nhanh',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -526,6 +482,7 @@ class _PhoneOtpBottomSheetState extends State<PhoneOtpBottomSheet> {
                 controller: _otpControllers[index],
                 focusNode: _otpFocusNodes[index],
                 keyboardType: TextInputType.number,
+                autofillHints: const [AutofillHints.oneTimeCode],
                 textAlign: TextAlign.center,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 style:

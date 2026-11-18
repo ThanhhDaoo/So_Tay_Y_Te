@@ -397,7 +397,6 @@ class _ForgotPasswordBottomSheetState extends State<ForgotPasswordBottomSheet> {
   }
 
   Widget _buildOtpStep() {
-    final previewCode = _challenge?.sandboxOtpPreview;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -431,10 +430,6 @@ class _ForgotPasswordBottomSheetState extends State<ForgotPasswordBottomSheet> {
             ),
           ],
         ),
-        if (previewCode != null) ...[
-          const SizedBox(height: 10),
-          _buildSandboxSmsBanner(previewCode),
-        ],
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -446,6 +441,7 @@ class _ForgotPasswordBottomSheetState extends State<ForgotPasswordBottomSheet> {
                 controller: _otpControllers[index],
                 focusNode: _otpFocusNodes[index],
                 keyboardType: TextInputType.number,
+                autofillHints: const [AutofillHints.oneTimeCode],
                 textAlign: TextAlign.center,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -662,44 +658,6 @@ class _ForgotPasswordBottomSheetState extends State<ForgotPasswordBottomSheet> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSandboxSmsBanner(String otpCode) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.secondary.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.iceOlive.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.sms_outlined, size: 16, color: AppColors.primary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'SMS Sandbox OTP: $otpCode',
-              style: AppTypography.caption.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimaryLight,
-              ),
-            ),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            onPressed: () => _fillOtpDigits(otpCode),
-            child: const Text(
-              'Tự động điền',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

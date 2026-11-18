@@ -46,7 +46,6 @@ class _RegistrationOtpBottomSheetState
   final List<FocusNode> _otpFocusNodes = List.generate(6, (_) => FocusNode());
 
   String? _errorMessage;
-  String? _sandboxOtpCode;
   bool _isLoading = false;
   Timer? _resendTimer;
   int _secondsRemaining = 60;
@@ -54,7 +53,6 @@ class _RegistrationOtpBottomSheetState
   @override
   void initState() {
     super.initState();
-    _sandboxOtpCode = widget.viewModel.peekSandboxOtp();
     _startCountdown();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_otpFocusNodes.isNotEmpty && mounted) {
@@ -115,7 +113,6 @@ class _RegistrationOtpBottomSheetState
         c.clear();
       }
       setState(() {
-        _sandboxOtpCode = widget.viewModel.peekSandboxOtp();
         _isLoading = false;
       });
       _startCountdown();
@@ -237,57 +234,7 @@ class _RegistrationOtpBottomSheetState
               ],
             ),
             const Divider(height: 28),
-            if (_sandboxOtpCode != null && !isEmail) ...[
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.secondary.withValues(alpha: 0.45),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.iceOlive.withValues(alpha: 0.5),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.sms_outlined,
-                      size: 16,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'SMS OTP vừa nhận: $_sandboxOtpCode',
-                        style: AppTypography.caption.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimaryLight,
-                        ),
-                      ),
-                    ),
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      onPressed: () => _fillOtpDigits(_sandboxOtpCode!),
-                      child: const Text(
-                        'Điền nhanh',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-            ],
+            const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: List.generate(6, (index) {
@@ -298,6 +245,7 @@ class _RegistrationOtpBottomSheetState
                     controller: _otpControllers[index],
                     focusNode: _otpFocusNodes[index],
                     keyboardType: TextInputType.number,
+                    autofillHints: const [AutofillHints.oneTimeCode],
                     textAlign: TextAlign.center,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     style: const TextStyle(

@@ -220,9 +220,10 @@ void main() {
       await tester.tap(find.text('Gửi Mã Xác Minh Danh Tính'));
       await tester.pumpAndSettle();
 
-      // Bước 2: Xác minh danh tính 6 số (nhấn Tự động điền từ SMS Sandbox)
+      // Bước 2: Xác minh danh tính 6 số (nhập/dán mã 654321 vào ô đầu tiên)
       expect(find.text('Xác Minh Danh Tính'), findsWidgets);
-      await tester.tap(find.text('Tự động điền'));
+      final otpBoxes = find.byType(TextField);
+      await tester.enterText(otpBoxes.at(0), '654321');
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ElevatedButton, 'Xác Minh Danh Tính'));
       await tester.pumpAndSettle();
@@ -236,6 +237,38 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(recoveredId, equals('STYT-892410'));
+    });
+
+    test('Firebase Console configured test phone numbers verify with exact configured OTPs', () async {
+      final ds = FirebaseAuthRemoteDataSourceImpl();
+
+      // SĐT test 1: 0362625218 -> 132005
+      final ver1 = await ds.sendPhoneOtp('0362625218');
+      expect(ds.peekSandboxOtp(ver1), isNull); // Không hiện banner giả cho SĐT test Firebase
+      expect(
+        () => ds.verifyPhoneOtp(
+          phoneNumber: '0362625218',
+          verificationId: ver1,
+          smsCode: '999999',
+        ),
+        throwsException,
+      );
+      final acc1 = await ds.verifyPhoneOtp(
+        phoneNumber: '0362625218',
+        verificationId: ver1,
+        smsCode: '132005',
+      );
+      expect(acc1.primaryContact, equals('+84362625218'));
+
+      // SĐT test 2: 0971860620 -> 131205
+      final ver2 = await ds.sendPhoneOtp('0971860620');
+      expect(ds.peekSandboxOtp(ver2), isNull);
+      final acc2 = await ds.verifyPhoneOtp(
+        phoneNumber: '0971860620',
+        verificationId: ver2,
+        smsCode: '131205',
+      );
+      expect(acc2.primaryContact, equals('+84971860620'));
     });
   });
 }
