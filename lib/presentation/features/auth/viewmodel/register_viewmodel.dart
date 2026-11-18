@@ -337,6 +337,30 @@ class RegisterViewModel extends ChangeNotifier {
     }
   }
 
+  /// Tự động thăm dò máy chủ Supabase trong nền khi người dùng mở Gmail xác nhận
+  Future<bool> silentCheckEmailLinkVerified() async {
+    if (!_isPendingEmailOtp) return false;
+
+    try {
+      final email = contactController.text.trim().toLowerCase();
+      final user = await _authRepository.login(
+        identifier: email,
+        password: passwordController.text,
+        rememberMe: true,
+      );
+      _isPendingEmailOtp = false;
+      _state = _state.copyWith(
+        status: RegisterStatus.success,
+        createdAccount: user,
+        errorMessage: null,
+      );
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> verifyOtpAndRegister(String otpCode) async {
     _state =
         _state.copyWith(status: RegisterStatus.loading, errorMessage: null);

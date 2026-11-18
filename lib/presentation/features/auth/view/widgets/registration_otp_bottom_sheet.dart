@@ -51,6 +51,7 @@ class _RegistrationOtpBottomSheetState
   int _secondsRemaining = 60;
 
   bool _showManualOtpInput = false;
+  Timer? _emailAutoCheckTimer;
 
   @override
   void initState() {
@@ -65,11 +66,33 @@ class _RegistrationOtpBottomSheetState
           _otpFocusNodes[0].requestFocus();
         }
       });
+    } else {
+      _startEmailAutoCheck();
     }
+  }
+
+  void _startEmailAutoCheck() {
+    _emailAutoCheckTimer?.cancel();
+    _emailAutoCheckTimer =
+        Timer.periodic(const Duration(seconds: 2), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_isLoading) return;
+      final ok = await widget.viewModel.silentCheckEmailLinkVerified();
+      if (!mounted) return;
+      if (ok && widget.viewModel.state.createdAccount != null) {
+        timer.cancel();
+        Navigator.pop(context);
+        widget.onSuccess(widget.viewModel.state.createdAccount!);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _emailAutoCheckTimer?.cancel();
     for (final c in _otpControllers) {
       c.dispose();
     }
@@ -448,6 +471,41 @@ class _RegistrationOtpBottomSheetState
             ),
             const SizedBox(height: 20),
             if (isEmail && !_showManualOtpInput) ...[
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Đang tự động lắng nghe xác nhận từ Gmail...',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
               SizedBox(
                 width: double.infinity,
                 height: 48,
