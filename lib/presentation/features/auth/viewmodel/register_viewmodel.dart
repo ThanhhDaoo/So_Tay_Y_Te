@@ -54,6 +54,20 @@ class RegisterViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void handleOAuthError(Object error) {
+    _isAwaitingOAuth = false;
+    _pendingOAuthProvider = null;
+    final raw = error.toString();
+    final friendly = raw.contains('Unable to exchange external code')
+        ? 'Máy chủ Supabase không đổi được mã xác thực Google (Client Secret trên Supabase chưa khớp với Google Cloud Console).'
+        : raw.replaceFirst('Exception: ', '');
+    _state = _state.copyWith(
+      status: RegisterStatus.error,
+      errorMessage: friendly,
+    );
+    notifyListeners();
+  }
+
   String? peekSandboxOtp() {
     if (_verificationId == null) return null;
     return _authRepository.peekSandboxOtp(_verificationId!);

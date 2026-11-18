@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/config/supabase_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -55,35 +56,48 @@ class _RegisterScreenState extends State<RegisterScreen>
   void _initOAuthListener() {
     final client = SupabaseConfig.client;
     if (client != null) {
-      _authStateSubscription =
-          client.auth.onAuthStateChange.listen((data) async {
-        final event = data.event;
-        final session = data.session;
-        // CHỈ bắt sự kiện signedIn khi người dùng chủ động nhấn Đăng ký bằng Google / Apple
-        if (event == AuthChangeEvent.signedIn &&
-            session != null &&
-            mounted &&
-            _viewModel.isAwaitingOAuth) {
-          final user = session.user;
-          final meta = user.userMetadata ?? const <String, dynamic>{};
-          final success = await _viewModel.handleOAuthSessionSuccess(
-            userId: user.id,
-            email: user.email,
-            fullName:
-                (meta['full_name'] as String?) ?? (meta['name'] as String?),
-            avatarUrl:
-                (meta['avatar_url'] as String?) ?? (meta['picture'] as String?),
-          );
-          if (success && mounted) {
-            final account = _viewModel.state.createdAccount;
-            if (account != null) {
-              _showSuccessRegistrationDialog(account);
-            } else {
-              _navigateToTimeline();
+      _authStateSubscription = client.auth.onAuthStateChange.listen(
+        (data) async {
+          final event = data.event;
+          final session = data.session;
+          // CHỈ bắt sự kiện signedIn khi người dùng chủ động nhấn Đăng ký bằng Google / Apple
+          if (event == AuthChangeEvent.signedIn &&
+              session != null &&
+              mounted &&
+              _viewModel.isAwaitingOAuth) {
+            try {
+              await closeInAppWebView();
+            } catch (_) {}
+            final user = session.user;
+            final meta = user.userMetadata ?? const <String, dynamic>{};
+            final success = await _viewModel.handleOAuthSessionSuccess(
+              userId: user.id,
+              email: user.email,
+              fullName:
+                  (meta['full_name'] as String?) ?? (meta['name'] as String?),
+              avatarUrl: (meta['avatar_url'] as String?) ??
+                  (meta['picture'] as String?),
+            );
+            if (success && mounted) {
+              final account = _viewModel.state.createdAccount;
+              if (account != null) {
+                _showSuccessRegistrationDialog(account);
+              } else {
+                _navigateToTimeline();
+              }
             }
           }
-        }
-      });
+        },
+        onError: (Object error) async {
+          if (!mounted) return;
+          if (_viewModel.isAwaitingOAuth) {
+            try {
+              await closeInAppWebView();
+            } catch (_) {}
+            _viewModel.handleOAuthError(error);
+          }
+        },
+      );
     }
   }
 
