@@ -150,6 +150,7 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
       res = await client.auth.signUp(
         email: email.trim().toLowerCase(),
         password: password,
+        emailRedirectTo: 'io.supabase.sotayyte://login-callback/',
         data: {
           'full_name': fullName.trim(),
           'primary_contact': cleanContact,
@@ -290,10 +291,19 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
       throw Exception('Supabase chưa được cấu hình.');
     }
 
-    await client.auth.signInWithOtp(
-      email: email.trim().toLowerCase(),
-      shouldCreateUser: shouldCreateUser,
-    );
+    try {
+      await client.auth.resend(
+        type: OtpType.signup,
+        email: email.trim().toLowerCase(),
+        emailRedirectTo: 'io.supabase.sotayyte://login-callback/',
+      );
+    } catch (_) {
+      await client.auth.signInWithOtp(
+        email: email.trim().toLowerCase(),
+        shouldCreateUser: shouldCreateUser,
+        emailRedirectTo: 'io.supabase.sotayyte://login-callback/',
+      );
+    }
   }
 
   @override
