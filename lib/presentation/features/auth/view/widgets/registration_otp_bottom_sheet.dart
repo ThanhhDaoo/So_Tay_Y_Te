@@ -50,15 +50,22 @@ class _RegistrationOtpBottomSheetState
   Timer? _resendTimer;
   int _secondsRemaining = 60;
 
+  bool _showManualOtpInput = false;
+
   @override
   void initState() {
     super.initState();
     _startCountdown();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_otpFocusNodes.isNotEmpty && mounted) {
-        _otpFocusNodes[0].requestFocus();
-      }
-    });
+    final rawContact = widget.viewModel.contactController.text.trim();
+    final isEmail =
+        widget.viewModel.isPendingEmailOtp || rawContact.contains('@');
+    if (!isEmail) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_otpFocusNodes.isNotEmpty && mounted) {
+          _otpFocusNodes[0].requestFocus();
+        }
+      });
+    }
   }
 
   @override
@@ -158,11 +165,33 @@ class _RegistrationOtpBottomSheetState
     }
   }
 
+  Future<void> _handleConfirmEmailLink() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final ok = await widget.viewModel.confirmEmailLinkVerified();
+    if (!mounted) return;
+
+    if (ok && widget.viewModel.state.createdAccount != null) {
+      Navigator.pop(context);
+      widget.onSuccess(widget.viewModel.state.createdAccount!);
+    } else {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = widget.viewModel.state.errorMessage ??
+            'Email chưa được xác nhận. Vui lòng mở thư trong Gmail và nhấn vào liên kết "Confirm email address" trước.';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final rawContact = widget.viewModel.contactController.text.trim();
-    final isEmail = widget.viewModel.isPendingEmailOtp || rawContact.contains('@');
+    final isEmail =
+        widget.viewModel.isPendingEmailOtp || rawContact.contains('@');
     final displayContact = isEmail
         ? rawContact.toLowerCase()
         : InputValidators.normalizePhoneLocal(rawContact);
@@ -212,7 +241,9 @@ class _RegistrationOtpBottomSheetState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isEmail ? 'Xác Thực Email Đăng Ký' : 'Xác Thực Số Điện Thoại',
+                        isEmail
+                            ? 'Xác Nhận Hộp Thư Email'
+                            : 'Xác Thực Số Điện Thoại',
                         style: AppTypography.heading2.copyWith(
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimaryLight,
@@ -221,73 +252,116 @@ class _RegistrationOtpBottomSheetState
                       const SizedBox(height: 2),
                       Text(
                         isEmail
-                            ? 'Nhập mã 6 số hoặc mở hộp thư nhấn Link xác nhận: $displayContact'
+                            ? 'Đã gửi liên kết kích hoạt tới:'
                             : 'Nhập mã 6 số gửi tới: $displayContact',
                         style: AppTypography.caption.copyWith(
                           color: AppColors.textMuted,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                      if (isEmail)
+                        Text(
+                          displayContact,
+                          style: AppTypography.caption.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                     ],
                   ),
                 ),
               ],
             ),
             const Divider(height: 28),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(6, (index) {
-                return SizedBox(
-                  width: 44,
-                  height: 52,
-                  child: TextField(
-                    controller: _otpControllers[index],
-                    focusNode: _otpFocusNodes[index],
-                    keyboardType: TextInputType.number,
-                    autofillHints: const [AutofillHints.oneTimeCode],
-                    textAlign: TextAlign.center,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    decoration: InputDecoration(
-                      counterText: '',
-                      filled: true,
-                      fillColor: AppColors.surfaceLight,
-                      contentPadding: EdgeInsets.zero,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide:
-                            const BorderSide(color: AppColors.secCardBorder),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide:
-                            const BorderSide(color: AppColors.primary, width: 2),
-                      ),
-                    ),
-                    onChanged: (value) {
-                      if (value.length > 1) {
-                        _fillOtpDigits(value);
-                        return;
-                      }
-                      if (value.isNotEmpty && index < 5) {
-                        _otpFocusNodes[index + 1].requestFocus();
-                      } else if (value.isEmpty && index > 0) {
-                        _otpFocusNodes[index - 1].requestFocus();
-                      }
-                      if (index == 5 && value.isNotEmpty) {
-                        _handleVerifyOtp();
-                      }
-                    },
+            if (isEmail && !_showManualOtpInput) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.2),
                   ),
-                );
-              }),
-            ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.mail_outline_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Vui lòng mở ứng dụng Gmail (kiểm tra cả mục Thư rác/Spam), bấm vào liên kết "Confirm email address", sau đó bấm nút xác nhận dưới đây để hoàn tất tạo hồ sơ.',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.textPrimaryLight,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+            ] else ...[
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: List.generate(6, (index) {
+                  return SizedBox(
+                    width: 44,
+                    height: 52,
+                    child: TextField(
+                      controller: _otpControllers[index],
+                      focusNode: _otpFocusNodes[index],
+                      keyboardType: TextInputType.number,
+                      autofillHints: const [AutofillHints.oneTimeCode],
+                      textAlign: TextAlign.center,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      decoration: InputDecoration(
+                        counterText: '',
+                        filled: true,
+                        fillColor: AppColors.surfaceLight,
+                        contentPadding: EdgeInsets.zero,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide:
+                              const BorderSide(color: AppColors.secCardBorder),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                              color: AppColors.primary, width: 2),
+                        ),
+                      ),
+                      onChanged: (value) {
+                        if (value.length > 1) {
+                          _fillOtpDigits(value);
+                          return;
+                        }
+                        if (value.isNotEmpty && index < 5) {
+                          _otpFocusNodes[index + 1].requestFocus();
+                        } else if (value.isEmpty && index > 0) {
+                          _otpFocusNodes[index - 1].requestFocus();
+                        }
+                        if (index == 5 && value.isNotEmpty) {
+                          _handleVerifyOtp();
+                        }
+                      },
+                    ),
+                  );
+                }),
+              ),
+            ],
             if (_errorMessage != null) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -354,7 +428,7 @@ class _RegistrationOtpBottomSheetState
             Center(
               child: _secondsRemaining > 0
                   ? Text(
-                      'Gửi lại mã sau (${_secondsRemaining}s)',
+                      'Gửi lại sau (${_secondsRemaining}s)',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textMuted,
                       ),
@@ -362,7 +436,9 @@ class _RegistrationOtpBottomSheetState
                   : GestureDetector(
                       onTap: _isLoading ? null : _handleResend,
                       child: Text(
-                        'Gửi lại mã OTP',
+                        isEmail
+                            ? 'Gửi lại email xác nhận'
+                            : 'Gửi lại mã OTP',
                         style: AppTypography.caption.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,
@@ -371,86 +447,109 @@ class _RegistrationOtpBottomSheetState
                     ),
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: _isLoading ? null : _handleVerifyOtp,
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Text(
-                        'Xác Thực & Tạo Hồ Sơ Y Tế',
-                        style: AppTypography.labelSemiBold.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-              ),
-            ),
-            if (isEmail) ...[
-              const SizedBox(height: 10),
+            if (isEmail && !_showManualOtpInput) ...[
               SizedBox(
                 width: double.infinity,
-                height: 44,
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.primary),
+                height: 48,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  icon: const Icon(
-                    Icons.check_circle_outline_rounded,
-                    size: 18,
-                    color: AppColors.primary,
-                  ),
-                  label: Text(
-                    'Tôi đã bấm Link xác nhận trong Email',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  onPressed: _isLoading
-                      ? null
-                      : () async {
-                          setState(() {
-                            _isLoading = true;
-                            _errorMessage = null;
-                          });
-                          final ok = await widget.viewModel
-                              .confirmEmailLinkVerified();
-                          if (!context.mounted) return;
-                          if (ok &&
-                              widget.viewModel.state.createdAccount != null) {
-                            Navigator.pop(context);
-                            widget.onSuccess(
-                              widget.viewModel.state.createdAccount!,
-                            );
-                          } else {
-                            setState(() {
-                              _isLoading = false;
-                              _errorMessage =
-                                  widget.viewModel.state.errorMessage ??
-                                      'Email chưa được xác nhận. Vui lòng mở thư và nhấn vào liên kết xác nhận trước.';
-                            });
-                          }
-                        },
+                  icon: _isLoading
+                      ? const SizedBox.shrink()
+                      : const Icon(
+                          Icons.check_circle_outline_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                  label: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'Tôi Đã Bấm Xác Nhận Trong Email',
+                          style: AppTypography.labelSemiBold.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                  onPressed: _isLoading ? null : _handleConfirmEmailLink,
                 ),
               ),
+              const SizedBox(height: 12),
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _showManualOtpInput = true;
+                    });
+                  },
+                  child: Text(
+                    'Hoặc nhập mã OTP 6 số (nếu có)',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.textMuted,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ),
+            ] else ...[
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: _isLoading ? null : _handleVerifyOtp,
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'Xác Thực & Tạo Hồ Sơ Y Tế',
+                          style: AppTypography.labelSemiBold.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+              ),
+              if (isEmail) ...[
+                const SizedBox(height: 10),
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _showManualOtpInput = false;
+                      });
+                    },
+                    child: Text(
+                      'Quay lại xác nhận bằng Liên kết Email',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ],
         ),
