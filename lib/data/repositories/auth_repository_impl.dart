@@ -361,30 +361,13 @@ class AuthRepositoryImpl implements AuthRepository {
           rethrow;
         }
       } catch (e) {
-        final errText = e.toString().toLowerCase();
-        if (!isPhone &&
-            (errText.contains('quá giới hạn') ||
-                errText.contains('rate limit'))) {
-          // Khi gói miễn phí của Supabase chạm giới hạn 2 email/giờ:
-          // Thử kiểm tra xem tài khoản đã tồn tại sẵn trên Cloud với mật khẩu này chưa,
-          // nếu chưa thì lưu hồ sơ an toàn ở chế độ Local-First để không chặn người dùng.
-          try {
-            final existingCloud =
-                await supabaseAuthRemoteDataSource!.signInWithEmail(
-              email: authEmail,
-              password: password,
-            );
-            cloudAccount = existingCloud;
-          } catch (_) {
-            debugPrint(
-              '[Supabase] Hạn mức gửi email xác thực miễn phí của Supabase tạm đầy, lưu hồ sơ chế độ Local-First.',
-            );
-          }
-        } else {
-          debugPrint(
-            '[Supabase] Không thể kết nối đám mây ($e), lưu hồ sơ chế độ Local-First.',
-          );
+        if (!isPhone) {
+          // Bắt buộc xác thực Email: Không được âm thầm bỏ qua xác thực khi máy chủ gặp lỗi hoặc chạm giới hạn.
+          rethrow;
         }
+        debugPrint(
+          '[Supabase] Không thể tạo tài khoản đồng bộ đám mây cho SĐT ($e), lưu hồ sơ chế độ Local-First.',
+        );
       }
     }
 

@@ -169,7 +169,7 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
       }
       if (lower.contains('rate limit') || lower.contains('over_email_send_rate_limit')) {
         throw Exception(
-          'Hệ thống gửi xác thực quá giới hạn tạm thời. Vui lòng đợi ít phút rồi thử lại.',
+          'Hạn mức gửi email của Supabase tạm thời vượt quá giới hạn (tối đa 2 email/giờ với máy chủ mặc định). Vui lòng đợi ít phút hoặc thiết lập Custom SMTP trên Supabase.',
         );
       }
       throw Exception('Đăng ký thất bại: ${e.message}');
