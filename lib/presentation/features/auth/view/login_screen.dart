@@ -23,10 +23,12 @@ import 'widgets/social_auth_button.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? initialIdentifier;
+  final String? initialOAuthError;
 
   const LoginScreen({
     super.key,
     this.initialIdentifier,
+    this.initialOAuthError,
   });
 
   @override
@@ -45,6 +47,10 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     if (widget.initialIdentifier != null &&
         widget.initialIdentifier!.isNotEmpty) {
       _viewModel.identifierController.text = widget.initialIdentifier!;
+    }
+    if (widget.initialOAuthError != null &&
+        widget.initialOAuthError!.isNotEmpty) {
+      _viewModel.handleOAuthError(widget.initialOAuthError!);
     }
     _initOAuthListener();
     WidgetsBinding.instance.addPostFrameCallback((_) {

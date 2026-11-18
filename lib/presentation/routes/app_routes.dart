@@ -29,6 +29,26 @@ class AppRoutes {
   static const String appLock = '/app-lock';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
+    final routeName = settings.name ?? '';
+    // Chặn các URI callback của Supabase OAuth (?code=..., ?error=..., #access_token=...) không bị đẩy thành màn hình lỗi
+    if (routeName.startsWith('/?') ||
+        routeName.startsWith('/#') ||
+        routeName.startsWith('/login-callback') ||
+        routeName.contains('error_description=') ||
+        routeName.contains('access_token=')) {
+      String? oauthError;
+      final uri = Uri.tryParse(routeName);
+      final errDesc = uri?.queryParameters['error_description'];
+      if (errDesc != null && errDesc.isNotEmpty) {
+        oauthError = errDesc.contains('Unable to exchange external code')
+            ? 'Client ID và Client Secret Google trên Supabase chưa khớp nhau. Vui lòng dùng đúng cặp Client ID + Client Secret của cùng 1 Web Client.'
+            : errDesc;
+      }
+      return MaterialPageRoute(
+        builder: (_) => LoginScreen(initialOAuthError: oauthError),
+      );
+    }
+
     switch (settings.name) {
       case login:
         final identifier = settings.arguments as String?;
