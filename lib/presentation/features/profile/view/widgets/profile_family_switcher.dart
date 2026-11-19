@@ -205,10 +205,20 @@ class _FamilyChipItem extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(7),
-                      child: Image.asset(
-                        member.avatarAsset,
-                        fit: BoxFit.cover,
-                      ),
+                      child: (member.avatarAsset.startsWith('http://') ||
+                              member.avatarAsset.startsWith('https://'))
+                          ? Image.network(
+                              member.avatarAsset,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Image.asset(
+                                'assets/images/img_profile_avatar.png',
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Image.asset(
+                              member.avatarAsset,
+                              fit: BoxFit.cover,
+                            ),
                     ),
                   ),
                   if (isSelected)

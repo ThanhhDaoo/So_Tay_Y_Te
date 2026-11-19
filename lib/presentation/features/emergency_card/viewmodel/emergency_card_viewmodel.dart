@@ -30,6 +30,7 @@ class EmergencyCardViewModel extends ChangeNotifier {
               height: '-- cm',
               weight: '-- kg',
               organDonorStatus: 'CHƯA ĐĂNG KÝ',
+              avatarAsset: session.avatarUrl ?? _state.patient.avatarAsset,
             ),
           );
           notifyListeners();

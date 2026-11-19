@@ -33,12 +33,26 @@ class IcePatientSnapshotCard extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   ClipOval(
-                    child: Image.asset(
-                      patient.avatarAsset,
-                      width: 56,
-                      height: 56,
-                      fit: BoxFit.cover,
-                    ),
+                    child: (patient.avatarAsset.startsWith('http://') ||
+                            patient.avatarAsset.startsWith('https://'))
+                        ? Image.network(
+                            patient.avatarAsset,
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => Image.asset(
+                              'assets/images/img_patient_avatar.png',
+                              width: 56,
+                              height: 56,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : Image.asset(
+                            patient.avatarAsset,
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.cover,
+                          ),
                   ),
                   Positioned(
                     right: -2,

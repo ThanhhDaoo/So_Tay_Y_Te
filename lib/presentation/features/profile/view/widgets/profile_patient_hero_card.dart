@@ -61,12 +61,26 @@ class ProfilePatientHeroCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                     child: AspectRatio(
                       aspectRatio: 3 / 4,
-                      child: Image.asset(
-                        profile.heroImageAsset,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.topCenter,
-                      ),
+                      child: (profile.heroImageAsset.startsWith('http://') ||
+                              profile.heroImageAsset.startsWith('https://'))
+                          ? Image.network(
+                              profile.heroImageAsset,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              alignment: Alignment.topCenter,
+                              errorBuilder: (_, _, _) => Image.asset(
+                                'assets/images/img_profile_hero_portrait.png',
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
+                              ),
+                            )
+                          : Image.asset(
+                              profile.heroImageAsset,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              alignment: Alignment.topCenter,
+                            ),
                     ),
                   ),
                   const SizedBox(height: 14),
