@@ -7,12 +7,36 @@ class TimelineVitalsBento extends StatelessWidget {
   const TimelineVitalsBento({
     super.key,
     this.onViewReports,
+    this.bloodPressure,
+    this.heartRate,
+    this.spo2,
+    this.bloodSugar,
   });
 
   final VoidCallback? onViewReports;
+  final String? bloodPressure;
+  final String? heartRate;
+  final String? spo2;
+  final String? bloodSugar;
 
   @override
   Widget build(BuildContext context) {
+    final hasBp = bloodPressure != null && bloodPressure!.trim().isNotEmpty;
+    final bpText = hasBp ? bloodPressure! : '--/--';
+    final bpNote = hasBp ? 'Chỉ số đo gần nhất' : 'Chưa đo';
+    final bpDotColor = hasBp ? AppColors.timelineOlive : AppColors.iceCardBorder;
+
+    final hasHr = heartRate != null && heartRate!.trim().isNotEmpty;
+    final hrText = hasHr ? heartRate! : '--';
+    final hrNote = hasHr ? 'Nhịp tim gần nhất' : 'Chưa đo';
+
+    final hasSpo2 = spo2 != null && spo2!.trim().isNotEmpty;
+    final spo2Text = hasSpo2 ? spo2! : '--';
+    final spo2Value = hasSpo2 ? ((double.tryParse(spo2!) ?? 99) / 100).clamp(0.0, 1.0) : 0.0;
+
+    final hasBs = bloodSugar != null && bloodSugar!.trim().isNotEmpty;
+    final bsText = hasBs ? bloodSugar! : '--';
+    final bsNote = hasBs ? 'FPG Ổn định' : 'Chưa đo';
     return Column(
       children: [
         Padding(
@@ -115,13 +139,13 @@ class TimelineVitalsBento extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const Row(
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
                         Text(
-                          '118/78',
-                          style: TextStyle(
+                          bpText,
+                          style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.7,
@@ -129,8 +153,8 @@ class TimelineVitalsBento extends StatelessWidget {
                             height: 1.1,
                           ),
                         ),
-                        SizedBox(width: 4),
-                        Text(
+                        const SizedBox(width: 4),
+                        const Text(
                           'mmHg',
                           style: TextStyle(
                             fontSize: 11,
@@ -146,20 +170,20 @@ class TimelineVitalsBento extends StatelessWidget {
                         Container(
                           width: 8,
                           height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppColors.timelineOlive,
+                          decoration: BoxDecoration(
+                            color: bpDotColor,
                             shape: BoxShape.circle,
                           ),
                         ),
                         const SizedBox(width: 5),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Tối ưu · Bình thường',
+                            bpNote,
                             maxLines: 2,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.timelineOlive,
+                              color: bpDotColor == AppColors.timelineOlive ? AppColors.timelineOlive : AppColors.iceTextMuted,
                               height: 1.25,
                             ),
                           ),
@@ -195,13 +219,13 @@ class TimelineVitalsBento extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const Row(
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
                         Text(
-                          '74',
-                          style: TextStyle(
+                          hrText,
+                          style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.7,
@@ -209,8 +233,8 @@ class TimelineVitalsBento extends StatelessWidget {
                             height: 1.1,
                           ),
                         ),
-                        SizedBox(width: 4),
-                        Text(
+                        const SizedBox(width: 4),
+                        const Text(
                           'bpm',
                           style: TextStyle(
                             fontSize: 11,
@@ -224,23 +248,25 @@ class TimelineVitalsBento extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Flexible(
+                        Flexible(
                           child: Text(
-                            'Nhịp xoang đều',
+                            hrNote,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                               color: AppColors.timelineTextWarm,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        SvgPicture.asset(
-                          'assets/icons/ic_ecg_mini_wave.svg',
-                          width: 40,
-                          height: 12,
-                        ),
+                        if (hasHr) ...[
+                          const SizedBox(width: 4),
+                          SvgPicture.asset(
+                            'assets/icons/ic_ecg_mini_wave.svg',
+                            width: 40,
+                            height: 12,
+                          ),
+                        ],
                       ],
                     ),
                   ],
@@ -279,13 +305,13 @@ class TimelineVitalsBento extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const Row(
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
                         Text(
-                          '99',
-                          style: TextStyle(
+                          spo2Text,
+                          style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.7,
@@ -293,8 +319,8 @@ class TimelineVitalsBento extends StatelessWidget {
                             height: 1.1,
                           ),
                         ),
-                        SizedBox(width: 4),
-                        Text(
+                        const SizedBox(width: 4),
+                        const Text(
                           '%',
                           style: TextStyle(
                             fontSize: 11,
@@ -307,11 +333,11 @@ class TimelineVitalsBento extends StatelessWidget {
                     ),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(999),
-                      child: const LinearProgressIndicator(
-                        value: 0.99,
+                      child: LinearProgressIndicator(
+                        value: spo2Value,
                         minHeight: 6,
                         backgroundColor: AppColors.timelineChipBg,
-                        valueColor: AlwaysStoppedAnimation<Color>(
+                        valueColor: const AlwaysStoppedAnimation<Color>(
                           AppColors.timelineOlive,
                         ),
                       ),
@@ -348,13 +374,13 @@ class TimelineVitalsBento extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const Row(
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
                         Text(
-                          '92',
-                          style: TextStyle(
+                          bsText,
+                          style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.7,
@@ -362,8 +388,8 @@ class TimelineVitalsBento extends StatelessWidget {
                             height: 1.1,
                           ),
                         ),
-                        SizedBox(width: 4),
-                        Text(
+                        const SizedBox(width: 4),
+                        const Text(
                           'mg/dL',
                           style: TextStyle(
                             fontSize: 11,
@@ -374,9 +400,9 @@ class TimelineVitalsBento extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const Text(
-                      'FPG Ổn định',
-                      style: TextStyle(
+                    Text(
+                      bsNote,
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.44,

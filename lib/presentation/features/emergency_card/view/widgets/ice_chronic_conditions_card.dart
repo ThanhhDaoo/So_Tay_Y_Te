@@ -63,10 +63,35 @@ class IceChronicConditionsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          for (int i = 0; i < conditions.length; i++) ...[
-            _ConditionRow(item: conditions[i]),
-            if (i < conditions.length - 1) const SizedBox(height: 10),
-          ],
+          if (conditions.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.iceMetricBox,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, size: 18, color: AppColors.iceOlive),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Chưa có ghi nhận bệnh nền mãn tính nào.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.iceTextSlate,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            for (int i = 0; i < conditions.length; i++) ...[
+              _ConditionRow(item: conditions[i]),
+              if (i < conditions.length - 1) const SizedBox(height: 10),
+            ],
         ],
       ),
     );

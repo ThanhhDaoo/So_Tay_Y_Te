@@ -132,7 +132,9 @@ class _PrimaryIceCallButton extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${contact.name} • ${contact.phone}',
+                      contact.phone.isNotEmpty
+                          ? '${contact.name} • ${contact.phone}'
+                          : contact.name,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,

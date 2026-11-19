@@ -11,12 +11,16 @@ class IceAllergyWarningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSevere = warning.isSevere;
+
     return Container(
       padding: const EdgeInsets.all(17),
       decoration: BoxDecoration(
-        color: AppColors.iceAllergyBg,
+        color: isSevere ? AppColors.iceAllergyBg : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.iceAllergyBorder),
+        border: Border.all(
+          color: isSevere ? AppColors.iceAllergyBorder : AppColors.iceCardBorder,
+        ),
         boxShadow: [
           BoxShadow(
             color: AppColors.iceTextNavy.withValues(alpha: 0.04),
@@ -31,16 +35,24 @@ class IceAllergyWarningCard extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: const BoxDecoration(
-              color: AppColors.iceOlive,
+            decoration: BoxDecoration(
+              color: isSevere
+                  ? AppColors.iceOlive
+                  : AppColors.iceOlive.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: SvgPicture.asset(
-              'assets/icons/ic_warning_triangle.svg',
-              width: 22,
-              height: 19,
-            ),
+            child: isSevere
+                ? SvgPicture.asset(
+                    'assets/icons/ic_warning_triangle.svg',
+                    width: 22,
+                    height: 19,
+                  )
+                : const Icon(
+                    Icons.shield_outlined,
+                    color: AppColors.iceOlive,
+                    size: 22,
+                  ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -49,12 +61,14 @@ class IceAllergyWarningCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Text(
-                      'CẢNH BÁO NGUY HIỂM',
+                    Text(
+                      isSevere ? 'CẢNH BÁO NGUY HIỂM' : 'THÔNG TIN DỊ ỨNG',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textWarmBrown,
+                        color: isSevere
+                            ? AppColors.textWarmBrown
+                            : AppColors.iceOlive,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -64,15 +78,17 @@ class IceAllergyWarningCard extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.iceCriticalBadge,
+                        color: isSevere
+                            ? AppColors.iceCriticalBadge
+                            : AppColors.iceOlive.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
                         warning.severityBadge,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: isSevere ? Colors.white : AppColors.iceOlive,
                         ),
                       ),
                     ),
@@ -81,19 +97,21 @@ class IceAllergyWarningCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   warning.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.iceOliveDark,
+                    color: isSevere
+                        ? AppColors.iceOliveDark
+                        : AppColors.iceTextNavy,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   warning.description,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     height: 1.45,
-                    color: AppColors.iceOlive,
+                    color: isSevere ? AppColors.iceOlive : AppColors.iceTextSlate,
                   ),
                 ),
               ],

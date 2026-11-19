@@ -61,11 +61,13 @@ class DrugAllergyWarning {
   final String severityBadge;
   final String title;
   final String description;
+  final bool isSevere;
 
   const DrugAllergyWarning({
     required this.severityBadge,
     required this.title,
     required this.description,
+    this.isSevere = false,
   });
 }
 
@@ -116,13 +118,13 @@ class EmergencyCardState {
     return const EmergencyCardState(
       primaryContact: EmergencyContactInfo(
         label: 'NGƯỜI THÂN KHẨN CẤP (ICE)',
-        name: 'Anh Minh (Chồng)',
-        phone: '0988 123 456',
+        name: 'Chưa thiết lập',
+        phone: '',
       ),
       doctorContact: EmergencyContactInfo(
         label: 'BS ĐIỀU TRỊ',
-        name: 'BS. CKII Lê Hoàng',
-        phone: '0909 112 233',
+        name: 'Chưa thiết lập',
+        phone: '',
       ),
       hotline115: EmergencyContactInfo(
         label: 'TỔNG ĐÀI',
@@ -130,57 +132,50 @@ class EmergencyCardState {
         phone: '115',
       ),
       patient: PatientSnapshotInfo(
-        fullName: 'Nguyễn Thu Trang',
-        demographics: 'Nữ • 32 tuổi (14/05/1992)',
-        bloodType: 'O+',
-        rhFactor: 'Rh Dương',
-        height: '162 cm',
-        weight: '54 kg',
-        organDonorStatus: 'ĐÃ ĐĂNG KÝ',
+        fullName: 'Chưa cập nhật',
+        demographics: 'Chưa cập nhật thông tin',
+        bloodType: '--',
+        rhFactor: 'Chưa rõ',
+        height: '-- cm',
+        weight: '-- kg',
+        organDonorStatus: 'CHƯA ĐĂNG KÝ',
         avatarAsset: 'assets/images/img_patient_avatar.png',
       ),
       allergyWarning: DrugAllergyWarning(
-        severityBadge: 'CẤP ĐỘ 3',
-        title: 'DỊ ỨNG PENICILLIN & ASPIRIN',
+        severityBadge: 'AN TOÀN',
+        title: 'Chưa ghi nhận dị ứng thuốc',
         description:
-            'Nguy cơ sốc phản vệ nặng (Phản ứng độ 3: phù Quincke, co thắt thanh quản). Tuyệt đối không dùng kháng sinh nhóm Beta-lactam và NSAID không chọn lọc.',
+            'Hồ sơ chưa có thông tin cảnh báo dị ứng thuốc hoặc sốc phản vệ nguy hiểm.',
+        isSevere: false,
       ),
-      chronicConditions: [
-        ChronicConditionItem(
-          title: 'Hen phế quản mãn tính (Asthma)',
-          badgeLabel: 'GĐ 2',
-          note: 'Mang theo thuốc cắt cơn Ventolin Inhaler 100mcg trong túi xách.',
-          iconAsset: 'assets/icons/ic_asthma_wind.svg',
-        ),
-        ChronicConditionItem(
-          title: 'Tiền sử nhịp tim nhanh kịch phát',
-          badgeLabel: 'PSVT',
-          note: 'Cơn kịch phát gần nhất tháng 11/2024. Đang theo dõi tại BV Chợ Rẫy.',
-          iconAsset: 'assets/icons/ic_ecg_pulse.svg',
-          isCriticalBadge: true,
-        ),
-      ],
-      verifiedFooterText: 'Được xác thực bởi BV Chợ Rẫy • Cập nhật 02 giờ trước',
+      chronicConditions: [],
+      verifiedFooterText: 'Hồ sơ cá nhân • Chưa liên kết CSYT',
       isLockScreenWidgetEnabled: true,
       selectedNavIndex: 2,
     );
   }
 
   EmergencyCardState copyWith({
+    EmergencyContactInfo? primaryContact,
+    EmergencyContactInfo? doctorContact,
+    EmergencyContactInfo? hotline115,
     PatientSnapshotInfo? patient,
+    DrugAllergyWarning? allergyWarning,
+    List<ChronicConditionItem>? chronicConditions,
+    String? verifiedFooterText,
     bool? isLockScreenWidgetEnabled,
     int? selectedNavIndex,
     String? lastActionMessage,
     bool clearActionMessage = false,
   }) {
     return EmergencyCardState(
-      primaryContact: primaryContact,
-      doctorContact: doctorContact,
-      hotline115: hotline115,
+      primaryContact: primaryContact ?? this.primaryContact,
+      doctorContact: doctorContact ?? this.doctorContact,
+      hotline115: hotline115 ?? this.hotline115,
       patient: patient ?? this.patient,
-      allergyWarning: allergyWarning,
-      chronicConditions: chronicConditions,
-      verifiedFooterText: verifiedFooterText,
+      allergyWarning: allergyWarning ?? this.allergyWarning,
+      chronicConditions: chronicConditions ?? this.chronicConditions,
+      verifiedFooterText: verifiedFooterText ?? this.verifiedFooterText,
       isLockScreenWidgetEnabled:
           isLockScreenWidgetEnabled ?? this.isLockScreenWidgetEnabled,
       selectedNavIndex: selectedNavIndex ?? this.selectedNavIndex,

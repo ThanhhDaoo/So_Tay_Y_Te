@@ -100,6 +100,10 @@ class TimelineState {
   final String selectedFilterId;
   final List<TimelineFilterCategory> filters;
   final List<TimelineRecordItem> records;
+  final String? latestBloodPressure;
+  final String? latestHeartRate;
+  final String? latestSpo2;
+  final String? latestBloodSugar;
   final String? lastActionMessage;
 
   const TimelineState({
@@ -107,6 +111,10 @@ class TimelineState {
     this.selectedFilterId = 'all',
     required this.filters,
     required this.records,
+    this.latestBloodPressure,
+    this.latestHeartRate,
+    this.latestSpo2,
+    this.latestBloodSugar,
     this.lastActionMessage,
   });
 
@@ -129,6 +137,10 @@ class TimelineState {
         ),
       ],
       records: [],
+      latestBloodPressure: null,
+      latestHeartRate: null,
+      latestSpo2: null,
+      latestBloodSugar: null,
     );
   }
 
@@ -151,6 +163,10 @@ class TimelineState {
     String? selectedFilterId,
     List<TimelineFilterCategory>? filters,
     List<TimelineRecordItem>? records,
+    String? latestBloodPressure,
+    String? latestHeartRate,
+    String? latestSpo2,
+    String? latestBloodSugar,
     String? lastActionMessage,
     bool clearActionMessage = false,
   }) {
@@ -159,6 +175,10 @@ class TimelineState {
       selectedFilterId: selectedFilterId ?? this.selectedFilterId,
       filters: filters ?? this.filters,
       records: records ?? this.records,
+      latestBloodPressure: latestBloodPressure ?? this.latestBloodPressure,
+      latestHeartRate: latestHeartRate ?? this.latestHeartRate,
+      latestSpo2: latestSpo2 ?? this.latestSpo2,
+      latestBloodSugar: latestBloodSugar ?? this.latestBloodSugar,
       lastActionMessage: clearActionMessage
           ? null
           : (lastActionMessage ?? this.lastActionMessage),

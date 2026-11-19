@@ -18,13 +18,18 @@ class EmergencyCardViewModel extends ChangeNotifier {
           if (session.dateOfBirth != null && session.dateOfBirth!.isNotEmpty) {
             demographics += ' • ${session.dateOfBirth}';
           }
+          final hasBlood = session.bloodType != null &&
+              session.bloodType!.isNotEmpty &&
+              session.bloodType != 'Chưa rõ';
           _state = _state.copyWith(
             patient: _state.patient.copyWith(
-              fullName: session.fullName,
+              fullName: session.fullName.isNotEmpty ? session.fullName : 'Chưa cập nhật',
               demographics: demographics,
-              bloodType: session.bloodType != null && session.bloodType!.isNotEmpty && session.bloodType != 'Chưa rõ'
-                  ? session.bloodType!
-                  : _state.patient.bloodType,
+              bloodType: hasBlood ? session.bloodType! : '--',
+              rhFactor: hasBlood ? 'Rh Dương' : 'Chưa rõ',
+              height: '-- cm',
+              weight: '-- kg',
+              organDonorStatus: 'CHƯA ĐĂNG KÝ',
             ),
           );
           notifyListeners();

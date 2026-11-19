@@ -109,10 +109,31 @@ class ProfileAllergyWarningCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              for (int i = 0; i < allergies.length; i++) ...[
-                _AllergyTile(item: allergies[i]),
-                if (i < allergies.length - 1) const SizedBox(height: 10),
-              ],
+              if (allergies.isEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceWarm,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.check_circle_outline, size: 16, color: AppColors.iceOlive),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Chưa ghi nhận dị ứng thuốc hoặc thức ăn',
+                          style: TextStyle(fontSize: 12, color: AppColors.iceTextSlate),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                for (int i = 0; i < allergies.length; i++) ...[
+                  _AllergyTile(item: allergies[i]),
+                  if (i < allergies.length - 1) const SizedBox(height: 10),
+                ],
             ],
           ),
         ),

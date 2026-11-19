@@ -50,9 +50,22 @@ class TimelineViewModel extends ChangeNotifier {
           ),
         ];
 
+        String? latestBp;
+        String? latestHr;
+        for (final e in events) {
+          if (latestBp == null && e.bloodPressure != null && e.bloodPressure!.trim().isNotEmpty) {
+            latestBp = e.bloodPressure!.trim();
+          }
+          if (latestHr == null && e.heartRate != null && e.heartRate!.trim().isNotEmpty) {
+            latestHr = e.heartRate!.trim();
+          }
+        }
+
         _state = _state.copyWith(
           records: mapped,
           filters: dynamicFilters,
+          latestBloodPressure: latestBp,
+          latestHeartRate: latestHr,
         );
       }
     } catch (_) {}

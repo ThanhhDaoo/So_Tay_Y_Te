@@ -94,10 +94,31 @@ class ProfileChronicConditionsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          for (int i = 0; i < conditions.length; i++) ...[
-            _ConditionRow(item: conditions[i]),
-            if (i < conditions.length - 1) const SizedBox(height: 8),
-          ],
+          if (conditions.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceWarm,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: AppColors.iceOlive),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Chưa có ghi nhận bệnh nền mãn tính',
+                      style: TextStyle(fontSize: 12, color: AppColors.iceTextSlate),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            for (int i = 0; i < conditions.length; i++) ...[
+              _ConditionRow(item: conditions[i]),
+              if (i < conditions.length - 1) const SizedBox(height: 8),
+            ],
         ],
       ),
     );

@@ -116,6 +116,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     ),
                     const SizedBox(height: 16),
                     TimelineVitalsBento(
+                      bloodPressure: state.latestBloodPressure,
+                      heartRate: state.latestHeartRate,
+                      spo2: state.latestSpo2,
+                      bloodSugar: state.latestBloodSugar,
                       onViewReports: () =>
                           Navigator.pushNamed(context, AppRoutes.vitalReports),
                     ),
