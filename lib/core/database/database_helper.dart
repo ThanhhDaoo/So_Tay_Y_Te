@@ -87,7 +87,12 @@ class AppDatabaseHelper implements DatabaseHelper {
         allergies TEXT,
         chronic_conditions TEXT,
         emergency_contact TEXT,
-        is_pro INTEGER NOT NULL DEFAULT 0
+        is_pro INTEGER NOT NULL DEFAULT 0,
+        height TEXT,
+        weight TEXT,
+        gender TEXT,
+        organ_donor TEXT,
+        region TEXT
       )
     ''');
 
@@ -201,6 +206,7 @@ class AppDatabaseHelper implements DatabaseHelper {
         'weight': 'TEXT',
         'gender': 'TEXT',
         'organ_donor': 'TEXT',
+        'region': 'TEXT',
       };
       for (final entry in requiredProfileCols.entries) {
         if (!existingProfileCols.contains(entry.key)) {

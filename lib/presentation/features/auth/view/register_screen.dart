@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -671,9 +673,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           const SizedBox(width: 6),
                           SvgPicture.asset(
-                            'assets/icons/ic_fingerprint_small.svg',
-                            width: 12.03,
-                            height: 13.31,
+                            (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
+                                ? 'assets/icons/ic_apple_face_id.svg'
+                                : 'assets/icons/ic_fingerprint_small.svg',
+                            width: 14,
+                            height: 14,
+                            colorFilter: const ColorFilter.mode(
+                              AppColors.iceOlive,
+                              BlendMode.srcIn,
+                            ),
                           ),
                         ],
                       ),

@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../../../core/services/user_session_manager.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../../core/widgets/safe_avatar_image.dart';
 
 class VitalReportsHeader extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onProfileTap;
@@ -145,13 +147,12 @@ class VitalReportsHeader extends StatelessWidget implements PreferredSizeWidget 
                           shape: BoxShape.circle,
                         ),
                         clipBehavior: Clip.antiAlias,
-                        child: Image.asset(
-                          'assets/images/img_profile_avatar.png',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => const Icon(
-                            Icons.person_rounded,
-                            color: AppColors.reportOlive,
-                            size: 20,
+                        child: ListenableBuilder(
+                          listenable: AppSessionNotifier.instance,
+                          builder: (context, _) => buildSafeAvatarImage(
+                            imageSource: AppSessionNotifier.instance.avatarUrl ?? '',
+                            fallbackAsset: 'assets/images/img_profile_avatar.png',
+                            fit: BoxFit.cover,
                           ),
                         ),
                       ),

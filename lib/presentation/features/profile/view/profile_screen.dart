@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/safe_avatar_image.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import '../../main_shell/view/main_shell_screen.dart';
 import '../../../routes/app_routes.dart';
@@ -128,6 +129,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     ProfilePatientHeroCard(
                       profile: activeProfile,
+                      onPickAvatar: () => pickAndSaveAvatar(
+                        context,
+                        onAvatarSaved: (localPath) async {
+                          await _viewModel.updateAvatar(localPath);
+                          _showSnack('Đã cập nhật ảnh đại diện thành công!');
+                        },
+                      ),
                       onEditTap: () {
                         EditPersonalProfileSheet.show(
                           context,
@@ -136,6 +144,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           initialBloodType: activeProfile.bloodType,
                           initialHeight: activeProfile.heightText,
                           initialWeight: activeProfile.weightText,
+                          initialRegion: (activeProfile.region != 'Chưa cập nhật' && !activeProfile.region.contains('@')) ? activeProfile.region : '',
+                          initialAvatarUrl: activeProfile.heroImageAsset,
+                          onAvatarChanged: (newPath) async {
+                            await _viewModel.updateAvatar(newPath);
+                            _showSnack('Đã cập nhật ảnh đại diện thành công!');
+                          },
                           initialAllergies: activeProfile.allergies.map((a) => a.title).join(', '),
                           initialChronicConditions: activeProfile.chronicConditions.map((c) => c.title).join(', '),
                           onSave: ({
@@ -149,6 +163,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             height,
                             organDonor,
                             weight,
+                            region,
+                            avatarUrl,
                           }) async {
                             await _viewModel.updateCurrentUserProfile(
                               fullName: fullName,
@@ -161,6 +177,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               allergies: allergies,
                               chronicConditions: chronicConditions,
                               organDonor: organDonor,
+                              region: region,
+                              avatarUrl: avatarUrl,
                             );
                           },
                         );

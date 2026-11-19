@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../../core/services/user_session_manager.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../../core/widgets/safe_avatar_image.dart';
 
 class PaywallHeader extends StatelessWidget {
   const PaywallHeader({
@@ -78,12 +80,16 @@ class PaywallHeader extends StatelessWidget {
               InkWell(
                 onTap: onProfileTap,
                 borderRadius: BorderRadius.circular(999),
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/images/img_profile_avatar.png',
-                    width: 32,
-                    height: 32,
-                    fit: BoxFit.cover,
+                child: ListenableBuilder(
+                  listenable: AppSessionNotifier.instance,
+                  builder: (context, _) => ClipOval(
+                    child: buildSafeAvatarImage(
+                      imageSource: AppSessionNotifier.instance.avatarUrl ?? '',
+                      fallbackAsset: 'assets/images/img_profile_avatar.png',
+                      width: 32,
+                      height: 32,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),

@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../../core/services/user_session_manager.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../../core/widgets/safe_avatar_image.dart';
 
 class DocumentsHeader extends StatelessWidget {
   const DocumentsHeader({
@@ -127,12 +129,16 @@ class DocumentsHeader extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        ClipOval(
-                          child: Image.asset(
-                            'assets/images/img_profile_avatar.png',
-                            width: 30,
-                            height: 30,
-                            fit: BoxFit.cover,
+                        ListenableBuilder(
+                          listenable: AppSessionNotifier.instance,
+                          builder: (context, _) => ClipOval(
+                            child: buildSafeAvatarImage(
+                              imageSource: AppSessionNotifier.instance.avatarUrl ?? '',
+                              fallbackAsset: 'assets/images/img_profile_avatar.png',
+                              width: 30,
+                              height: 30,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 5),

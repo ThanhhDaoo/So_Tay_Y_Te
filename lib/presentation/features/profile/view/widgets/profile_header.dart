@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../../core/widgets/safe_avatar_image.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({
@@ -104,8 +105,9 @@ class ProfileHeader extends StatelessWidget {
                             ),
                           ),
                           child: ClipOval(
-                            child: Image.asset(
-                              activeAvatarAsset,
+                            child: buildSafeAvatarImage(
+                              imageSource: activeAvatarAsset,
+                              fallbackAsset: 'assets/images/img_profile_avatar.png',
                               fit: BoxFit.cover,
                             ),
                           ),

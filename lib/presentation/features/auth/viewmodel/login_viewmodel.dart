@@ -805,6 +805,7 @@ class _FallbackInMemoryAuthRepository implements AuthRepository {
     String? weight,
     String? organDonor,
     String? avatarUrl,
+    String? region,
   }) async {
     return UserAccount(
       id: userId,

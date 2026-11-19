@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../../core/services/user_session_manager.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/widgets/safe_avatar_image.dart';
 
 /// Thanh tiêu đề kính mờ cố định phía trên của màn hình Dòng Thời Gian Bệnh Án.
 class TimelineHeader extends StatelessWidget {
@@ -87,12 +89,16 @@ class TimelineHeader extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      ClipOval(
-                        child: Image.asset(
-                          'assets/images/img_profile_avatar.png',
-                          width: 32,
-                          height: 32,
-                          fit: BoxFit.cover,
+                      ListenableBuilder(
+                        listenable: AppSessionNotifier.instance,
+                        builder: (context, _) => ClipOval(
+                          child: buildSafeAvatarImage(
+                            imageSource: AppSessionNotifier.instance.avatarUrl ?? '',
+                            fallbackAsset: 'assets/images/img_profile_avatar.png',
+                            width: 32,
+                            height: 32,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 6),

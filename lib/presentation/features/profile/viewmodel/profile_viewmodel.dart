@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/user_session_manager.dart';
 import '../../../../domain/repositories/auth_repository.dart';
 import 'profile_state.dart';
 
@@ -41,9 +42,27 @@ class ProfileViewModel extends ChangeNotifier {
           String weightStr = '-- kg';
           String bmiVal = '--';
           String bmiLabel = 'Chưa tính';
+          String regionDisplay = 'Chưa cập nhật';
 
           final details = await authRepo.getUserProfileDetails(session.id);
           if (details != null) {
+            final rawRegion = details['region'] as String?;
+            if (rawRegion != null &&
+                rawRegion.trim().isNotEmpty &&
+                !rawRegion.contains('@') &&
+                !rawRegion.startsWith('0') &&
+                rawRegion.trim() != 'Chưa cập nhật') {
+              regionDisplay = rawRegion.trim();
+            } else if (rawRegion != null && (rawRegion.contains('@') || rawRegion.startsWith('0'))) {
+              // Tự động dọn dẹp dữ liệu cũ nếu bị lưu nhầm email hoặc số điện thoại vào trường khu vực
+              try {
+                await authRepo.updateUserProfile(
+                  userId: session.id,
+                  fullName: session.fullName,
+                  region: 'Chưa cập nhật',
+                );
+              } catch (_) {}
+            }
             final rawAllergies = details['allergies'] as String?;
             if (rawAllergies != null && rawAllergies.trim().isNotEmpty && rawAllergies != 'Không có') {
               allergiesList = rawAllergies.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
@@ -94,7 +113,8 @@ class ProfileViewModel extends ChangeNotifier {
             recordCode: session.patientCode,
             bhytStatus: 'BHYT: Chưa liên kết',
             dob: dobFormatted,
-            region: session.primaryContact,
+            region: regionDisplay,
+            contact: session.primaryContact,
             heroImageAsset: session.avatarUrl ?? 'assets/images/img_profile_hero_portrait.png',
             vitalsUpdatedAt: 'Chưa có',
             bloodType: session.bloodType != null && session.bloodType != 'Chưa rõ'
@@ -140,6 +160,8 @@ class ProfileViewModel extends ChangeNotifier {
     String? allergies,
     String? chronicConditions,
     String? organDonor,
+    String? region,
+    String? avatarUrl,
   }) async {
     if (sl.isRegistered<AuthRepository>()) {
       final auth = sl<AuthRepository>();
@@ -157,7 +179,28 @@ class ProfileViewModel extends ChangeNotifier {
           height: height,
           weight: weight,
           organDonor: organDonor,
+          region: region,
+          avatarUrl: avatarUrl,
         );
+        if (avatarUrl != null) {
+          AppSessionNotifier.instance.notifyAvatarChanged(avatarUrl);
+        }
+        await loadCurrentUserProfile();
+      }
+    }
+  }
+
+  Future<void> updateAvatar(String imagePath) async {
+    if (sl.isRegistered<AuthRepository>()) {
+      final auth = sl<AuthRepository>();
+      final session = await auth.getActiveSession();
+      if (session != null) {
+        await auth.updateUserProfile(
+          userId: session.id,
+          fullName: session.fullName,
+          avatarUrl: imagePath,
+        );
+        AppSessionNotifier.instance.notifyAvatarChanged(imagePath);
         await loadCurrentUserProfile();
       }
     }

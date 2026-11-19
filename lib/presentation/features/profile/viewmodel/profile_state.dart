@@ -66,6 +66,7 @@ class MemberMedicalProfile {
     required this.bhytStatus,
     required this.dob,
     required this.region,
+    this.contact = '',
     required this.heroImageAsset,
     required this.vitalsUpdatedAt,
     required this.bloodType,
@@ -85,6 +86,7 @@ class MemberMedicalProfile {
   final String bhytStatus;
   final String dob;
   final String region;
+  final String contact;
   final String heroImageAsset;
   final String vitalsUpdatedAt;
   final String bloodType;

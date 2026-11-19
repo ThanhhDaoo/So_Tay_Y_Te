@@ -787,6 +787,7 @@ class _FallbackRegisterAuthRepository implements AuthRepository {
     String? weight,
     String? organDonor,
     String? avatarUrl,
+    String? region,
   }) async {
     return UserAccount(
       id: userId,

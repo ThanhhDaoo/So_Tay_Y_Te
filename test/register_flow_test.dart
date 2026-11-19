@@ -168,6 +168,7 @@ class MockTestAuthRepository implements AuthRepository {
     String? weight,
     String? organDonor,
     String? avatarUrl,
+    String? region,
   }) async {
     return (await getActiveSession())!;
   }

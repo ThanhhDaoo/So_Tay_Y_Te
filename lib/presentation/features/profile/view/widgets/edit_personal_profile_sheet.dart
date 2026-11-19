@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../../core/widgets/safe_avatar_image.dart';
 
 class EditPersonalProfileSheet extends StatefulWidget {
   final String initialFullName;
@@ -13,6 +14,10 @@ class EditPersonalProfileSheet extends StatefulWidget {
   final String? initialAllergies;
   final String? initialChronicConditions;
   final String? initialOrganDonor;
+  final String? initialRegion;
+  final String? initialAvatarUrl;
+  final VoidCallback? onPickAvatar;
+  final Future<void> Function(String newAvatarPath)? onAvatarChanged;
   final Future<void> Function({
     required String fullName,
     String? dateOfBirth,
@@ -24,6 +29,8 @@ class EditPersonalProfileSheet extends StatefulWidget {
     String? allergies,
     String? chronicConditions,
     String? organDonor,
+    String? region,
+    String? avatarUrl,
   }) onSave;
 
   const EditPersonalProfileSheet({
@@ -38,6 +45,10 @@ class EditPersonalProfileSheet extends StatefulWidget {
     this.initialAllergies,
     this.initialChronicConditions,
     this.initialOrganDonor,
+    this.initialRegion,
+    this.initialAvatarUrl,
+    this.onPickAvatar,
+    this.onAvatarChanged,
     required this.onSave,
   });
 
@@ -53,6 +64,10 @@ class EditPersonalProfileSheet extends StatefulWidget {
     String? initialAllergies,
     String? initialChronicConditions,
     String? initialOrganDonor,
+    String? initialRegion,
+    String? initialAvatarUrl,
+    VoidCallback? onPickAvatar,
+    Future<void> Function(String newAvatarPath)? onAvatarChanged,
     required Future<void> Function({
       required String fullName,
       String? dateOfBirth,
@@ -64,6 +79,8 @@ class EditPersonalProfileSheet extends StatefulWidget {
       String? allergies,
       String? chronicConditions,
       String? organDonor,
+      String? region,
+      String? avatarUrl,
     }) onSave,
   }) {
     showModalBottomSheet<void>(
@@ -81,6 +98,10 @@ class EditPersonalProfileSheet extends StatefulWidget {
         initialAllergies: initialAllergies,
         initialChronicConditions: initialChronicConditions,
         initialOrganDonor: initialOrganDonor,
+        initialRegion: initialRegion,
+        initialAvatarUrl: initialAvatarUrl,
+        onPickAvatar: onPickAvatar,
+        onAvatarChanged: onAvatarChanged,
         onSave: onSave,
       ),
     );
@@ -98,11 +119,13 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
   late final TextEditingController _iceContactCtrl;
   late final TextEditingController _allergiesCtrl;
   late final TextEditingController _conditionsCtrl;
+  late final TextEditingController _regionCtrl;
 
   late String _gender;
   late String _bloodType;
   DateTime? _selectedDob;
   late String _organDonor;
+  String? _currentAvatar;
   bool _isSaving = false;
 
   final _bloodOptions = const [
@@ -126,6 +149,9 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
     _iceContactCtrl = TextEditingController(text: widget.initialEmergencyContact ?? '');
     _allergiesCtrl = TextEditingController(text: widget.initialAllergies ?? '');
     _conditionsCtrl = TextEditingController(text: widget.initialChronicConditions ?? '');
+    final rawReg = widget.initialRegion?.trim() ?? '';
+    final initialRegionClean = (!rawReg.contains('@') && rawReg != 'Chưa cập nhật') ? rawReg : '';
+    _regionCtrl = TextEditingController(text: initialRegionClean);
 
     _gender = widget.initialGender ?? 'Nam';
     _bloodType = widget.initialBloodType ?? 'Chưa rõ';
@@ -145,6 +171,7 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
     }
 
     _organDonor = widget.initialOrganDonor ?? 'CHƯA ĐĂNG KÝ';
+    _currentAvatar = widget.initialAvatarUrl;
   }
 
   @override
@@ -155,6 +182,7 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
     _iceContactCtrl.dispose();
     _allergiesCtrl.dispose();
     _conditionsCtrl.dispose();
+    _regionCtrl.dispose();
     super.dispose();
   }
 
@@ -191,6 +219,10 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
         allergies: _allergiesCtrl.text.trim().isNotEmpty ? _allergiesCtrl.text.trim() : null,
         chronicConditions: _conditionsCtrl.text.trim().isNotEmpty ? _conditionsCtrl.text.trim() : null,
         organDonor: _organDonor,
+        region: (_regionCtrl.text.trim().isNotEmpty && !_regionCtrl.text.trim().contains('@'))
+            ? _regionCtrl.text.trim()
+            : null,
+        avatarUrl: _currentAvatar,
       );
 
       if (mounted) {
@@ -215,6 +247,20 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  Future<void> _handlePickAvatar() async {
+    await pickAndSaveAvatar(
+      context,
+      onAvatarSaved: (localPath) async {
+        setState(() {
+          _currentAvatar = localPath;
+        });
+        if (widget.onAvatarChanged != null) {
+          await widget.onAvatarChanged!(localPath);
+        }
+      },
+    );
   }
 
   @override
@@ -288,12 +334,64 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
               child: ListView(
                 shrinkWrap: true,
                 children: [
+                  // 0. Avatar Preview & Camera Picker
+                  Center(
+                    child: Stack(
+                      children: [
+                        ClipOval(
+                          child: buildSafeAvatarImage(
+                            imageSource: _currentAvatar ?? '',
+                            fallbackAsset: 'assets/images/img_profile_avatar.png',
+                            width: 72,
+                            height: 72,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Material(
+                            color: AppColors.iceOlive,
+                            shape: const CircleBorder(),
+                            elevation: 2,
+                            child: InkWell(
+                              customBorder: const CircleBorder(),
+                              onTap: _handlePickAvatar,
+                              child: const Padding(
+                                padding: EdgeInsets.all(6),
+                                child: Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: _handlePickAvatar,
+                      icon: const Icon(Icons.photo_camera_outlined, size: 14, color: AppColors.iceOlive),
+                      label: const Text('Đổi ảnh đại diện', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.iceOlive)),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
                   // 1. Họ và tên
                   _buildLabel('Họ và tên *'),
                   TextFormField(
                     controller: _nameCtrl,
                     validator: (v) => v == null || v.trim().isEmpty ? 'Vui lòng nhập họ tên' : null,
                     decoration: _inputDeco(hint: 'VD: Nguyễn Thu Trang'),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 1.1 Khu vực sinh sống / Tỉnh thành
+                  _buildLabel('Khu vực sinh sống / Tỉnh thành'),
+                  TextFormField(
+                    controller: _regionCtrl,
+                    decoration: _inputDeco(hint: 'VD: TP. Hồ Chí Minh, Hà Nội...'),
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 14),

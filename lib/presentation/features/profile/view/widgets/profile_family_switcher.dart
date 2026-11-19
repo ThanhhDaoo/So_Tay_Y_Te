@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../../core/widgets/safe_avatar_image.dart';
 import '../../viewmodel/profile_state.dart';
 
 class ProfileFamilySwitcher extends StatelessWidget {
@@ -205,20 +206,11 @@ class _FamilyChipItem extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(7),
-                      child: (member.avatarAsset.startsWith('http://') ||
-                              member.avatarAsset.startsWith('https://'))
-                          ? Image.network(
-                              member.avatarAsset,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => Image.asset(
-                                'assets/images/img_profile_avatar.png',
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          : Image.asset(
-                              member.avatarAsset,
-                              fit: BoxFit.cover,
-                            ),
+                      child: buildSafeAvatarImage(
+                        imageSource: member.avatarAsset,
+                        fallbackAsset: 'assets/images/img_profile_avatar.png',
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   if (isSelected)

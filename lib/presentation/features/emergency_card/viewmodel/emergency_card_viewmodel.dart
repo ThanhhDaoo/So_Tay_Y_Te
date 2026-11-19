@@ -1,11 +1,27 @@
 import 'package:flutter/material.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/user_session_manager.dart';
 import '../../../../domain/repositories/auth_repository.dart';
 import 'emergency_card_state.dart';
 
 /// ViewModel quản lý trạng thái và tương tác cho màn hình Thẻ Cấp Cứu Khẩn Cấp (ICE).
 class EmergencyCardViewModel extends ChangeNotifier {
   EmergencyCardState _state = EmergencyCardState.initial();
+
+  EmergencyCardViewModel() {
+    loadProfile();
+    AppSessionNotifier.instance.addListener(_onSessionChanged);
+  }
+
+  void _onSessionChanged() {
+    loadProfile();
+  }
+
+  @override
+  void dispose() {
+    AppSessionNotifier.instance.removeListener(_onSessionChanged);
+    super.dispose();
+  }
 
   EmergencyCardState get state => _state;
 
@@ -26,9 +42,19 @@ class EmergencyCardViewModel extends ChangeNotifier {
           String heightStr = '-- cm';
           String weightStr = '-- kg';
           String organDonor = 'CHƯA ĐĂNG KÝ';
-          EmergencyContactInfo primaryIce = _state.primaryContact;
-          DrugAllergyWarning allergyWarn = _state.allergyWarning;
-          List<ChronicConditionItem> conditions = _state.chronicConditions;
+          EmergencyContactInfo primaryIce = const EmergencyContactInfo(
+            label: 'NGƯỜI THÂN KHẨN CẤP (ICE)',
+            name: 'Chưa thiết lập',
+            phone: '',
+          );
+          DrugAllergyWarning allergyWarn = const DrugAllergyWarning(
+            severityBadge: 'AN TOÀN',
+            title: 'Chưa ghi nhận dị ứng thuốc',
+            description:
+                'Hồ sơ chưa có thông tin cảnh báo dị ứng thuốc hoặc sốc phản vệ nguy hiểm.',
+            isSevere: false,
+          );
+          List<ChronicConditionItem> conditions = const [];
 
           final details = await auth.getUserProfileDetails(session.id);
           if (details != null) {

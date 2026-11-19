@@ -121,6 +121,7 @@ abstract class AuthRepository {
     String? weight,
     String? organDonor,
     String? avatarUrl,
+    String? region,
   });
 
   /// Lấy thông tin bổ sung về hồ sơ cá nhân (chiều cao, cân nặng, dị ứng, bệnh nền...)

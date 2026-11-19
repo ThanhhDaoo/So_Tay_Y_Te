@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -103,7 +105,9 @@ class _PulsingBiometricButtonState extends State<PulsingBiometricButton>
                 ),
                 child: Center(
                   child: SvgPicture.asset(
-                    'assets/icons/ic_fingerprint.svg',
+                    (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
+                        ? 'assets/icons/ic_apple_face_id.svg'
+                        : 'assets/icons/ic_fingerprint.svg',
                     width: 24,
                     height: 24,
                     colorFilter: const ColorFilter.mode(

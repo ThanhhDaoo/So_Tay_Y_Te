@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../../core/widgets/safe_avatar_image.dart';
 import '../../viewmodel/profile_state.dart';
 
 class ProfilePatientHeroCard extends StatelessWidget {
@@ -9,10 +10,12 @@ class ProfilePatientHeroCard extends StatelessWidget {
     super.key,
     required this.profile,
     this.onEditTap,
+    this.onPickAvatar,
   });
 
   final MemberMedicalProfile profile;
   final VoidCallback? onEditTap;
+  final VoidCallback? onPickAvatar;
 
   @override
   Widget build(BuildContext context) {
@@ -63,26 +66,41 @@ class ProfilePatientHeroCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                     child: AspectRatio(
                       aspectRatio: 3 / 4,
-                      child: (profile.heroImageAsset.startsWith('http://') ||
-                              profile.heroImageAsset.startsWith('https://'))
-                          ? Image.network(
-                              profile.heroImageAsset,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              alignment: Alignment.topCenter,
-                              errorBuilder: (_, _, _) => Image.asset(
-                                'assets/images/img_profile_hero_portrait.png',
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                alignment: Alignment.topCenter,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          buildSafeAvatarImage(
+                            imageSource: profile.heroImageAsset,
+                            fallbackAsset: 'assets/images/img_profile_hero_portrait.png',
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            alignment: Alignment.topCenter,
+                          ),
+                          if (onPickAvatar != null)
+                            Positioned(
+                              bottom: 10,
+                              right: 10,
+                              child: Material(
+                                color: AppColors.iceOlive,
+                                shape: const CircleBorder(),
+                                elevation: 3,
+                                child: InkWell(
+                                  customBorder: const CircleBorder(),
+                                  onTap: onPickAvatar,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    child: const Icon(
+                                      Icons.camera_alt,
+                                      size: 18,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            )
-                          : Image.asset(
-                              profile.heroImageAsset,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              alignment: Alignment.topCenter,
                             ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -197,8 +215,13 @@ class ProfilePatientHeroCard extends StatelessWidget {
                         ),
                         _MetaItem(
                           iconAsset: 'assets/icons/ic_prof_location.svg',
-                          text: 'Khu vực: ${profile.region}',
+                          text: 'Khu vực: ${(profile.region.isNotEmpty && !profile.region.contains('@') && profile.region != 'Chưa cập nhật') ? profile.region : 'Chưa cập nhật'}',
                         ),
+                        if (profile.contact.isNotEmpty)
+                          _MetaItem(
+                            iconAsset: 'assets/icons/ic_prof_verified_user.svg',
+                            text: 'Liên hệ: ${profile.contact}',
+                          ),
                       ],
                     ),
                   ),

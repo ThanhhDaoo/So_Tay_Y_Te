@@ -36,6 +36,7 @@ abstract class AuthLocalDataSource {
     String? weight,
     String? organDonor,
     String? avatarUrl,
+    String? region,
   });
   Future<Map<String, dynamic>?> getUserProfileData(String userId);
   Future<void> deleteUserById(String userId);
@@ -319,6 +320,7 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
     String? weight,
     String? organDonor,
     String? avatarUrl,
+    String? region,
   }) async {
     final db = await _db;
     await db.transaction((txn) async {
@@ -349,6 +351,7 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       if (height != null) profileUpdates['height'] = height;
       if (weight != null) profileUpdates['weight'] = weight;
       if (organDonor != null) profileUpdates['organ_donor'] = organDonor;
+      if (region != null) profileUpdates['region'] = region;
 
       await txn.update(
         'user_profile',

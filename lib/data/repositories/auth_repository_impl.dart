@@ -1171,6 +1171,7 @@ class AuthRepositoryImpl implements AuthRepository {
     String? weight,
     String? organDonor,
     String? avatarUrl,
+    String? region,
   }) async {
     final nameErr = InputValidators.validateFullName(fullName);
     if (nameErr != null) throw Exception(nameErr);
@@ -1188,6 +1189,7 @@ class AuthRepositoryImpl implements AuthRepository {
       weight: weight,
       organDonor: organDonor,
       avatarUrl: avatarUrl,
+      region: region,
     );
 
     if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
@@ -1204,6 +1206,8 @@ class AuthRepositoryImpl implements AuthRepository {
         if (height != null) meta['height'] = height;
         if (weight != null) meta['weight'] = weight;
         if (organDonor != null) meta['organ_donor'] = organDonor;
+        if (avatarUrl != null) meta['avatar_url'] = avatarUrl;
+        if (region != null) meta['region'] = region;
         await supabaseAuthRemoteDataSource!.updateCloudUserMetadata(meta);
       } catch (_) {}
     }

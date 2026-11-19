@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/widgets/safe_avatar_image.dart';
 import '../../viewmodel/emergency_card_state.dart';
 
 /// Thẻ thông tin bệnh nhân, nhóm máu và chỉ số sinh trắc nhanh.
@@ -33,26 +34,13 @@ class IcePatientSnapshotCard extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   ClipOval(
-                    child: (patient.avatarAsset.startsWith('http://') ||
-                            patient.avatarAsset.startsWith('https://'))
-                        ? Image.network(
-                            patient.avatarAsset,
-                            width: 56,
-                            height: 56,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => Image.asset(
-                              'assets/images/img_patient_avatar.png',
-                              width: 56,
-                              height: 56,
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : Image.asset(
-                            patient.avatarAsset,
-                            width: 56,
-                            height: 56,
-                            fit: BoxFit.cover,
-                          ),
+                    child: buildSafeAvatarImage(
+                      imageSource: patient.avatarAsset,
+                      fallbackAsset: 'assets/images/img_patient_avatar.png',
+                      width: 56,
+                      height: 56,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   Positioned(
                     right: -2,

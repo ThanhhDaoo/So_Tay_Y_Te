@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/user_session_manager.dart';
 import '../../emergency_card/view/emergency_card_screen.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import '../../prescriptions/view/prescriptions_screen.dart';
@@ -23,6 +24,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    AppSessionNotifier.instance.initFromSession();
   }
 
   void _onSelectTab(int index) {
