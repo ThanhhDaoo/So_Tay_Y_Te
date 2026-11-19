@@ -8,9 +8,11 @@ class ProfilePatientHeroCard extends StatelessWidget {
   const ProfilePatientHeroCard({
     super.key,
     required this.profile,
+    this.onEditTap,
   });
 
   final MemberMedicalProfile profile;
+  final VoidCallback? onEditTap;
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +109,36 @@ class ProfilePatientHeroCard extends StatelessWidget {
                           height: 18,
                         ),
                       ),
+                      if (onEditTap != null) ...[
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: onEditTap,
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceLight,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppColors.iceOlive.withValues(alpha: 0.4)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.edit_outlined, size: 14, color: AppColors.iceOlive),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Sửa',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.iceOlive,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 6),

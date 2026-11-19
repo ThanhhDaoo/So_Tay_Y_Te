@@ -8,6 +8,7 @@ import '../../../../domain/entities/medical_event.dart';
 import '../../../../domain/entities/medicine.dart';
 import '../../../../domain/entities/prescription.dart';
 import '../../../../domain/repositories/medical_record_repository.dart';
+import '../../prescriptions/view/widgets/prescription_ocr_result_modal.dart';
 
 class AddRecordScreen extends StatefulWidget {
   final MedicalEvent? recordToEdit;
@@ -343,6 +344,52 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
     }
   }
 
+  void _scanPrescriptionOcr() {
+    PrescriptionOcrResultModal.show(
+      context,
+      onApplyResult: (result) {
+        setState(() {
+          if (result.hospital != null && result.hospital!.isNotEmpty && _facilityController.text.isEmpty) {
+            _facilityController.text = result.hospital!;
+          }
+          if (result.doctorName != null && result.doctorName!.isNotEmpty && _doctorController.text.isEmpty) {
+            _doctorController.text = result.doctorName!;
+          }
+          if (result.diagnosis != null && result.diagnosis!.isNotEmpty && _diagnosisController.text.isEmpty) {
+            _diagnosisController.text = result.diagnosis!;
+            if (_titleController.text.isEmpty) {
+              _titleController.text = 'Khám ${result.diagnosis!}';
+            }
+          }
+          if (result.imagePath != null && !_attachedFiles.contains(result.imagePath!)) {
+            _attachedFiles.add(result.imagePath!);
+          }
+
+          final newMeds = result.medicines.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final m = entry.value;
+            return Medicine(
+              id: 'med_${DateTime.now().millisecondsSinceEpoch}_$idx',
+              name: m.name,
+              dosage: m.dosage,
+              frequency: m.instruction,
+            );
+          }).toList();
+
+          _medicines.addAll(newMeds);
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã bóc tách ${result.medicines.length} loại thuốc và tự động điền thông tin đợt khám!'),
+            backgroundColor: AppColors.iceOlive,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
@@ -595,10 +642,20 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                     _buildFormCard(
                       title: 'Toa Thuốc Chỉ Định',
                       icon: Icons.medication_outlined,
-                      trailing: TextButton.icon(
-                        onPressed: _showAddMedicineDialog,
-                        icon: const Icon(Icons.add, size: 16, color: AppColors.iceOlive),
-                        label: const Text('Thêm thuốc', style: TextStyle(fontSize: 12, color: AppColors.iceOlive)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextButton.icon(
+                            onPressed: _scanPrescriptionOcr,
+                            icon: const Icon(Icons.document_scanner_outlined, size: 16, color: AppColors.iceOlive),
+                            label: const Text('Quét AI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.iceOlive)),
+                          ),
+                          TextButton.icon(
+                            onPressed: _showAddMedicineDialog,
+                            icon: const Icon(Icons.add, size: 16, color: AppColors.iceOlive),
+                            label: const Text('Thêm tay', style: TextStyle(fontSize: 12, color: AppColors.iceOlive)),
+                          ),
+                        ],
                       ),
                       children: [
                         if (_medicines.isEmpty)

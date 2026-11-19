@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/ocr_service.dart';
+import '../../../../domain/entities/medical_event.dart';
+import '../../../../domain/entities/medicine.dart';
+import '../../../../domain/entities/prescription.dart';
 import '../../../../domain/repositories/medical_record_repository.dart';
 import 'prescriptions_state.dart';
 
@@ -145,6 +149,66 @@ class PrescriptionsViewModel extends ChangeNotifier {
         await scheduleAllReminders();
       }
     } catch (_) {}
+  }
+
+  Future<void> saveOcrPrescription(ParsedPrescriptionResult result) async {
+    try {
+      final repo = _repository ??
+          (sl.isRegistered<MedicalRecordRepository>()
+              ? sl<MedicalRecordRepository>()
+              : null);
+      if (repo == null) return;
+
+      final now = DateTime.now();
+      final eventId = 'REC-OCR-${now.millisecondsSinceEpoch}';
+      final rxId = 'RX-OCR-${now.millisecondsSinceEpoch}';
+
+      final mappedMeds = result.medicines.asMap().entries.map((entry) {
+        final idx = entry.key;
+        final m = entry.value;
+        return Medicine(
+          id: 'med_${now.millisecondsSinceEpoch}_$idx',
+          name: m.name,
+          dosage: m.dosage,
+          frequency: m.instruction,
+        );
+      }).toList();
+
+      final pres = Prescription(
+        id: rxId,
+        doctorName: result.doctorName ?? 'Bác sĩ điều trị',
+        hospital: result.hospital ?? 'Bệnh viện / Cơ sở y tế',
+        issuedDate: now,
+        medicines: mappedMeds,
+      );
+
+      final event = MedicalEvent(
+        id: eventId,
+        title: result.diagnosis != null && result.diagnosis!.isNotEmpty
+            ? 'Đợt khám: ${result.diagnosis}'
+            : 'Đơn thuốc quét bằng AI OCR',
+        date: now,
+        type: MedicalEventType.generalCheckup,
+        facilityName: result.hospital,
+        doctorName: result.doctorName,
+        diagnosis: result.diagnosis,
+        prescription: pres,
+        attachments: result.imagePath != null ? [result.imagePath!] : const [],
+      );
+
+      await repo.saveMedicalEvent(event);
+      await loadFromRepository();
+
+      _state = _state.copyWith(
+        lastActionMessage: 'Đã lưu toa thuốc (${mappedMeds.length} loại) vào sổ y tế và lên lịch uống thuốc tự động!',
+      );
+      notifyListeners();
+    } catch (e) {
+      _state = _state.copyWith(
+        lastActionMessage: 'Lỗi khi lưu toa thuốc: $e',
+      );
+      notifyListeners();
+    }
   }
 
   Future<void> scheduleAllReminders() async {

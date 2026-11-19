@@ -104,6 +104,40 @@ Chẩn đoán: Viêm loét dạ dày tá tràng Hp dương tính
       expect(result.medicines[2].dosage, contains('500mg'));
     });
 
+    test('parseText correctly binds multi-line instructions to the preceding medicine', () {
+      const sampleMultiLine = '''
+BỆNH VIỆN BẠCH MAI
+Khoa Tim Mạch
+Bác sĩ điều trị: PGS.TS Nguyễn Quang Tuấn
+Chẩn đoán: Tăng huyết áp độ 2, Rối loạn lipid máu
+1. Amlodipine 5mg
+   Uống 1 viên vào buổi sáng sau ăn no. SL: 30 viên
+2. Atorvastatin 20mg
+   Tối 1 viên trước khi đi ngủ. SL: 30 viên
+3. Aspirin 81mg
+   Ngày uống 1 viên sau ăn trưa
+      ''';
+
+      final result = ocrService.parseText(sampleMultiLine);
+
+      expect(result.hospital, contains('BỆNH VIỆN BẠCH MAI'));
+      expect(result.doctorName, contains('Nguyễn Quang Tuấn'));
+      expect(result.diagnosis, contains('Tăng huyết áp'));
+      expect(result.medicines.length, equals(3));
+
+      expect(result.medicines[0].name, contains('Amlodipine'));
+      expect(result.medicines[0].dosage, contains('5mg'));
+      expect(result.medicines[0].instruction, contains('buổi sáng sau ăn no'));
+
+      expect(result.medicines[1].name, contains('Atorvastatin'));
+      expect(result.medicines[1].dosage, contains('20mg'));
+      expect(result.medicines[1].instruction, contains('trước khi đi ngủ'));
+
+      expect(result.medicines[2].name, contains('Aspirin'));
+      expect(result.medicines[2].dosage, contains('81mg'));
+      expect(result.medicines[2].instruction, contains('sau ăn trưa'));
+    });
+
     testWidgets('PrescriptionOcrResultModal triggers scanning and displays parsed medicines',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);

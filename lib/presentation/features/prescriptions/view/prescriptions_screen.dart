@@ -110,10 +110,8 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                     onScanOcr: () {
                       PrescriptionOcrResultModal.show(
                         context,
-                        onApplyResult: (result) {
-                          _viewModel.notifyUser(
-                            'Đã nhận diện thành công ${result.medicines.length} loại thuốc từ toa thuốc!',
-                          );
+                        onApplyResult: (result) async {
+                          await _viewModel.saveOcrPrescription(result);
                         },
                       );
                     },

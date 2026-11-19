@@ -1158,6 +1158,68 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<UserAccount> updateUserProfile({
+    required String userId,
+    required String fullName,
+    String? dateOfBirth,
+    String? gender,
+    String? bloodType,
+    String? emergencyContact,
+    String? allergies,
+    String? chronicConditions,
+    String? height,
+    String? weight,
+    String? organDonor,
+    String? avatarUrl,
+  }) async {
+    final nameErr = InputValidators.validateFullName(fullName);
+    if (nameErr != null) throw Exception(nameErr);
+
+    final updated = await authLocalDataSource.updateProfileFields(
+      userId: userId,
+      fullName: fullName.trim(),
+      bloodType: bloodType,
+      gender: gender,
+      dateOfBirth: dateOfBirth,
+      emergencyContact: emergencyContact,
+      allergies: allergies,
+      chronicConditions: chronicConditions,
+      height: height,
+      weight: weight,
+      organDonor: organDonor,
+      avatarUrl: avatarUrl,
+    );
+
+    if (SupabaseConfig.isConfigured && supabaseAuthRemoteDataSource != null) {
+      try {
+        final meta = <String, dynamic>{
+          'full_name': fullName.trim(),
+        };
+        if (bloodType != null) meta['blood_type'] = bloodType;
+        if (gender != null) meta['gender'] = gender;
+        if (dateOfBirth != null) meta['date_of_birth'] = dateOfBirth;
+        if (emergencyContact != null) meta['emergency_contact'] = emergencyContact;
+        if (allergies != null) meta['allergies'] = allergies;
+        if (chronicConditions != null) meta['chronic_conditions'] = chronicConditions;
+        if (height != null) meta['height'] = height;
+        if (weight != null) meta['weight'] = weight;
+        if (organDonor != null) meta['organ_donor'] = organDonor;
+        await supabaseAuthRemoteDataSource!.updateCloudUserMetadata(meta);
+      } catch (_) {}
+    }
+
+    if (updated == null) {
+      throw Exception('Không thể cập nhật thông tin hồ sơ.');
+    }
+    return updated;
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getUserProfileDetails(String userId) async {
+    return await authLocalDataSource.getUserProfileData(userId);
+  }
+
+  @override
   Future<UserAccount> signInWithSocialProvider({
     required String provider,
     String? idToken,

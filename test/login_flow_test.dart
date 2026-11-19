@@ -171,6 +171,29 @@ class MockLoginAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<UserAccount> updateUserProfile({
+    required String userId,
+    required String fullName,
+    String? dateOfBirth,
+    String? gender,
+    String? bloodType,
+    String? emergencyContact,
+    String? allergies,
+    String? chronicConditions,
+    String? height,
+    String? weight,
+    String? organDonor,
+    String? avatarUrl,
+  }) async {
+    return (await getActiveSession())!;
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getUserProfileDetails(String userId) async {
+    return null;
+  }
+
+  @override
   String? peekSandboxOtp(String verificationId) => '123456';
 
   @override

@@ -29,7 +29,15 @@ abstract class AuthLocalDataSource {
     String? dateOfBirth,
     String? gender,
     String? bloodType,
+    String? emergencyContact,
+    String? allergies,
+    String? chronicConditions,
+    String? height,
+    String? weight,
+    String? organDonor,
+    String? avatarUrl,
   });
+  Future<Map<String, dynamic>?> getUserProfileData(String userId);
   Future<void> deleteUserById(String userId);
   Future<String> generateUniquePatientCode();
 }
@@ -304,6 +312,13 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
     String? dateOfBirth,
     String? gender,
     String? bloodType,
+    String? emergencyContact,
+    String? allergies,
+    String? chronicConditions,
+    String? height,
+    String? weight,
+    String? organDonor,
+    String? avatarUrl,
   }) async {
     final db = await _db;
     await db.transaction((txn) async {
@@ -313,6 +328,7 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       if (dateOfBirth != null) updates['date_of_birth'] = dateOfBirth;
       if (gender != null) updates['gender'] = gender;
       if (bloodType != null) updates['blood_type'] = bloodType;
+      if (avatarUrl != null) updates['avatar_url'] = avatarUrl;
 
       await txn.update(
         'users',
@@ -326,6 +342,13 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       };
       if (dateOfBirth != null) profileUpdates['date_of_birth'] = dateOfBirth;
       if (bloodType != null) profileUpdates['blood_type'] = bloodType;
+      if (gender != null) profileUpdates['gender'] = gender;
+      if (emergencyContact != null) profileUpdates['emergency_contact'] = emergencyContact;
+      if (allergies != null) profileUpdates['allergies'] = allergies;
+      if (chronicConditions != null) profileUpdates['chronic_conditions'] = chronicConditions;
+      if (height != null) profileUpdates['height'] = height;
+      if (weight != null) profileUpdates['weight'] = weight;
+      if (organDonor != null) profileUpdates['organ_donor'] = organDonor;
 
       await txn.update(
         'user_profile',
@@ -336,6 +359,19 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
     });
 
     return await findById(userId);
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getUserProfileData(String userId) async {
+    final db = await _db;
+    final res = await db.query(
+      'user_profile',
+      where: 'id = ?',
+      whereArgs: [userId],
+      limit: 1,
+    );
+    if (res.isEmpty) return null;
+    return res.first;
   }
 
   @override

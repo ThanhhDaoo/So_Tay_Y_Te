@@ -12,7 +12,8 @@ class EmergencyCardViewModel extends ChangeNotifier {
   Future<void> loadProfile() async {
     try {
       if (sl.isRegistered<AuthRepository>()) {
-        final session = await sl<AuthRepository>().getActiveSession();
+        final auth = sl<AuthRepository>();
+        final session = await auth.getActiveSession();
         if (session != null) {
           String demographics = session.gender ?? 'Chưa rõ';
           if (session.dateOfBirth != null && session.dateOfBirth!.isNotEmpty) {
@@ -21,15 +22,65 @@ class EmergencyCardViewModel extends ChangeNotifier {
           final hasBlood = session.bloodType != null &&
               session.bloodType!.isNotEmpty &&
               session.bloodType != 'Chưa rõ';
+
+          String heightStr = '-- cm';
+          String weightStr = '-- kg';
+          String organDonor = 'CHƯA ĐĂNG KÝ';
+          EmergencyContactInfo primaryIce = _state.primaryContact;
+          DrugAllergyWarning allergyWarn = _state.allergyWarning;
+          List<ChronicConditionItem> conditions = _state.chronicConditions;
+
+          final details = await auth.getUserProfileDetails(session.id);
+          if (details != null) {
+            final h = details['height'] as String?;
+            final w = details['weight'] as String?;
+            if (h != null && h.trim().isNotEmpty) heightStr = '${h.trim()} cm';
+            if (w != null && w.trim().isNotEmpty) weightStr = '${w.trim()} kg';
+            if (details['organ_donor'] != null) organDonor = details['organ_donor'] as String;
+
+            final ice = details['emergency_contact'] as String?;
+            if (ice != null && ice.trim().isNotEmpty) {
+              primaryIce = EmergencyContactInfo(
+                label: 'NGƯỜI THÂN KHẨN CẤP (ICE)',
+                name: ice.trim(),
+                phone: ice.trim(),
+              );
+            }
+
+            final all = details['allergies'] as String?;
+            if (all != null && all.trim().isNotEmpty && all != 'Không có') {
+              allergyWarn = DrugAllergyWarning(
+                severityBadge: 'CẢNH BÁO',
+                title: 'Dị ứng: ${all.trim()}',
+                description: 'Cần đặc biệt lưu ý trước khi chỉ định thuốc hoặc can thiệp y tế.',
+                isSevere: true,
+              );
+            }
+
+            final cond = details['chronic_conditions'] as String?;
+            if (cond != null && cond.trim().isNotEmpty && cond != 'Không có') {
+              final list = cond.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+              conditions = list.map((c) => ChronicConditionItem(
+                title: c,
+                badgeLabel: 'GHI NHẬN',
+                note: 'Theo dõi thường quy',
+                iconAsset: 'assets/icons/ic_condition_lungs.svg',
+              )).toList();
+            }
+          }
+
           _state = _state.copyWith(
+            primaryContact: primaryIce,
+            allergyWarning: allergyWarn,
+            chronicConditions: conditions,
             patient: _state.patient.copyWith(
               fullName: session.fullName.isNotEmpty ? session.fullName : 'Chưa cập nhật',
               demographics: demographics,
               bloodType: hasBlood ? session.bloodType! : '--',
               rhFactor: hasBlood ? 'Rh Dương' : 'Chưa rõ',
-              height: '-- cm',
-              weight: '-- kg',
-              organDonorStatus: 'CHƯA ĐĂNG KÝ',
+              height: heightStr,
+              weight: weightStr,
+              organDonorStatus: organDonor,
               avatarAsset: session.avatarUrl ?? _state.patient.avatarAsset,
             ),
           );

@@ -772,4 +772,39 @@ class _FallbackRegisterAuthRepository implements AuthRepository {
       createdAt: DateTime.now(),
     );
   }
+
+  @override
+  Future<UserAccount> updateUserProfile({
+    required String userId,
+    required String fullName,
+    String? dateOfBirth,
+    String? gender,
+    String? bloodType,
+    String? emergencyContact,
+    String? allergies,
+    String? chronicConditions,
+    String? height,
+    String? weight,
+    String? organDonor,
+    String? avatarUrl,
+  }) async {
+    return UserAccount(
+      id: userId,
+      patientCode: 'STYT-999999',
+      fullName: fullName,
+      primaryContact: '',
+      passwordHash: '',
+      salt: '',
+      dateOfBirth: dateOfBirth,
+      gender: gender,
+      bloodType: bloodType,
+      avatarUrl: avatarUrl,
+      createdAt: DateTime.now(),
+    );
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getUserProfileDetails(String userId) async {
+    return null;
+  }
 }

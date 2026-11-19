@@ -193,6 +193,22 @@ class AppDatabaseHelper implements DatabaseHelper {
           } catch (_) {}
         }
       }
+
+      final profileInfo = await db.rawQuery('PRAGMA table_info(user_profile)');
+      final existingProfileCols = profileInfo.map((row) => row['name'] as String).toSet();
+      final requiredProfileCols = {
+        'height': 'TEXT',
+        'weight': 'TEXT',
+        'gender': 'TEXT',
+        'organ_donor': 'TEXT',
+      };
+      for (final entry in requiredProfileCols.entries) {
+        if (!existingProfileCols.contains(entry.key)) {
+          try {
+            await db.execute('ALTER TABLE user_profile ADD COLUMN ${entry.key} ${entry.value}');
+          } catch (_) {}
+        }
+      }
     } catch (_) {}
   }
 

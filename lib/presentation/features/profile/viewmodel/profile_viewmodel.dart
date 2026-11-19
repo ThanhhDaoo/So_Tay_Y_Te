@@ -14,7 +14,8 @@ class ProfileViewModel extends ChangeNotifier {
   Future<void> loadCurrentUserProfile() async {
     try {
       if (sl.isRegistered<AuthRepository>()) {
-        final session = await sl<AuthRepository>().getActiveSession();
+        final authRepo = sl<AuthRepository>();
+        final session = await authRepo.getActiveSession();
         if (session != null && !session.isGuest) {
           final shortName = session.fullName.trim().split(' ').last;
           final primaryMember = FamilyMemberChip(
@@ -34,6 +35,59 @@ class ProfileViewModel extends ChangeNotifier {
             }
           }
 
+          List<String> allergiesList = const [];
+          List<String> conditionsList = const [];
+          String heightStr = '-- cm';
+          String weightStr = '-- kg';
+          String bmiVal = '--';
+          String bmiLabel = 'Chưa tính';
+
+          final details = await authRepo.getUserProfileDetails(session.id);
+          if (details != null) {
+            final rawAllergies = details['allergies'] as String?;
+            if (rawAllergies != null && rawAllergies.trim().isNotEmpty && rawAllergies != 'Không có') {
+              allergiesList = rawAllergies.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+            }
+            final rawConditions = details['chronic_conditions'] as String?;
+            if (rawConditions != null && rawConditions.trim().isNotEmpty && rawConditions != 'Không có') {
+              conditionsList = rawConditions.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+            }
+            final h = details['height'] as String?;
+            final w = details['weight'] as String?;
+            if (h != null && h.trim().isNotEmpty) heightStr = '${h.trim()} cm';
+            if (w != null && w.trim().isNotEmpty) weightStr = '${w.trim()} kg';
+
+            final hNum = double.tryParse(h ?? '');
+            final wNum = double.tryParse(w ?? '');
+            if (hNum != null && wNum != null && hNum > 0) {
+              final bmi = wNum / ((hNum / 100) * (hNum / 100));
+              bmiVal = bmi.toStringAsFixed(1);
+              if (bmi < 18.5) {
+                bmiLabel = 'Thiếu cân';
+              } else if (bmi < 24.9) {
+                bmiLabel = 'Bình thường';
+              } else if (bmi < 29.9) {
+                bmiLabel = 'Tiền béo phì';
+              } else {
+                bmiLabel = 'Béo phì';
+              }
+            }
+          }
+
+          final allergyItems = allergiesList.map((a) => AllergyItem(
+            title: a,
+            severityLabel: 'Cảnh báo',
+            isHighRisk: true,
+            reaction: 'Cần lưu ý khi kê đơn y tế',
+            iconAsset: 'assets/icons/ic_prof_allergy_pill.svg',
+          )).toList();
+
+          final conditionItems = conditionsList.map((c) => ChronicConditionItem(
+            title: c,
+            statusText: 'Đang theo dõi',
+            iconAsset: 'assets/icons/ic_prof_condition_stomach.svg',
+          )).toList();
+
           final primaryProfile = MemberMedicalProfile(
             id: 'primary',
             fullName: session.fullName.isNotEmpty ? session.fullName : 'Chưa cập nhật',
@@ -47,12 +101,12 @@ class ProfileViewModel extends ChangeNotifier {
                 ? session.bloodType!
                 : 'Chưa rõ',
             bloodNote: 'Chưa xác nhận',
-            bmiValue: '--',
-            bmiStatusLabel: 'Chưa tính',
-            heightText: '-- cm',
-            weightText: '-- kg',
-            allergies: const [],
-            chronicConditions: const [],
+            bmiValue: bmiVal,
+            bmiStatusLabel: bmiLabel,
+            heightText: heightStr,
+            weightText: weightStr,
+            allergies: allergyItems,
+            chronicConditions: conditionItems,
             immunizations: const [],
           );
 
@@ -73,6 +127,40 @@ class ProfileViewModel extends ChangeNotifier {
         }
       }
     } catch (_) {}
+  }
+
+  Future<void> updateCurrentUserProfile({
+    required String fullName,
+    String? dateOfBirth,
+    String? gender,
+    String? bloodType,
+    String? height,
+    String? weight,
+    String? emergencyContact,
+    String? allergies,
+    String? chronicConditions,
+    String? organDonor,
+  }) async {
+    if (sl.isRegistered<AuthRepository>()) {
+      final auth = sl<AuthRepository>();
+      final session = await auth.getActiveSession();
+      if (session != null) {
+        await auth.updateUserProfile(
+          userId: session.id,
+          fullName: fullName,
+          dateOfBirth: dateOfBirth,
+          gender: gender,
+          bloodType: bloodType,
+          emergencyContact: emergencyContact,
+          allergies: allergies,
+          chronicConditions: chronicConditions,
+          height: height,
+          weight: weight,
+          organDonor: organDonor,
+        );
+        await loadCurrentUserProfile();
+      }
+    }
   }
 
   void selectMember(String memberId) {

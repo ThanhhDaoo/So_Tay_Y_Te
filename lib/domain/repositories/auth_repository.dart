@@ -107,6 +107,25 @@ abstract class AuthRepository {
     String? dateOfBirth,
   });
 
+  /// Cập nhật đầy đủ thông tin hồ sơ cá nhân và đồng bộ dữ liệu
+  Future<UserAccount> updateUserProfile({
+    required String userId,
+    required String fullName,
+    String? dateOfBirth,
+    String? gender,
+    String? bloodType,
+    String? emergencyContact,
+    String? allergies,
+    String? chronicConditions,
+    String? height,
+    String? weight,
+    String? organDonor,
+    String? avatarUrl,
+  });
+
+  /// Lấy thông tin bổ sung về hồ sơ cá nhân (chiều cao, cân nặng, dị ứng, bệnh nền...)
+  Future<Map<String, dynamic>?> getUserProfileDetails(String userId);
+
   // Social Sign-In (Apple & Google)
   Future<UserAccount> signInWithSocialProvider({
     required String provider,

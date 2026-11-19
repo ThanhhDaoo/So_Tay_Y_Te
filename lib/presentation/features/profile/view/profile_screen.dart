@@ -5,6 +5,7 @@ import '../../main_shell/view/main_shell_screen.dart';
 import '../../../routes/app_routes.dart';
 import '../viewmodel/profile_viewmodel.dart';
 import 'widgets/add_family_member_sheet.dart';
+import 'widgets/edit_personal_profile_sheet.dart';
 import 'widgets/medical_history_sheet.dart';
 import 'widgets/profile_allergy_warning_card.dart';
 import 'widgets/profile_chronic_conditions_card.dart';
@@ -125,7 +126,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 sliver: SliverList.list(
                   children: [
-                    ProfilePatientHeroCard(profile: activeProfile),
+                    ProfilePatientHeroCard(
+                      profile: activeProfile,
+                      onEditTap: () {
+                        EditPersonalProfileSheet.show(
+                          context,
+                          initialFullName: activeProfile.fullName,
+                          initialDob: activeProfile.dob,
+                          initialBloodType: activeProfile.bloodType,
+                          initialHeight: activeProfile.heightText,
+                          initialWeight: activeProfile.weightText,
+                          initialAllergies: activeProfile.allergies.map((a) => a.title).join(', '),
+                          initialChronicConditions: activeProfile.chronicConditions.map((c) => c.title).join(', '),
+                          onSave: ({
+                            required fullName,
+                            allergies,
+                            bloodType,
+                            chronicConditions,
+                            dateOfBirth,
+                            emergencyContact,
+                            gender,
+                            height,
+                            organDonor,
+                            weight,
+                          }) async {
+                            await _viewModel.updateCurrentUserProfile(
+                              fullName: fullName,
+                              dateOfBirth: dateOfBirth,
+                              gender: gender,
+                              bloodType: bloodType,
+                              height: height,
+                              weight: weight,
+                              emergencyContact: emergencyContact,
+                              allergies: allergies,
+                              chronicConditions: chronicConditions,
+                              organDonor: organDonor,
+                            );
+                          },
+                        );
+                      },
+                    ),
                     const SizedBox(height: 18),
                     ProfileVaultProBanner(
                       onTap: () =>
