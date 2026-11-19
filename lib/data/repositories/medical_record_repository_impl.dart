@@ -9,8 +9,8 @@ class MedicalRecordRepositoryImpl implements MedicalRecordRepository {
   MedicalRecordRepositoryImpl({required this.localDataSource});
 
   @override
-  Future<List<MedicalEvent>> getMedicalTimeline() async {
-    final models = await localDataSource.getAllEvents();
+  Future<List<MedicalEvent>> getMedicalTimeline({String? userId}) async {
+    final models = await localDataSource.getAllEvents(userId: userId);
     return models.map((m) => m.toEntity()).toList();
   }
 
@@ -24,12 +24,22 @@ class MedicalRecordRepositoryImpl implements MedicalRecordRepository {
   Future<void> saveMedicalEvent(MedicalEvent event) async {
     final model = MedicalEventModel(
       id: event.id,
+      userId: event.userId,
       title: event.title,
       description: event.description,
       date: event.date,
       type: event.type,
+      facilityName: event.facilityName,
+      doctorName: event.doctorName,
+      department: event.department,
+      diagnosis: event.diagnosis,
+      bloodPressure: event.bloodPressure,
+      heartRate: event.heartRate,
       prescription: event.prescription,
       attachments: event.attachments,
+      hospitalFee: event.hospitalFee,
+      createdAt: event.createdAt,
+      updatedAt: event.updatedAt,
     );
     await localDataSource.insertOrUpdateEvent(model);
   }

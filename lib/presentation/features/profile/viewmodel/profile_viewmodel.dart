@@ -1,11 +1,79 @@
 import 'package:flutter/foundation.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../../domain/repositories/auth_repository.dart';
 import 'profile_state.dart';
 
 class ProfileViewModel extends ChangeNotifier {
-  ProfileViewModel() : _state = _buildInitialState();
+  ProfileViewModel() : _state = _buildInitialState() {
+    loadCurrentUserProfile();
+  }
 
   ProfileState _state;
   ProfileState get state => _state;
+
+  Future<void> loadCurrentUserProfile() async {
+    try {
+      if (sl.isRegistered<AuthRepository>()) {
+        final session = await sl<AuthRepository>().getActiveSession();
+        if (session != null && !session.isGuest) {
+          final shortName = session.fullName.trim().split(' ').last;
+          final primaryMember = FamilyMemberChip(
+            id: 'primary',
+            name: shortName,
+            subtitle: 'Chính • Hồ sơ gốc',
+            avatarAsset: session.avatarUrl ?? 'assets/images/img_profile_thu_trang.png',
+          );
+
+          String dobFormatted = '14/06/1993';
+          if (session.dateOfBirth != null && session.dateOfBirth!.isNotEmpty) {
+            final parts = session.dateOfBirth!.split('-');
+            if (parts.length == 3) {
+              dobFormatted = '${parts[2]}/${parts[1]}/${parts[0]}';
+            } else {
+              dobFormatted = session.dateOfBirth!;
+            }
+          }
+
+          final primaryProfile = MemberMedicalProfile(
+            id: 'primary',
+            fullName: session.fullName,
+            recordCode: session.patientCode,
+            bhytStatus: 'BHYT: Hoạt động',
+            dob: dobFormatted,
+            region: session.primaryContact,
+            heroImageAsset: session.avatarUrl ?? 'assets/images/img_profile_hero_portrait.png',
+            vitalsUpdatedAt: 'Hôm nay',
+            bloodType: session.bloodType != null && session.bloodType != 'Chưa rõ'
+                ? session.bloodType!
+                : 'O+',
+            bloodNote: 'Sẵn sàng hiến cấp cứu',
+            bmiValue: '21.2',
+            bmiStatusLabel: 'Lý tưởng',
+            heightText: '165 cm',
+            weightText: '55.0 kg',
+            allergies: _state.activeProfile.allergies,
+            chronicConditions: _state.activeProfile.chronicConditions,
+            immunizations: _state.activeProfile.immunizations,
+          );
+
+          final updatedProfiles = Map<String, MemberMedicalProfile>.from(_state.profilesById);
+          updatedProfiles['primary'] = primaryProfile;
+
+          final updatedMembers = [
+            primaryMember,
+            ..._state.familyMembers.where((m) => m.id != 'primary' && m.id != 'thu_trang'),
+          ];
+
+          _state = _state.copyWith(
+            familyMembers: updatedMembers,
+            profilesById: updatedProfiles,
+            selectedMemberId: 'primary',
+          );
+          notifyListeners();
+        }
+      }
+    } catch (_) {}
+  }
 
   void selectMember(String memberId) {
     if (_state.selectedMemberId == memberId) return;

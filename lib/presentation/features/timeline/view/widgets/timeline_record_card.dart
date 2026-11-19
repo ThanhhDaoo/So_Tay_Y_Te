@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -336,10 +337,7 @@ class TimelineRecordCard extends StatelessWidget {
                           height: 56,
                           width: double.infinity,
                           color: AppColors.timelineCardBg,
-                          child: Image.asset(
-                            record.attachedDocs[i].imageAsset,
-                            fit: BoxFit.cover,
-                          ),
+                          child: _buildDocImage(record.attachedDocs[i].imageAsset),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -362,6 +360,24 @@ class TimelineRecordCard extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildDocImage(String path) {
+    if (path.startsWith('assets/')) {
+      return Image.asset(path, fit: BoxFit.cover);
+    }
+    try {
+      final file = File(path);
+      if (file.existsSync()) {
+        return Image.file(file, fit: BoxFit.cover);
+      }
+    } catch (_) {}
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return Image.network(path, fit: BoxFit.cover);
+    }
+    return const Center(
+      child: Icon(Icons.description_outlined, color: AppColors.iceOlive, size: 24),
     );
   }
 

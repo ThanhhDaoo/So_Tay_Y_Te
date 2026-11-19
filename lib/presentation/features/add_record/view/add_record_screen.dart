@@ -1,9 +1,18 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../domain/entities/medical_event.dart';
 import '../../../../domain/entities/medicine.dart';
+import '../../../../domain/entities/prescription.dart';
+import '../../../../domain/repositories/medical_record_repository.dart';
 
 class AddRecordScreen extends StatefulWidget {
-  const AddRecordScreen({super.key});
+  final MedicalEvent? recordToEdit;
+
+  const AddRecordScreen({super.key, this.recordToEdit});
 
   @override
   State<AddRecordScreen> createState() => _AddRecordScreenState();
@@ -11,16 +20,19 @@ class AddRecordScreen extends StatefulWidget {
 
 class _AddRecordScreenState extends State<AddRecordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController(text: 'Khám Chuyên Khoa Tiêu Hóa');
-  final _facilityController = TextEditingController(text: 'Bệnh viện Đa khoa Quốc tế Vinmec');
-  final _doctorController = TextEditingController(text: 'BS. Trần Văn Hùng');
-  final _diagnosisController = TextEditingController(text: 'Viêm dạ dày - tá tràng mạn tính HP (+)');
-  final _symptomsController = TextEditingController(text: 'Đau âm ỉ thượng vị, ợ hơi nhẹ sau ăn.');
-  final _bpController = TextEditingController(text: '120/80');
-  final _hrController = TextEditingController(text: '72');
+  late final TextEditingController _titleController;
+  late final TextEditingController _facilityController;
+  late final TextEditingController _doctorController;
+  late final TextEditingController _diagnosisController;
+  late final TextEditingController _symptomsController;
+  late final TextEditingController _bpController;
+  late final TextEditingController _hrController;
 
-  DateTime _selectedDate = DateTime.now();
-  String _selectedSpecialty = 'Tiêu hóa';
+  late DateTime _selectedDate;
+  late String _selectedSpecialty;
+  final List<Medicine> _medicines = [];
+  final List<String> _attachedFiles = [];
+  bool _isSaving = false;
 
   final List<String> _specialties = [
     'Tiêu hóa',
@@ -30,27 +42,66 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
     'Hô hấp',
     'Cơ xương khớp',
     'Nhi khoa',
+    'Da liễu',
+    'Cấp cứu',
+    'Tiêm chủng',
   ];
 
-  final List<Medicine> _medicines = [
-    Medicine(
-      id: '1',
-      name: 'Nexium 40mg',
-      dosage: '1 viên/lần',
-      frequency: 'Trước ăn sáng 30p',
-    ),
-    Medicine(
-      id: '2',
-      name: 'Amoxicillin 500mg',
-      dosage: '2 viên/lần',
-      frequency: '2 lần/ngày sau ăn',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    final edit = widget.recordToEdit;
+    _titleController = TextEditingController(
+      text: edit?.title ?? 'Khám Chuyên Khoa Tiêu Hóa',
+    );
+    _facilityController = TextEditingController(
+      text: edit?.facilityName ?? 'Bệnh viện Đa khoa Quốc tế Vinmec',
+    );
+    _doctorController = TextEditingController(
+      text: edit?.doctorName ?? 'BS. Trần Văn Hùng',
+    );
+    _diagnosisController = TextEditingController(
+      text: edit?.diagnosis ?? 'Viêm dạ dày - tá tràng mạn tính HP (+)',
+    );
+    _symptomsController = TextEditingController(
+      text: edit?.description ?? 'Đau âm ỉ thượng vị, ợ hơi nhẹ sau ăn.',
+    );
+    _bpController = TextEditingController(
+      text: edit?.bloodPressure ?? '120/80',
+    );
+    _hrController = TextEditingController(
+      text: edit?.heartRate ?? '72',
+    );
 
-  final List<String> _attachedFiles = [
-    'Phieu_Noi_Soi_Da_Day.jpg',
-    'Ket_Qua_Xet_Nghiem_Mau.pdf',
-  ];
+    _selectedDate = edit?.date ?? DateTime.now();
+    _selectedSpecialty = edit?.department ?? 'Tiêu hóa';
+    if (!_specialties.contains(_selectedSpecialty)) {
+      _specialties.insert(0, _selectedSpecialty);
+    }
+
+    if (edit?.prescription?.medicines != null && edit!.prescription!.medicines.isNotEmpty) {
+      _medicines.addAll(edit.prescription!.medicines);
+    } else if (edit == null) {
+      _medicines.addAll([
+        const Medicine(
+          id: '1',
+          name: 'Nexium 40mg',
+          dosage: '1 viên/lần',
+          frequency: 'Trước ăn sáng 30p',
+        ),
+        const Medicine(
+          id: '2',
+          name: 'Amoxicillin 500mg',
+          dosage: '2 viên/lần',
+          frequency: '2 lần/ngày sau ăn',
+        ),
+      ]);
+    }
+
+    if (edit?.attachments != null && edit!.attachments.isNotEmpty) {
+      _attachedFiles.addAll(edit.attachments);
+    }
+  }
 
   @override
   void dispose() {
@@ -62,6 +113,106 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
     _bpController.dispose();
     _hrController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAttachment() async {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Đính Kèm Tài Liệu / Hình Ảnh Bệnh Án',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.iceTextNavy,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(
+                    color: AppColors.surfaceWarm,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.camera_alt_outlined, color: AppColors.iceOlive),
+                ),
+                title: const Text('Chụp ảnh từ Camera', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Chụp sổ khám, kết quả xét nghiệm, đơn thuốc trực tiếp'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await _captureAndSaveImage(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(
+                    color: AppColors.surfaceWarm,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.photo_library_outlined, color: AppColors.iceOlive),
+                ),
+                title: const Text('Chọn ảnh từ Thư viện máy', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Chọn ảnh hoặc file phiếu khám có sẵn'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await _captureAndSaveImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _captureAndSaveImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1920,
+      );
+      if (picked == null) return;
+
+      final appDir = await getApplicationDocumentsDirectory();
+      final fileName = 'med_${DateTime.now().millisecondsSinceEpoch}_${picked.name}';
+      final permanentFile = await File(picked.path).copy('${appDir.path}/$fileName');
+
+      setState(() {
+        _attachedFiles.add(permanentFile.path);
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã đính kèm ảnh tài liệu y tế thành công!'),
+            backgroundColor: AppColors.iceOlive,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không thể chọn ảnh: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   void _showAddMedicineDialog() {
@@ -138,22 +289,93 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
     );
   }
 
-  void _saveRecord() {
-    if (_formKey.currentState?.validate() ?? false) {
+  Future<void> _saveRecord() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      final repo = sl.isRegistered<MedicalRecordRepository>()
+          ? sl<MedicalRecordRepository>()
+          : null;
+
+      final now = DateTime.now();
+      final recordId = widget.recordToEdit?.id ??
+          'rec_${now.millisecondsSinceEpoch}';
+
+      Prescription? prescription;
+      if (_medicines.isNotEmpty || _doctorController.text.trim().isNotEmpty) {
+        prescription = Prescription(
+          id: widget.recordToEdit?.prescription?.id ?? 'rx_${now.millisecondsSinceEpoch}',
+          doctorName: _doctorController.text.trim(),
+          hospital: _facilityController.text.trim(),
+          issuedDate: _selectedDate,
+          medicines: _medicines,
+          note: _diagnosisController.text.trim(),
+        );
+      }
+
+      MedicalEventType eventType = MedicalEventType.generalCheckup;
+      if (_selectedSpecialty == 'Cấp cứu') {
+        eventType = MedicalEventType.emergency;
+      } else if (_selectedSpecialty == 'Tiêm chủng') {
+        eventType = MedicalEventType.vaccination;
+      }
+
+      final event = MedicalEvent(
+        id: recordId,
+        title: _titleController.text.trim().isNotEmpty
+            ? _titleController.text.trim()
+            : 'Đợt khám $_selectedSpecialty',
+        description: _symptomsController.text.trim(),
+        date: _selectedDate,
+        type: eventType,
+        facilityName: _facilityController.text.trim(),
+        doctorName: _doctorController.text.trim(),
+        department: _selectedSpecialty,
+        diagnosis: _diagnosisController.text.trim(),
+        bloodPressure: _bpController.text.trim(),
+        heartRate: _hrController.text.trim(),
+        prescription: prescription,
+        attachments: _attachedFiles,
+        hospitalFee: widget.recordToEdit?.hospitalFee,
+        createdAt: widget.recordToEdit?.createdAt ?? now,
+        updatedAt: now,
+      );
+
+      if (repo != null) {
+        await repo.saveMedicalEvent(event);
+      }
+
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Đã lưu thành công đợt khám mới vào Sổ Tay Y Tế!'),
+        SnackBar(
+          content: Text(widget.recordToEdit != null
+              ? 'Đã cập nhật thành công đợt khám!'
+              : 'Đã lưu thành công đợt khám mới vào Sổ Tay Y Tế!'),
           backgroundColor: AppColors.iceOlive,
           behavior: SnackBarBehavior.floating,
         ),
       );
-      Navigator.pop(context);
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi khi lưu đợt khám: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    final isEdit = widget.recordToEdit != null;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF8F5),
@@ -184,42 +406,35 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.iceTextNavy),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.pop(context),
                   ),
                   const SizedBox(width: 4),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Text(
-                          'SỔ TAY Y TẾ',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.55,
-                            color: AppColors.iceOlive,
-                            height: 1.1,
-                          ),
-                        ),
-                        Text(
-                          'Thêm Đợt Khám Mới',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.iceTextNavy,
-                            height: 1.2,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      isEdit ? 'Chỉnh Sửa Đợt Khám' : 'Thêm Đợt Khám Mới',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.iceTextNavy,
+                      ),
                     ),
                   ),
                   TextButton(
-                    onPressed: _saveRecord,
-                    child: const Text(
-                      'LƯU',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.iceOlive),
-                    ),
+                    onPressed: _isSaving ? null : _saveRecord,
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.iceOlive),
+                          )
+                        : Text(
+                            isEdit ? 'Cập nhật' : 'Lưu',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.iceOlive,
+                            ),
+                          ),
                   ),
                 ],
               ),
@@ -230,24 +445,30 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
               child: Form(
                 key: _formKey,
                 child: ListView(
-                  padding: EdgeInsets.fromLTRB(16, 16, 16, 32 + bottomPadding),
+                  padding: EdgeInsets.only(
+                    top: 16,
+                    bottom: bottomPadding + 32,
+                    left: 16,
+                    right: 16,
+                  ),
                   children: [
-                    // 1. Basic Info Card
+                    // 1. General Info Card
                     _buildFormCard(
                       title: 'Thông Tin Cơ Sở Khám',
                       icon: Icons.local_hospital_outlined,
                       children: [
                         _buildInputField(
                           controller: _titleController,
-                          label: 'Tiêu đề đợt khám',
-                          hint: 'VD: Khám tiêu hóa định kỳ',
-                          validator: (v) => v?.trim().isEmpty == true ? 'Vui lòng nhập tiêu đề' : null,
+                          label: 'Tên đợt khám / Lý do đến khám *',
+                          hint: 'VD: Khám Chuyên Khoa Tiêu Hóa',
+                          validator: (v) => v == null || v.trim().isEmpty ? 'Vui lòng nhập lý do khám' : null,
                         ),
                         const SizedBox(height: 12),
                         _buildInputField(
                           controller: _facilityController,
-                          label: 'Bệnh viện / Phòng khám',
+                          label: 'Cơ sở khám / Bệnh viện *',
                           hint: 'VD: Bệnh viện Vinmec, Bạch Mai...',
+                          validator: (v) => v == null || v.trim().isEmpty ? 'Vui lòng nhập cơ sở khám' : null,
                         ),
                         const SizedBox(height: 12),
                         Row(
@@ -264,17 +485,22 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Ngày khám', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.iceTextSlate)),
+                                  const Text(
+                                    'Ngày khám',
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.iceTextSlate),
+                                  ),
                                   const SizedBox(height: 6),
                                   InkWell(
                                     onTap: () async {
                                       final picked = await showDatePicker(
                                         context: context,
                                         initialDate: _selectedDate,
-                                        firstDate: DateTime(2000),
-                                        lastDate: DateTime.now(),
+                                        firstDate: DateTime(1970),
+                                        lastDate: DateTime(2035),
                                       );
-                                      if (picked != null) setState(() => _selectedDate = picked);
+                                      if (picked != null) {
+                                        setState(() => _selectedDate = picked);
+                                      }
                                     },
                                     borderRadius: BorderRadius.circular(10),
                                     child: Container(
@@ -288,8 +514,8 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
-                                            '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.iceTextNavy),
+                                            '${_selectedDate.day.toString().padLeft(2, '0')}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year}',
+                                            style: const TextStyle(fontSize: 13, color: AppColors.iceTextNavy),
                                           ),
                                           const Icon(Icons.calendar_today, size: 16, color: AppColors.iceOlive),
                                         ],
@@ -313,19 +539,29 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: _specialties.map((s) {
-                            final isSelected = s == _selectedSpecialty;
+                          children: _specialties.map((spec) {
+                            final isSelected = _selectedSpecialty == spec;
                             return ChoiceChip(
-                              label: Text(s),
+                              label: Text(spec),
                               selected: isSelected,
-                              selectedColor: AppColors.iceOlive,
-                              backgroundColor: AppColors.surfaceWarm,
                               labelStyle: TextStyle(
                                 fontSize: 12,
                                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                 color: isSelected ? Colors.white : AppColors.iceTextNavy,
                               ),
-                              onSelected: (_) => setState(() => _selectedSpecialty = s),
+                              selectedColor: AppColors.iceOlive,
+                              backgroundColor: AppColors.surfaceWarm,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                side: BorderSide(
+                                  color: isSelected ? AppColors.iceOlive : AppColors.iceCardBorder,
+                                ),
+                              ),
+                              onSelected: (selected) {
+                                if (selected) {
+                                  setState(() => _selectedSpecialty = spec);
+                                }
+                              },
                             );
                           }).toList(),
                         ),
@@ -333,20 +569,22 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // 3. Diagnosis & Symptoms
+                    // 3. Clinical Diagnosis
                     _buildFormCard(
-                      title: 'Chẩn Đoán & Triệu Chứng',
-                      icon: Icons.note_alt_outlined,
+                      title: 'Chẩn Đoán Lâm Sàng & Triệu Chứng',
+                      icon: Icons.assignment_outlined,
                       children: [
                         _buildInputField(
                           controller: _diagnosisController,
-                          label: 'Chẩn đoán của bác sĩ',
-                          hint: 'VD: Viêm loét dạ dày, Rối loạn tiêu hóa...',
+                          label: 'Chẩn đoán xác định của bác sĩ *',
+                          hint: 'VD: Viêm dạ dày mạn tính...',
+                          maxLines: 2,
+                          validator: (v) => v == null || v.trim().isEmpty ? 'Vui lòng nhập chẩn đoán' : null,
                         ),
                         const SizedBox(height: 12),
                         _buildInputField(
                           controller: _symptomsController,
-                          label: 'Triệu chứng & Ghi chú',
+                          label: 'Triệu chứng & Ghi chú diễn tiến',
                           hint: 'Mô tả triệu chứng người bệnh gặp phải...',
                           maxLines: 3,
                         ),
@@ -427,55 +665,77 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // 6. Attachments
+                    // 6. Attachments (Real Photos)
                     _buildFormCard(
                       title: 'Tài Liệu Đính Kèm (Kết quả, Toa, X-quang)',
                       icon: Icons.attach_file_outlined,
                       trailing: TextButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _attachedFiles.add('Tep_Dinh_Kem_${DateTime.now().second}.jpg');
-                          });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Đã đính kèm ảnh tài liệu y tế'),
-                              backgroundColor: AppColors.iceOlive,
-                              duration: Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.add_photo_alternate_outlined, size: 16, color: AppColors.iceOlive),
-                        label: const Text('Thêm tệp', style: TextStyle(fontSize: 12, color: AppColors.iceOlive)),
+                        onPressed: _pickAttachment,
+                        icon: const Icon(Icons.add_a_photo_outlined, size: 16, color: AppColors.iceOlive),
+                        label: const Text('+ Đính kèm ảnh', style: TextStyle(fontSize: 12, color: AppColors.iceOlive, fontWeight: FontWeight.w700)),
                       ),
                       children: [
-                        ..._attachedFiles.map((f) => Container(
-                              margin: const EdgeInsets.only(bottom: 6),
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        if (_attachedFiles.isEmpty)
+                          const Text(
+                            'Chưa có ảnh tài liệu đính kèm. Bấm "+ Đính kèm ảnh" để chụp hoặc chọn từ máy.',
+                            style: TextStyle(color: AppColors.iceTextMuted, fontSize: 13),
+                          )
+                        else
+                          ..._attachedFiles.map((f) {
+                            final name = f.split('/').last;
+                            final fileExists = File(f).existsSync();
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: AppColors.surfaceWarm,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: AppColors.iceCardBorder),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.description_outlined, size: 18, color: AppColors.iceOlive),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: Text(f, style: const TextStyle(fontSize: 12, color: AppColors.iceTextNavy))),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: Container(
+                                      width: 44,
+                                      height: 44,
+                                      color: Colors.grey.shade200,
+                                      child: fileExists
+                                          ? Image.file(File(f), fit: BoxFit.cover)
+                                          : (f.startsWith('assets/')
+                                              ? Image.asset(f, fit: BoxFit.cover)
+                                              : const Icon(Icons.image_outlined, color: AppColors.iceOlive)),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      name,
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.iceTextNavy),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                   IconButton(
-                                    icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
+                                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
                                     onPressed: () => setState(() => _attachedFiles.remove(f)),
                                   ),
                                 ],
                               ),
-                            )),
+                            );
+                          }),
                       ],
                     ),
                     const SizedBox(height: 28),
 
                     // Submit CTA
                     ElevatedButton.icon(
-                      onPressed: _saveRecord,
+                      onPressed: _isSaving ? null : _saveRecord,
                       icon: const Icon(Icons.check_circle_outline, size: 20),
-                      label: const Text('Lưu Đợt Khám Vào Sổ Y Tế', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                      label: Text(
+                        isEdit ? 'Lưu Thay Đổi Đợt Khám' : 'Lưu Đợt Khám Vào Sổ Y Tế',
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.iceOlive,
                         foregroundColor: Colors.white,

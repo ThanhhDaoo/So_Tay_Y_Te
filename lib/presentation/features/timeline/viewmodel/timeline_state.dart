@@ -224,14 +224,16 @@ class TimelineState {
   TimelineState copyWith({
     String? searchQuery,
     String? selectedFilterId,
+    List<TimelineFilterCategory>? filters,
+    List<TimelineRecordItem>? records,
     String? lastActionMessage,
     bool clearActionMessage = false,
   }) {
     return TimelineState(
       searchQuery: searchQuery ?? this.searchQuery,
       selectedFilterId: selectedFilterId ?? this.selectedFilterId,
-      filters: filters,
-      records: records,
+      filters: filters ?? this.filters,
+      records: records ?? this.records,
       lastActionMessage: clearActionMessage
           ? null
           : (lastActionMessage ?? this.lastActionMessage),

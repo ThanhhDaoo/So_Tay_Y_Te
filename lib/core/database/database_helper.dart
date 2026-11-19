@@ -128,8 +128,9 @@ class AppDatabaseHelper implements DatabaseHelper {
 
   Future<void> _onOpen(Database db) async {
     await db.execute('PRAGMA foreign_keys = ON');
-    // Đảm bảo các bảng auth luôn tồn tại kể cả khi mở DB cũ
+    // Đảm bảo các bảng auth và medical_events luôn tồn tại kể cả khi mở DB cũ
     await _createAuthTables(db);
+    await _ensureMedicalEventsSchema(db);
 
     // Dọn dẹp tài khoản mẫu tự động seed từ phiên bản dev cũ (nếu có)
     await db.delete(
@@ -142,6 +143,57 @@ class AppDatabaseHelper implements DatabaseHelper {
       where: 'id = ?',
       whereArgs: ['default-demo-user-01'],
     );
+  }
+
+  Future<void> _ensureMedicalEventsSchema(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS medical_events (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        title TEXT NOT NULL,
+        description TEXT,
+        date TEXT NOT NULL,
+        type TEXT NOT NULL,
+        facility_name TEXT,
+        doctor_name TEXT,
+        department TEXT,
+        diagnosis TEXT,
+        blood_pressure TEXT,
+        heart_rate TEXT,
+        prescription_json TEXT,
+        attachments TEXT,
+        hospital_fee TEXT,
+        created_at TEXT,
+        updated_at TEXT
+      )
+    ''');
+
+    try {
+      final tableInfo = await db.rawQuery('PRAGMA table_info(medical_events)');
+      final existingColumns = tableInfo.map((row) => row['name'] as String).toSet();
+
+      final requiredColumns = {
+        'user_id': 'TEXT',
+        'facility_name': 'TEXT',
+        'doctor_name': 'TEXT',
+        'department': 'TEXT',
+        'diagnosis': 'TEXT',
+        'blood_pressure': 'TEXT',
+        'heart_rate': 'TEXT',
+        'prescription_json': 'TEXT',
+        'hospital_fee': 'TEXT',
+        'created_at': 'TEXT',
+        'updated_at': 'TEXT',
+      };
+
+      for (final entry in requiredColumns.entries) {
+        if (!existingColumns.contains(entry.key)) {
+          try {
+            await db.execute('ALTER TABLE medical_events ADD COLUMN ${entry.key} ${entry.value}');
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
   }
 
   @override

@@ -115,13 +115,15 @@ class ProfileState {
       profilesById[selectedMemberId] ?? profilesById.values.first;
 
   ProfileState copyWith({
+    List<FamilyMemberChip>? familyMembers,
     String? selectedMemberId,
+    Map<String, MemberMedicalProfile>? profilesById,
     bool? isEditLocked,
   }) {
     return ProfileState(
-      familyMembers: familyMembers,
+      familyMembers: familyMembers ?? this.familyMembers,
       selectedMemberId: selectedMemberId ?? this.selectedMemberId,
-      profilesById: profilesById,
+      profilesById: profilesById ?? this.profilesById,
       isEditLocked: isEditLocked ?? this.isEditLocked,
     );
   }

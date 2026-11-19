@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/pdf_report_service.dart';
@@ -5,29 +6,52 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/medical_event.dart';
 import '../../../../domain/entities/medicine.dart';
 import '../../../../domain/entities/prescription.dart';
-import '../../../routes/app_routes.dart';
+import '../../../../domain/repositories/medical_record_repository.dart';
+import '../../add_record/view/add_record_screen.dart';
 
-class RecordDetailScreen extends StatelessWidget {
+class RecordDetailScreen extends StatefulWidget {
   final String recordId;
   final PdfReportService? pdfReportService;
+  final MedicalRecordRepository? repository;
 
   const RecordDetailScreen({
     super.key,
     required this.recordId,
     this.pdfReportService,
+    this.repository,
   });
 
-  MedicalEvent _createCurrentEvent() {
+  @override
+  State<RecordDetailScreen> createState() => _RecordDetailScreenState();
+}
+
+class _RecordDetailScreenState extends State<RecordDetailScreen> {
+  late MedicalEvent _event;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEvent();
+  }
+
+  MedicalEvent _createFallbackEvent() {
     return MedicalEvent(
-      id: recordId.isNotEmpty ? recordId : 'REC-2024-0418',
+      id: widget.recordId.isNotEmpty ? widget.recordId : 'REC-2024-0418',
       title: 'Viêm dạ dày & Trào ngược dạ dày thực quản (GERD Độ A)',
       description: 'Đau âm ỉ vùng thượng vị sau ăn, ợ chua nhiều về đêm. Xét nghiệm vi khuẩn HP dương tính.',
       date: DateTime(2024, 4, 18, 9, 30),
       type: MedicalEventType.generalCheckup,
+      facilityName: 'Bệnh viện Đa khoa Quốc tế Vinmec Central Park',
+      doctorName: 'BS. Trần Văn Hùng',
+      department: 'Khoa Tiêu hóa - Gan mật • Phòng khám VIP 3',
+      diagnosis: 'Viêm dạ dày & Trào ngược dạ dày thực quản (GERD Độ A)',
+      bloodPressure: '120/78',
+      heartRate: '72',
       prescription: Prescription(
         id: 'RX-2024-089',
-        doctorName: 'BS. CKII Lê Hoàng Tuấn',
-        hospital: 'Bệnh viện Đa khoa Quốc tế Vinmec',
+        doctorName: 'BS. Trần Văn Hùng',
+        hospital: 'Bệnh viện Đa khoa Quốc tế Vinmec Central Park',
         issuedDate: DateTime(2024, 4, 18),
         medicines: const [
           Medicine(id: 'm1', name: 'Nexium Mups 40mg', dosage: '40mg • 1 viên/ngày', frequency: 'Trước ăn sáng 30p'),
@@ -36,15 +60,44 @@ class RecordDetailScreen extends StatelessWidget {
           Medicine(id: 'm4', name: 'Gaviscon Dual Action', dosage: '1 gói • 3 lần/ngày', frequency: 'Sau ăn trưa/tối'),
         ],
       ),
+      attachments: const [
+        'assets/images/img_doc_endoscopy.png',
+        'assets/images/img_doc_blood_test.png',
+        'assets/images/img_doc_xray.png',
+      ],
     );
   }
 
+  Future<void> _loadEvent() async {
+    setState(() => _isLoading = true);
+    try {
+      final repo = widget.repository ??
+          (sl.isRegistered<MedicalRecordRepository>()
+              ? sl<MedicalRecordRepository>()
+              : null);
+      if (repo != null && widget.recordId.isNotEmpty) {
+        final loaded = await repo.getMedicalEventById(widget.recordId);
+        if (loaded != null) {
+          setState(() {
+            _event = loaded;
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+    } catch (_) {}
+
+    setState(() {
+      _event = _createFallbackEvent();
+      _isLoading = false;
+    });
+  }
+
   Future<void> _exportPdf(BuildContext context) async {
-    final pdfService = pdfReportService ??
+    final pdfService = widget.pdfReportService ??
         (sl.isRegistered<PdfReportService>() ? sl<PdfReportService>() : PdfReportServiceImpl());
     try {
-      final event = _createCurrentEvent();
-      await pdfService.printRecord(record: event);
+      await pdfService.printRecord(record: _event);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -55,11 +108,10 @@ class RecordDetailScreen extends StatelessWidget {
   }
 
   Future<void> _sharePdf(BuildContext context) async {
-    final pdfService = pdfReportService ??
+    final pdfService = widget.pdfReportService ??
         (sl.isRegistered<PdfReportService>() ? sl<PdfReportService>() : PdfReportServiceImpl());
     try {
-      final event = _createCurrentEvent();
-      await pdfService.shareRecordPdf(record: event);
+      await pdfService.shareRecordPdf(record: _event);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -69,7 +121,83 @@ class RecordDetailScreen extends StatelessWidget {
     }
   }
 
-  void _showImagePreview(BuildContext context, String title, String imageAsset) {
+  Future<void> _onEdit() async {
+    final res = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddRecordScreen(recordToEdit: _event),
+      ),
+    );
+    if (res == true) {
+      _loadEvent();
+    }
+  }
+
+  Future<void> _onDelete() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Xác Nhận Xóa Bệnh Án',
+          style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
+        ),
+        content: const Text(
+          'Bạn có chắc chắn muốn xóa hồ sơ đợt khám này? Hành động này sẽ xóa dữ liệu và không thể hoàn tác.',
+          style: TextStyle(color: AppColors.iceTextSlate, fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy', style: TextStyle(color: AppColors.iceTextSlate)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Xác nhận xóa'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    try {
+      final repo = widget.repository ??
+          (sl.isRegistered<MedicalRecordRepository>()
+              ? sl<MedicalRecordRepository>()
+              : null);
+      if (repo != null) {
+        await repo.deleteMedicalEvent(_event.id);
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đã xóa thành công đợt khám khỏi sổ y tế.'),
+          backgroundColor: AppColors.iceOlive,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Không thể xóa đợt khám: $e'), backgroundColor: AppColors.error),
+      );
+    }
+  }
+
+  void _showImagePreview(BuildContext context, String title, String imagePath) {
+    final isAsset = imagePath.startsWith('assets/');
+    final file = File(imagePath);
+
     showDialog<void>(
       context: context,
       builder: (ctx) => Dialog(
@@ -114,16 +242,19 @@ class RecordDetailScreen extends StatelessWidget {
               ),
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-                child: Image.asset(
-                  imageAsset,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 220,
-                    color: AppColors.surfaceWarm,
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.image_not_supported, size: 48, color: AppColors.iceTextMuted),
-                  ),
-                ),
+                child: isAsset
+                    ? Image.asset(
+                        imagePath,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => _buildImageError(),
+                      )
+                    : (file.existsSync()
+                        ? Image.file(
+                            file,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => _buildImageError(),
+                          )
+                        : _buildImageError()),
               ),
             ],
           ),
@@ -132,9 +263,27 @@ class RecordDetailScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildImageError() {
+    return Container(
+      height: 220,
+      color: AppColors.surfaceWarm,
+      alignment: Alignment.center,
+      child: const Icon(Icons.image_not_supported, size: 48, color: AppColors.iceTextMuted),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFFAF8F5),
+        body: Center(child: CircularProgressIndicator(color: AppColors.iceOlive)),
+      );
+    }
+
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    final medicines = _event.prescription?.medicines ?? [];
+    final attachments = _event.attachments;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFAF8F5),
@@ -148,7 +297,7 @@ class RecordDetailScreen extends StatelessWidget {
                 top: MediaQuery.paddingOf(context).top + 8,
                 bottom: 12,
                 left: 8,
-                right: 16,
+                right: 8,
               ),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -173,7 +322,7 @@ class RecordDetailScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
+                        const Text(
                           'SỔ TAY Y TẾ',
                           style: TextStyle(
                             fontSize: 11,
@@ -183,7 +332,7 @@ class RecordDetailScreen extends StatelessWidget {
                             height: 1.1,
                           ),
                         ),
-                        Text(
+                        const Text(
                           'Chi Tiết Bệnh Án',
                           style: TextStyle(
                             fontSize: 18,
@@ -196,11 +345,21 @@ class RecordDetailScreen extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.share_outlined, size: 22, color: AppColors.iceOlive),
+                    icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.iceOlive),
+                    tooltip: 'Chỉnh sửa đợt khám',
+                    onPressed: _onEdit,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                    tooltip: 'Xóa đợt khám',
+                    onPressed: _onDelete,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.share_outlined, size: 20, color: AppColors.iceOlive),
                     onPressed: () => _sharePdf(context),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 22, color: AppColors.iceOlive),
+                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: AppColors.iceOlive),
                     onPressed: () => _exportPdf(context),
                   ),
                 ],
@@ -223,29 +382,36 @@ class RecordDetailScreen extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 18,
-                              backgroundColor: AppColors.iceOlive.withValues(alpha: 0.2),
-                              child: const Icon(Icons.person, color: AppColors.iceOliveDark, size: 20),
-                            ),
-                            const SizedBox(width: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  'Nguyễn Thu Trang',
-                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: AppColors.iceOlive.withValues(alpha: 0.2),
+                                child: const Icon(Icons.person, color: AppColors.iceOliveDark, size: 20),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _event.title,
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      'Ngày khám: ${_event.date.day.toString().padLeft(2, '0')}/${_event.date.month.toString().padLeft(2, '0')}/${_event.date.year}',
+                                      style: const TextStyle(fontSize: 12, color: AppColors.iceTextSlate),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  '32 tuổi • Nhóm máu O+ • Nữ',
-                                  style: TextStyle(fontSize: 12, color: AppColors.iceTextSlate),
-                                ),
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
@@ -254,7 +420,7 @@ class RecordDetailScreen extends StatelessWidget {
                             border: Border.all(color: AppColors.iceCardBorder),
                           ),
                           child: Text(
-                            recordId.isNotEmpty ? '#${recordId.toUpperCase()}' : '#REC-2024-0418',
+                            '#${_event.id.toUpperCase()}',
                             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.iceOlive),
                           ),
                         ),
@@ -270,14 +436,14 @@ class RecordDetailScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Bệnh viện Đa khoa Quốc tế Vinmec Central Park',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
+                        Text(
+                          _event.facilityName ?? 'Bệnh viện Đa khoa Quốc tế Vinmec Central Park',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Khoa Tiêu hóa - Gan mật • Phòng khám VIP 3',
-                          style: TextStyle(fontSize: 13, color: AppColors.iceTextSlate),
+                        Text(
+                          _event.department ?? 'Khoa Tiêu hóa - Gan mật • Phòng khám VIP 3',
+                          style: const TextStyle(fontSize: 13, color: AppColors.iceTextSlate),
                         ),
                         const SizedBox(height: 10),
                         const Divider(height: 1, color: AppColors.iceCardBorder),
@@ -293,14 +459,16 @@ class RecordDetailScreen extends StatelessWidget {
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
+                                children: [
                                   Text(
-                                    'BS. Trần Văn Hùng',
-                                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.iceTextNavy),
+                                    _event.doctorName != null && _event.doctorName!.isNotEmpty
+                                        ? (_event.doctorName!.startsWith('BS') ? _event.doctorName! : 'BS. ${_event.doctorName}')
+                                        : 'BS. Trần Văn Hùng',
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.iceTextNavy),
                                   ),
-                                  Text(
-                                    'Bác sĩ Chuyên khoa II • Chứng chỉ hành nghề: 018492/HCM',
-                                    style: TextStyle(fontSize: 11, color: AppColors.iceTextSlate),
+                                  const Text(
+                                    'Bác sĩ điều trị chuyên khoa',
+                                    style: TextStyle(fontSize: 12, color: AppColors.iceTextSlate),
                                   ),
                                 ],
                               ),
@@ -312,43 +480,21 @@ class RecordDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // 3. Clinical Diagnosis Card
+                  // 3. Clinical Diagnosis & Description
                   _buildSectionCard(
-                    title: 'Chẩn Đoán Lâm Sàng & Triệu Chứng',
-                    icon: Icons.biotech_outlined,
+                    title: 'Chẩn Đoán Lâm Sàng & Diễn Tiến',
+                    icon: Icons.health_and_safety_outlined,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFDE8E8),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'ICD-10: K29.5 · Viêm dạ dày mạn tính, HP (+)',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF9B1C1C)),
-                          ),
+                        Text(
+                          _event.diagnosis ?? _event.title,
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.iceOliveDark),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Triệu chứng khai báo:',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.iceTextNavy),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Đau tức vùng thượng vị âm ỉ liên tục 2 tuần, ợ chua, buồn nôn nhẹ sau khi ăn đồ cay nóng hoặc thức khuya. Không sụt cân, không nôn ra máu.',
-                          style: TextStyle(fontSize: 13, color: AppColors.iceTextSlate, height: 1.35),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Kết luận nội soi:',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.iceTextNavy),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Niêm mạc hang vị phù nề, rải rác có vài ổ trợt nông đường kính 2-3mm. Môn vị co bóp tốt, không hẹp. Clo-test xác định vi khuẩn Helicobacter Pylori dương tính (++).',
-                          style: TextStyle(fontSize: 13, color: AppColors.iceTextSlate, height: 1.35),
+                        Text(
+                          _event.description ?? 'Đau âm ỉ thượng vị, ợ hơi nhẹ sau ăn.',
+                          style: const TextStyle(fontSize: 13, color: AppColors.iceTextSlate, height: 1.35),
                         ),
                       ],
                     ),
@@ -361,9 +507,9 @@ class RecordDetailScreen extends StatelessWidget {
                     icon: Icons.monitor_heart_outlined,
                     child: Row(
                       children: [
-                        _buildVitalPill('Huyết áp', '120/78', 'mmHg', true),
+                        _buildVitalPill('Huyết áp', _event.bloodPressure ?? '120/78', 'mmHg', true),
                         const SizedBox(width: 8),
-                        _buildVitalPill('Nhịp tim', '72', 'bpm', true),
+                        _buildVitalPill('Nhịp tim', _event.heartRate ?? '72', 'bpm', true),
                         const SizedBox(width: 8),
                         _buildVitalPill('SpO2', '98', '%', true),
                         const SizedBox(width: 8),
@@ -375,32 +521,23 @@ class RecordDetailScreen extends StatelessWidget {
 
                   // 5. Attached Clinical Files (with tap-to-zoom)
                   _buildSectionCard(
-                    title: 'Tài Liệu & Kết Quả Cận Lâm Sàng (3)',
+                    title: 'Tài Liệu & Kết Quả Cận Lâm Sàng (${attachments.length})',
                     icon: Icons.folder_open_outlined,
-                    child: Column(
-                      children: [
-                        _buildAttachmentRow(
-                          context: context,
-                          title: 'Ảnh chụp nội soi dạ dày HP (+)',
-                          subtitle: 'Tệp hình ảnh JPEG · 2.4 MB · 18/04/2024',
-                          imageAsset: 'assets/images/img_doc_endoscopy.png',
-                        ),
-                        const SizedBox(height: 8),
-                        _buildAttachmentRow(
-                          context: context,
-                          title: 'Xét nghiệm huyết học tổng quát (CBC)',
-                          subtitle: 'Bản quét PDF/OCR · 1.1 MB · 18/04/2024',
-                          imageAsset: 'assets/images/img_doc_blood_test.png',
-                        ),
-                        const SizedBox(height: 8),
-                        _buildAttachmentRow(
-                          context: context,
-                          title: 'X-Quang ngực thẳng kỹ thuật số',
-                          subtitle: 'Chẩn đoán hình ảnh DICOM/PNG · 3.8 MB',
-                          imageAsset: 'assets/images/img_doc_xray.png',
-                        ),
-                      ],
-                    ),
+                    child: attachments.isEmpty
+                        ? const Text('Chưa có tài liệu đính kèm.', style: TextStyle(color: AppColors.iceTextMuted, fontSize: 13))
+                        : Column(
+                            children: [
+                              for (int i = 0; i < attachments.length; i++) ...[
+                                _buildAttachmentRow(
+                                  context: context,
+                                  title: attachments[i].split('/').last,
+                                  subtitle: 'Ảnh tài liệu đính kèm',
+                                  imagePath: attachments[i],
+                                ),
+                                if (i < attachments.length - 1) const SizedBox(height: 8),
+                              ],
+                            ],
+                          ),
                   ),
                   const SizedBox(height: 16),
 
@@ -408,95 +545,35 @@ class RecordDetailScreen extends StatelessWidget {
                   _buildSectionCard(
                     title: 'Toa Thuốc Điều Trị Ngoại Trú (14 Ngày)',
                     icon: Icons.medication_outlined,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildMedicationItem(
-                          stt: '1',
-                          name: 'Nexium 40mg (Esomeprazole)',
-                          dosage: '1 viên/lần · Ngày 1 lần (Trước ăn sáng 30 phút)',
-                          duration: 'Số lượng: 14 viên',
-                        ),
-                        const Divider(height: 16, color: AppColors.iceCardBorder),
-                        _buildMedicationItem(
-                          stt: '2',
-                          name: 'Amoxicillin 500mg (Kháng sinh)',
-                          dosage: '2 viên/lần · Ngày 2 lần (Sau ăn sáng và tối)',
-                          duration: 'Số lượng: 56 viên',
-                        ),
-                        const Divider(height: 16, color: AppColors.iceCardBorder),
-                        _buildMedicationItem(
-                          stt: '3',
-                          name: 'Clarithromycin 500mg',
-                          dosage: '1 viên/lần · Ngày 2 lần (Sau ăn sáng và tối)',
-                          duration: 'Số lượng: 28 viên',
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 7. Doctor Advice & Next Appointment
-                  _buildSectionCard(
-                    title: 'Lời Dặn Bác Sĩ & Lịch Tái Khám',
-                    icon: Icons.event_available_outlined,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '• Uống thuốc đều đặn đúng giờ, tuyệt đối không ngưng kháng sinh giữa chừng để tránh tình trạng kháng thuốc HP.',
-                          style: TextStyle(fontSize: 13, color: AppColors.iceTextSlate, height: 1.35),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          '• Kiêng đồ ăn cay, chua, cà phê, rượu bia, thức khuya.',
-                          style: TextStyle(fontSize: 13, color: AppColors.iceTextSlate, height: 1.35),
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceWarm,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.iceAccentCream),
-                          ),
-                          child: Row(
-                            children: const [
-                              Icon(Icons.calendar_month, color: AppColors.iceOlive, size: 24),
-                              SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Hẹn tái khám & Test hơi thở C13',
-                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
-                                    ),
-                                    Text(
-                                      '08:30 Sáng - Thứ Năm, 16/05/2024 (Sau 4 tuần)',
-                                      style: TextStyle(fontSize: 12, color: AppColors.iceOliveDark),
-                                    ),
-                                  ],
+                    child: medicines.isEmpty
+                        ? const Text('Chưa có toa thuốc chỉ định cho đợt khám này.', style: TextStyle(color: AppColors.iceTextMuted, fontSize: 13))
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (int i = 0; i < medicines.length; i++) ...[
+                                _buildMedicationItem(
+                                  stt: '${i + 1}',
+                                  name: medicines[i].name,
+                                  dosage: medicines[i].dosage,
+                                  duration: medicines[i].frequency,
                                 ),
-                              ),
+                                if (i < medicines.length - 1) const Divider(height: 16, color: AppColors.iceCardBorder),
+                              ],
                             ],
                           ),
-                        ),
-                      ],
-                    ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
 
-                  // Action Buttons
+                  // Bottom Action Buttons: Edit and Export
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () => Navigator.pushNamed(context, AppRoutes.prescriptions),
-                          icon: const Icon(Icons.alarm_on, size: 18),
-                          label: const Text('Xem Lịch Thuốc'),
+                          onPressed: _onEdit,
+                          icon: const Icon(Icons.edit_outlined, size: 18),
+                          label: const Text('Chỉnh Sửa'),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.iceOliveDark,
+                            foregroundColor: AppColors.iceOlive,
                             side: const BorderSide(color: AppColors.iceOlive),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -542,8 +619,8 @@ class RecordDetailScreen extends StatelessWidget {
         border: Border.all(color: AppColors.iceCardBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -558,8 +635,6 @@ class RecordDetailScreen extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -579,7 +654,7 @@ class RecordDetailScreen extends StatelessWidget {
   Widget _buildVitalPill(String label, String value, String unit, bool isNormal) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
         decoration: BoxDecoration(
           color: AppColors.surfaceWarm,
           borderRadius: BorderRadius.circular(10),
@@ -587,10 +662,25 @@ class RecordDetailScreen extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(label, style: const TextStyle(fontSize: 11, color: AppColors.iceTextMuted)),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.iceTextSlate),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+            ),
             const SizedBox(height: 2),
-            Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy)),
-            Text(unit, style: const TextStyle(fontSize: 10, color: AppColors.iceTextSlate)),
+            Text(
+              unit,
+              style: const TextStyle(fontSize: 9, color: AppColors.iceTextMuted),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -601,13 +691,16 @@ class RecordDetailScreen extends StatelessWidget {
     required BuildContext context,
     required String title,
     required String subtitle,
-    required String imageAsset,
+    required String imagePath,
   }) {
+    final isAsset = imagePath.startsWith('assets/');
+    final file = File(imagePath);
+
     return InkWell(
-      onTap: () => _showImagePreview(context, title, imageAsset),
+      onTap: () => _showImagePreview(context, title, imagePath),
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: AppColors.surfaceWarm,
           borderRadius: BorderRadius.circular(10),
@@ -617,20 +710,18 @@ class RecordDetailScreen extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                imageAsset,
-                width: 44,
-                height: 44,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  width: 44,
-                  height: 44,
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.image, size: 20, color: Colors.grey),
-                ),
+              child: Container(
+                width: 48,
+                height: 48,
+                color: Colors.white,
+                child: isAsset
+                    ? Image.asset(imagePath, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_outlined))
+                    : (file.existsSync()
+                        ? Image.file(file, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_outlined))
+                        : const Icon(Icons.image_outlined, color: AppColors.iceOlive)),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -644,14 +735,12 @@ class RecordDetailScreen extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 11, color: AppColors.iceTextSlate),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 11, color: AppColors.iceTextMuted),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.zoom_in, color: AppColors.iceOlive, size: 20),
+            const Icon(Icons.zoom_in, size: 20, color: AppColors.iceOlive),
           ],
         ),
       ),
@@ -669,7 +758,7 @@ class RecordDetailScreen extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 11,
-          backgroundColor: AppColors.iceOlive.withValues(alpha: 0.12),
+          backgroundColor: AppColors.iceOlive.withValues(alpha: 0.15),
           child: Text(
             stt,
             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.iceOliveDark),
@@ -692,7 +781,7 @@ class RecordDetailScreen extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 duration,
-                style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: AppColors.iceOliveDark),
+                style: const TextStyle(fontSize: 11, color: AppColors.iceOlive, fontWeight: FontWeight.w600),
               ),
             ],
           ),

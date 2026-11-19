@@ -143,8 +143,13 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     duration: const Duration(milliseconds: 200),
                     opacity: _isFabVisible ? 1.0 : 0.0,
                     child: TimelineStickyFab(
-                      onPressed: () =>
-                          Navigator.pushNamed(context, AppRoutes.addRecord),
+                      onPressed: () async {
+                        final res =
+                            await Navigator.pushNamed(context, AppRoutes.addRecord);
+                        if (res == true) {
+                          _viewModel.loadRecords();
+                        }
+                      },
                     ),
                   ),
                 ),
@@ -214,15 +219,67 @@ class _TimelineScreenState extends State<TimelineScreen> {
   Widget _buildChronologicalSpine(List<TimelineRecordItem> records) {
     if (records.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(24),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         decoration: BoxDecoration(
-          color: AppColors.timelineCardBg,
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.iceCardBorder),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: const Text(
-          'Không tìm thấy đợt khám phù hợp.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 14, color: AppColors.iceTextSlate),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.iceOlive.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.medical_information_outlined,
+                size: 36,
+                color: AppColors.iceOlive,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Chưa Có Hồ Sơ Đợt Khám Nào',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.iceTextNavy,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Tài khoản của bạn chưa có hồ sơ bệnh án nào. Hãy bấm nút bên dưới để thêm đợt khám đầu tiên, toa thuốc và chụp ảnh kết quả xét nghiệm!',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: AppColors.iceTextSlate, height: 1.4),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.iceOlive,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Thêm Đợt Khám Đầu Tiên', style: TextStyle(fontWeight: FontWeight.w700)),
+              onPressed: () async {
+                final res = await Navigator.pushNamed(context, AppRoutes.addRecord);
+                if (res == true) {
+                  _viewModel.loadRecords();
+                }
+              },
+            ),
+          ],
         ),
       );
     }
@@ -253,11 +310,16 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 ],
                 TimelineRecordCard(
                   record: records[i],
-                  onOpenDetail: () => Navigator.pushNamed(
-                    context,
-                    AppRoutes.recordDetail,
-                    arguments: records[i].id,
-                  ),
+                  onOpenDetail: () async {
+                    final res = await Navigator.pushNamed(
+                      context,
+                      AppRoutes.recordDetail,
+                      arguments: records[i].id,
+                    );
+                    if (res == true) {
+                      _viewModel.loadRecords();
+                    }
+                  },
                   onViewAllDocs: () =>
                       Navigator.pushNamed(context, AppRoutes.documents),
                   onViewPrescription: () =>

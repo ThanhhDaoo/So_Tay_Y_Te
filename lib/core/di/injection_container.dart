@@ -1,11 +1,17 @@
 import 'package:get_it/get_it.dart';
 import '../../data/datasources/local/app_preferences_datasource.dart';
 import '../../data/datasources/local/auth_local_datasource.dart';
+import '../../data/datasources/local/medical_local_datasource.dart';
 import '../../data/datasources/remote/auth_remote_datasource.dart';
 import '../../data/datasources/remote/firebase_auth_datasource.dart';
 import '../../data/datasources/remote/supabase_auth_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
+import '../../data/repositories/medical_record_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/repositories/medical_record_repository.dart';
+import '../../domain/usecases/medical/delete_medical_event_usecase.dart';
+import '../../domain/usecases/medical/get_medical_timeline_usecase.dart';
+import '../../domain/usecases/medical/save_medical_event_usecase.dart';
 import '../config/firebase_config.dart';
 import '../config/supabase_config.dart';
 import '../database/database_helper.dart';
@@ -88,6 +94,12 @@ class InjectionContainer {
       );
     }
 
+    if (!sl.isRegistered<MedicalLocalDataSource>()) {
+      sl.registerLazySingleton<MedicalLocalDataSource>(
+        () => MedicalLocalDataSourceImpl(databaseHelper: sl<DatabaseHelper>()),
+      );
+    }
+
     // 3. Repositories
     if (!sl.isRegistered<AuthRepository>()) {
       sl.registerLazySingleton<AuthRepository>(
@@ -98,6 +110,33 @@ class InjectionContainer {
           supabaseAuthRemoteDataSource: sl<SupabaseAuthRemoteDataSource>(),
           firebaseAuthRemoteDataSource: sl<FirebaseAuthRemoteDataSource>(),
         ),
+      );
+    }
+
+    if (!sl.isRegistered<MedicalRecordRepository>()) {
+      sl.registerLazySingleton<MedicalRecordRepository>(
+        () => MedicalRecordRepositoryImpl(
+          localDataSource: sl<MedicalLocalDataSource>(),
+        ),
+      );
+    }
+
+    // 4. Use Cases
+    if (!sl.isRegistered<GetMedicalTimelineUseCase>()) {
+      sl.registerLazySingleton<GetMedicalTimelineUseCase>(
+        () => GetMedicalTimelineUseCase(sl<MedicalRecordRepository>()),
+      );
+    }
+
+    if (!sl.isRegistered<SaveMedicalEventUseCase>()) {
+      sl.registerLazySingleton<SaveMedicalEventUseCase>(
+        () => SaveMedicalEventUseCase(sl<MedicalRecordRepository>()),
+      );
+    }
+
+    if (!sl.isRegistered<DeleteMedicalEventUseCase>()) {
+      sl.registerLazySingleton<DeleteMedicalEventUseCase>(
+        () => DeleteMedicalEventUseCase(sl<MedicalRecordRepository>()),
       );
     }
   }
