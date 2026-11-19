@@ -177,9 +177,9 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
-                        '22 Tháng 4, 2024',
-                        style: TextStyle(
+                      Text(
+                        '${DateTime.now().day} Tháng ${DateTime.now().month}, ${DateTime.now().year}',
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.44,
@@ -189,24 +189,75 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  for (int i = 0; i < state.slots.length; i++) ...[
-                    RxDoseSlotCard(
-                      slot: state.slots[i],
-                      onMarkTaken: () =>
-                          _viewModel.markDoseTaken(state.slots[i].id),
-                      onSnooze: () => _viewModel.snoozeDose(state.slots[i].id),
+                  if (state.slots.isEmpty) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.rxBorder),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.rxOlive.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.medication_outlined,
+                              size: 32,
+                              color: AppColors.rxOlive,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Chưa Có Đơn Thuốc Nào',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.iceTextNavy,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Bạn chưa có lịch nhắc uống thuốc hoặc đơn thuốc đang điều trị. Hãy bấm nút Thêm hoặc Quét OCR để lưu đơn thuốc!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.iceTextSlate,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    if (i < state.slots.length - 1) const SizedBox(height: 8),
+                  ] else ...[
+                    for (int i = 0; i < state.slots.length; i++) ...[
+                      RxDoseSlotCard(
+                        slot: state.slots[i],
+                        onMarkTaken: () =>
+                            _viewModel.markDoseTaken(state.slots[i].id),
+                        onSnooze: () => _viewModel.snoozeDose(state.slots[i].id),
+                      ),
+                      if (i < state.slots.length - 1) const SizedBox(height: 8),
+                    ],
                   ],
-                  const SizedBox(height: 24),
-                  RxActivePlanCard(
-                    plan: state.activePlan,
-                    onDetailTap: () => _viewModel.notifyUser(
-                      'Đang xem chi tiết đơn thuốc điều trị HP',
+                  if (state.activePlan != null) ...[
+                    const SizedBox(height: 24),
+                    RxActivePlanCard(
+                      plan: state.activePlan!,
+                      onDetailTap: () => _viewModel.notifyUser(
+                        'Đang xem chi tiết đơn thuốc: ${state.activePlan!.title}',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  RxPharmacistAdviceCard(advice: state.pharmacistAdvice),
+                  ],
+                  if (state.pharmacistAdvice != null) ...[
+                    const SizedBox(height: 16),
+                    RxPharmacistAdviceCard(advice: state.pharmacistAdvice!),
+                  ],
                 ],
               ),
               const Positioned(

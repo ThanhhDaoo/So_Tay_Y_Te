@@ -1,27 +1,150 @@
 import 'package:flutter/material.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../domain/repositories/medical_record_repository.dart';
 import 'prescriptions_state.dart';
 
 /// ViewModel quản lý lịch nhắc uống thuốc và đơn thuốc đang điều trị.
 class PrescriptionsViewModel extends ChangeNotifier {
   final NotificationService _notificationService;
-  PrescriptionsState _state = PrescriptionsState.initial();
+  final MedicalRecordRepository? _repository;
+  PrescriptionsState _state;
 
   PrescriptionsState get state => _state;
 
-  PrescriptionsViewModel({NotificationService? notificationService})
-      : _notificationService = notificationService ??
+  PrescriptionsViewModel({
+    NotificationService? notificationService,
+    MedicalRecordRepository? repository,
+    PrescriptionsState? initialState,
+  })  : _notificationService = notificationService ??
             (sl.isRegistered<NotificationService>()
                 ? sl<NotificationService>()
-                : NotificationServiceImpl()) {
+                : NotificationServiceImpl()),
+        _repository = repository ??
+            (sl.isRegistered<MedicalRecordRepository>()
+                ? sl<MedicalRecordRepository>()
+                : null),
+        _state = initialState ?? PrescriptionsState.initial() {
     initNotifications();
+    if (initialState == null) {
+      loadFromRepository();
+    }
   }
 
   Future<void> initNotifications() async {
     await _notificationService.initialize();
     await _notificationService.requestPermissions();
     await scheduleAllReminders();
+  }
+
+  Future<void> loadFromRepository() async {
+    try {
+      final repo = _repository ??
+          (sl.isRegistered<MedicalRecordRepository>()
+              ? sl<MedicalRecordRepository>()
+              : null);
+      if (repo != null) {
+        final events = await repo.getMedicalTimeline();
+        final eventsWithPrescription = events.where(
+          (e) => e.prescription != null && e.prescription!.medicines.isNotEmpty,
+        ).toList();
+
+        if (eventsWithPrescription.isEmpty) {
+          return;
+        }
+
+        final latestEvent = eventsWithPrescription.first;
+        final pres = latestEvent.prescription!;
+        final medicines = pres.medicines;
+
+        final morningMeds = <MedicationItem>[];
+        final noonMeds = <MedicationItem>[];
+        final nightMeds = <MedicationItem>[];
+
+        for (final m in medicines) {
+          final freq = m.frequency.toLowerCase();
+          final item = MedicationItem(
+            name: m.name,
+            instruction: '${m.dosage} • ${m.frequency}',
+            iconAsset: 'assets/icons/ic_rx_med_bottle.svg',
+          );
+
+          if (freq.contains('sáng') || freq.contains('ngày') || freq.contains('lần')) {
+            morningMeds.add(item);
+          }
+          if (freq.contains('trưa') || freq.contains('2 lần') || freq.contains('3 lần')) {
+            noonMeds.add(item);
+          }
+          if (freq.contains('tối') || freq.contains('chiều') || freq.contains('2 lần') || freq.contains('3 lần')) {
+            nightMeds.add(item);
+          }
+          if (morningMeds.isEmpty && noonMeds.isEmpty && nightMeds.isEmpty) {
+            morningMeds.add(item);
+          }
+        }
+
+        final realSlots = <MedicationDoseSlot>[];
+        if (morningMeds.isNotEmpty) {
+          realSlots.add(
+            MedicationDoseSlot(
+              id: 'morning',
+              title: 'Cữ Sáng',
+              timeLabel: '08:00',
+              status: DoseSlotStatus.upcoming,
+              statusBadge: 'Chưa đến giờ',
+              slotIconAsset: 'assets/icons/ic_rx_sunrise.svg',
+              medications: morningMeds,
+            ),
+          );
+        }
+        if (noonMeds.isNotEmpty) {
+          realSlots.add(
+            MedicationDoseSlot(
+              id: 'noon',
+              title: 'Cữ Trưa',
+              timeLabel: '12:30',
+              status: DoseSlotStatus.upcoming,
+              statusBadge: 'Chưa đến giờ',
+              slotIconAsset: 'assets/icons/ic_rx_sun_noon.svg',
+              medications: noonMeds,
+            ),
+          );
+        }
+        if (nightMeds.isNotEmpty) {
+          realSlots.add(
+            MedicationDoseSlot(
+              id: 'night',
+              title: 'Cữ Tối',
+              timeLabel: '20:00',
+              status: DoseSlotStatus.upcoming,
+              statusBadge: 'Chưa đến giờ',
+              slotIconAsset: 'assets/icons/ic_rx_moon_night.svg',
+              medications: nightMeds,
+            ),
+          );
+        }
+
+        final plan = ActiveTreatmentPlan(
+          title: latestEvent.title,
+          subtitle: pres.doctorName.isNotEmpty ? 'BS. ${pres.doctorName}' : (pres.hospital ?? 'Phác đồ điều trị'),
+          statusLabel: 'Đang áp dụng',
+          currentDay: 1,
+          totalDays: 14,
+          startDate: '${pres.issuedDate.day}/${pres.issuedDate.month}/${pres.issuedDate.year}',
+          endDate: '${pres.issuedDate.add(const Duration(days: 14)).day}/${pres.issuedDate.month}/${pres.issuedDate.year}',
+          pharmacyName: pres.hospital ?? 'Cơ sở khám bệnh',
+          totalCost: latestEvent.hospitalFee ?? 'Chưa cập nhật chi phí',
+        );
+
+        _state = _state.copyWith(
+          planSubtitle: 'Phác đồ: ${latestEvent.title}',
+          slots: realSlots,
+          activePlan: plan,
+        );
+        notifyListeners();
+        await scheduleAllReminders();
+      }
+    } catch (_) {}
   }
 
   Future<void> scheduleAllReminders() async {

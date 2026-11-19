@@ -84,8 +84,8 @@ class PrescriptionsState {
   final int adherencePercent;
   final String nextDoseHighlight;
   final List<MedicationDoseSlot> slots;
-  final ActiveTreatmentPlan activePlan;
-  final String pharmacistAdvice;
+  final ActiveTreatmentPlan? activePlan;
+  final String? pharmacistAdvice;
   final String? lastActionMessage;
 
   const PrescriptionsState({
@@ -94,8 +94,8 @@ class PrescriptionsState {
     required this.adherencePercent,
     required this.nextDoseHighlight,
     required this.slots,
-    required this.activePlan,
-    required this.pharmacistAdvice,
+    this.activePlan,
+    this.pharmacistAdvice,
     this.lastActionMessage,
   });
 
@@ -105,6 +105,20 @@ class PrescriptionsState {
   int get totalCount => slots.length;
 
   factory PrescriptionsState.initial() {
+    final now = DateTime.now();
+    return PrescriptionsState(
+      dayTitle: 'Hôm nay, ${now.day} Tháng ${now.month}',
+      planSubtitle: 'Chưa có phác đồ điều trị',
+      adherencePercent: 0,
+      nextDoseHighlight: 'Chưa có lịch uống',
+      slots: const [],
+      activePlan: null,
+      pharmacistAdvice:
+          'Hãy uống thuốc theo đúng chỉ dẫn của bác sĩ và không tự ý ngưng thuốc.',
+    );
+  }
+
+  factory PrescriptionsState.sample() {
     return const PrescriptionsState(
       dayTitle: 'Hôm nay, Thứ Hai',
       planSubtitle: 'Kế hoạch dùng thuốc thường nhật',
@@ -195,19 +209,25 @@ class PrescriptionsState {
   }
 
   PrescriptionsState copyWith({
+    String? dayTitle,
+    String? planSubtitle,
     int? adherencePercent,
+    String? nextDoseHighlight,
     List<MedicationDoseSlot>? slots,
+    ActiveTreatmentPlan? activePlan,
+    bool clearActivePlan = false,
+    String? pharmacistAdvice,
     String? lastActionMessage,
     bool clearActionMessage = false,
   }) {
     return PrescriptionsState(
-      dayTitle: dayTitle,
-      planSubtitle: planSubtitle,
+      dayTitle: dayTitle ?? this.dayTitle,
+      planSubtitle: planSubtitle ?? this.planSubtitle,
       adherencePercent: adherencePercent ?? this.adherencePercent,
-      nextDoseHighlight: nextDoseHighlight,
+      nextDoseHighlight: nextDoseHighlight ?? this.nextDoseHighlight,
       slots: slots ?? this.slots,
-      activePlan: activePlan,
-      pharmacistAdvice: pharmacistAdvice,
+      activePlan: clearActivePlan ? null : (activePlan ?? this.activePlan),
+      pharmacistAdvice: pharmacistAdvice ?? this.pharmacistAdvice,
       lastActionMessage: clearActionMessage
           ? null
           : (lastActionMessage ?? this.lastActionMessage),

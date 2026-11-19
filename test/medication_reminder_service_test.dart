@@ -81,7 +81,10 @@ void main() {
 
     setUp(() async {
       mockService = MockNotificationService();
-      viewModel = PrescriptionsViewModel(notificationService: mockService);
+      viewModel = PrescriptionsViewModel(
+        notificationService: mockService,
+        initialState: PrescriptionsState.sample(),
+      );
       // Wait for async initNotifications in constructor
       await Future.delayed(const Duration(milliseconds: 50));
     });
