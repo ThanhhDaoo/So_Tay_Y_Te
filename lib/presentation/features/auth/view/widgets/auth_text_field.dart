@@ -57,22 +57,31 @@ class AuthTextField extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(label, style: AppTypography.labelSemiBold),
-                if (isRequired) ...[
-                  const SizedBox(width: 6),
-                  Text(
-                    '*',
-                    style: AppTypography.labelSemiBold.copyWith(
-                      color: AppColors.error,
+            Expanded(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      label,
+                      style: AppTypography.labelSemiBold,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (isRequired) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      '*',
+                      style: AppTypography.labelSemiBold.copyWith(
+                        color: AppColors.error,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-            if (trailingLabel != null)
+            if (trailingLabel != null) ...[
+              const SizedBox(width: 8),
               Text(
                 trailingLabel!,
                 style: AppTypography.badge.copyWith(
@@ -80,6 +89,7 @@ class AuthTextField extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+            ],
           ],
         ),
         const SizedBox(height: 6),
