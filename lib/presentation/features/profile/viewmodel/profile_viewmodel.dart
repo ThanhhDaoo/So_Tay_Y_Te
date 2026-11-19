@@ -24,7 +24,7 @@ class ProfileViewModel extends ChangeNotifier {
             avatarAsset: session.avatarUrl ?? 'assets/images/img_profile_thu_trang.png',
           );
 
-          String dobFormatted = '14/06/1993';
+          String dobFormatted = 'Chưa cập nhật';
           if (session.dateOfBirth != null && session.dateOfBirth!.isNotEmpty) {
             final parts = session.dateOfBirth!.split('-');
             if (parts.length == 3) {

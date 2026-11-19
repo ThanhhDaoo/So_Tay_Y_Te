@@ -1,10 +1,10 @@
 enum DocumentCategory {
-  all('all', 'Tất cả', 24),
-  prescriptions('prescriptions', 'Toa thuốc', 8),
-  bloodTests('blood_tests', 'Xét nghiệm máu', 5),
-  endoscopy('endoscopy', 'Siêu âm / Nội soi', 6),
-  xray('xray', 'X-Quang / CT', 3),
-  discharge('discharge', 'Giấy ra viện', 2);
+  all('all', 'Tất cả', 0),
+  prescriptions('prescriptions', 'Toa thuốc', 0),
+  bloodTests('blood_tests', 'Xét nghiệm máu', 0),
+  endoscopy('endoscopy', 'Siêu âm / Nội soi', 0),
+  xray('xray', 'X-Quang / CT', 0),
+  discharge('discharge', 'Giấy ra viện', 0);
 
   const DocumentCategory(this.id, this.label, this.count);
 
@@ -27,10 +27,10 @@ class DocumentsState {
   const DocumentsState({
     required this.selectedCategory,
     this.showViewerTip = true,
-    this.usedStorageMb = 142,
-    this.savedStorageMb = 480,
-    this.totalStorageGb = '1.8 GB',
-    this.totalDocCount = 24,
+    this.usedStorageMb = 0,
+    this.savedStorageMb = 0,
+    this.totalStorageGb = '0 MB',
+    this.totalDocCount = 0,
   });
 
   final DocumentCategory selectedCategory;

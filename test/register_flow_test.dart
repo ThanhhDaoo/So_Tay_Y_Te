@@ -230,7 +230,7 @@ void main() {
     test('Initial state is valid with default values', () {
       expect(viewModel.state.status, equals(RegisterStatus.initial));
       expect(viewModel.state.gender, equals('Nam'));
-      expect(viewModel.state.bloodType, equals('O+'));
+      expect(viewModel.state.bloodType, equals('Chưa rõ'));
       // acceptedTerms mặc định = false → user phải tự tick (chuẩn UX)
       expect(viewModel.state.acceptedTerms, isFalse);
     });

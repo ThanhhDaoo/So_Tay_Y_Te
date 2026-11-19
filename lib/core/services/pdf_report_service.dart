@@ -177,12 +177,12 @@ class PdfReportServiceImpl implements PdfReportService {
   }
 
   pw.Widget _buildPatientSection(UserProfile? profile, pw.Font fontBold) {
-    final name = profile?.fullName ?? 'Bệnh nhân Nguyễn Thu Trang';
-    final bloodType = profile?.bloodType ?? 'O+ (Rh Dương)';
-    final emergency = profile?.emergencyContact ?? '0988 123 456';
+    final name = profile?.fullName ?? 'Chưa cập nhật tên';
+    final bloodType = profile?.bloodType ?? 'Chưa xác định';
+    final emergency = profile?.emergencyContact ?? 'Chưa cập nhật';
     final allergies = (profile?.allergies != null && profile!.allergies.isNotEmpty)
         ? profile.allergies.join(', ')
-        : 'Penicillin, Aspirin';
+        : 'Không có ghi nhận';
 
     return pw.Container(
       padding: const pw.EdgeInsets.all(10),

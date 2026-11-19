@@ -36,35 +36,52 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
   }
 
   MedicalEvent _createFallbackEvent() {
-    return MedicalEvent(
-      id: widget.recordId.isNotEmpty ? widget.recordId : 'REC-2024-0418',
-      title: 'Viêm dạ dày & Trào ngược dạ dày thực quản (GERD Độ A)',
-      description: 'Đau âm ỉ vùng thượng vị sau ăn, ợ chua nhiều về đêm. Xét nghiệm vi khuẩn HP dương tính.',
-      date: DateTime(2024, 4, 18, 9, 30),
-      type: MedicalEventType.generalCheckup,
-      facilityName: 'Bệnh viện Đa khoa Quốc tế Vinmec Central Park',
-      doctorName: 'BS. Trần Văn Hùng',
-      department: 'Khoa Tiêu hóa - Gan mật • Phòng khám VIP 3',
-      diagnosis: 'Viêm dạ dày & Trào ngược dạ dày thực quản (GERD Độ A)',
-      bloodPressure: '120/78',
-      heartRate: '72',
-      prescription: Prescription(
-        id: 'RX-2024-089',
+    if (widget.recordId == 'REC-2024-0418' || widget.recordId == 'sample') {
+      return MedicalEvent(
+        id: 'REC-2024-0418',
+        title: 'Viêm dạ dày & Trào ngược dạ dày thực quản (GERD Độ A)',
+        description: 'Đau âm ỉ vùng thượng vị sau ăn, ợ chua nhiều về đêm. Xét nghiệm vi khuẩn HP dương tính.',
+        date: DateTime(2024, 4, 18, 9, 30),
+        type: MedicalEventType.generalCheckup,
+        facilityName: 'Bệnh viện Đa khoa Quốc tế Vinmec Central Park',
         doctorName: 'BS. Trần Văn Hùng',
-        hospital: 'Bệnh viện Đa khoa Quốc tế Vinmec Central Park',
-        issuedDate: DateTime(2024, 4, 18),
-        medicines: const [
-          Medicine(id: 'm1', name: 'Nexium Mups 40mg', dosage: '40mg • 1 viên/ngày', frequency: 'Trước ăn sáng 30p'),
-          Medicine(id: 'm2', name: 'Amoxicillin 500mg', dosage: '500mg • 2 viên/ngày', frequency: 'Sau ăn no'),
-          Medicine(id: 'm3', name: 'Clarithromycin 500mg', dosage: '500mg • 2 viên/ngày', frequency: 'Sau ăn no'),
-          Medicine(id: 'm4', name: 'Gaviscon Dual Action', dosage: '1 gói • 3 lần/ngày', frequency: 'Sau ăn trưa/tối'),
+        department: 'Khoa Tiêu hóa - Gan mật • Phòng khám VIP 3',
+        diagnosis: 'Viêm dạ dày & Trào ngược dạ dày thực quản (GERD Độ A)',
+        bloodPressure: '120/78',
+        heartRate: '72',
+        prescription: Prescription(
+          id: 'RX-2024-089',
+          doctorName: 'BS. Trần Văn Hùng',
+          hospital: 'Bệnh viện Đa khoa Quốc tế Vinmec Central Park',
+          issuedDate: DateTime(2024, 4, 18),
+          medicines: const [
+            Medicine(id: 'm1', name: 'Nexium Mups 40mg', dosage: '40mg • 1 viên/ngày', frequency: 'Trước ăn sáng 30p'),
+            Medicine(id: 'm2', name: 'Amoxicillin 500mg', dosage: '500mg • 2 viên/ngày', frequency: 'Sau ăn no'),
+            Medicine(id: 'm3', name: 'Clarithromycin 500mg', dosage: '500mg • 2 viên/ngày', frequency: 'Sau ăn no'),
+            Medicine(id: 'm4', name: 'Gaviscon Dual Action', dosage: '1 gói • 3 lần/ngày', frequency: 'Sau ăn trưa/tối'),
+          ],
+        ),
+        attachments: const [
+          'assets/images/img_doc_endoscopy.png',
+          'assets/images/img_doc_blood_test.png',
+          'assets/images/img_doc_xray.png',
         ],
-      ),
-      attachments: const [
-        'assets/images/img_doc_endoscopy.png',
-        'assets/images/img_doc_blood_test.png',
-        'assets/images/img_doc_xray.png',
-      ],
+      );
+    }
+    return MedicalEvent(
+      id: widget.recordId.isNotEmpty ? widget.recordId : 'REC-CHUA-CO',
+      title: 'Hồ sơ đợt khám',
+      description: 'Chưa có thông tin diễn tiến bệnh.',
+      date: DateTime.now(),
+      type: MedicalEventType.generalCheckup,
+      facilityName: 'Chưa cập nhật cơ sở khám',
+      doctorName: 'Chưa cập nhật bác sĩ',
+      department: 'Khám tổng quát',
+      diagnosis: 'Chưa cập nhật chẩn đoán',
+      bloodPressure: null,
+      heartRate: null,
+      prescription: null,
+      attachments: const [],
     );
   }
 

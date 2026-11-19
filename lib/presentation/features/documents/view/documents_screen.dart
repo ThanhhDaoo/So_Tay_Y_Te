@@ -97,7 +97,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             slivers: [
               SliverToBoxAdapter(
                 child: DocumentsHeader(
-                  onProfileTap: () => _showSnack('Kho tài liệu của Thu Trang'),
+                  onProfileTap: () => _showSnack('Kho tài liệu y tế cá nhân'),
                 ),
               ),
               SliverPadding(
@@ -163,97 +163,147 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    if (showBlood) ...[
-                      DocumentBloodTestCard(
-                        onTapDetail: () => DocumentViewerModal.show(
-                          context,
-                          title: 'Xét Nghiệm Huyết Học Tổng Quát (CBC)',
-                          category: 'Huyết học & Sinh hóa',
-                          date: '18/04/2024',
-                          hospital: 'BV Đa Khoa Quốc Tế Vinmec',
-                          imageAsset: 'assets/images/img_doc_blood_test.png',
-                          keyFindings: [
-                            {'label': 'Bạch cầu (WBC)', 'value': '7.2 K/uL', 'status': 'Bình thường'},
-                            {'label': 'Hồng cầu (RBC)', 'value': '4.65 M/uL', 'status': 'Bình thường'},
-                            {'label': 'Huyết sắc tố (Hb)', 'value': '138 g/L', 'status': 'Bình thường'},
-                            {'label': 'Tiểu cầu (PLT)', 'value': '248 K/uL', 'status': 'Bình thường'},
-                            {'label': 'Đường huyết đói (Glucose)', 'value': '5.2 mmol/L', 'status': 'Bình thường'},
-                          ],
+                    if (state.totalDocCount == 0) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE5DFD4)),
                         ),
-                        onMoreTap: () => _showSnack('Tùy chọn: Tải về • Đổi tên • Xóa'),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    if (showEndo) ...[
-                      DocumentEndoscopyCard(
-                        onTapDetail: () => DocumentViewerModal.show(
-                          context,
-                          title: 'Kết Quả Nội Soi Dạ Dày HP (+)',
-                          category: 'Thăm dò chức năng',
-                          date: '18/04/2024',
-                          hospital: 'Khoa Tiêu hóa - Gan mật Vinmec',
-                          imageAsset: 'assets/images/img_doc_endoscopy.png',
-                          keyFindings: [
-                            {'label': 'Thực quản', 'value': 'Bình thường, không viêm', 'status': 'Bình thường'},
-                            {'label': 'Hang vị dạ dày', 'value': 'Phù nề, trợt nông 2-3mm', 'status': 'Viêm nhẹ'},
-                            {'label': 'Helicobacter Pylori', 'value': 'CLO-Test Dương tính (++)', 'status': 'Cảnh báo (+)'},
-                            {'label': 'Hành tá tràng', 'value': 'Niêm mạc nhẵn, co bóp tốt', 'status': 'Bình thường'},
-                          ],
-                        ),
-                        onMoreTap: () => _showSnack('Tùy chọn: Tải về • Đổi tên • Xóa'),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    if (showRx) ...[
-                      DocumentPrescriptionOcrCard(
-                        onViewScannedRx: () => DocumentViewerModal.show(
-                          context,
-                          title: 'Đơn Thuốc Ngoại Trú Đã Quét OCR',
-                          category: 'Toa thuốc điện tử',
-                          date: '18/04/2024',
-                          hospital: 'Khoa Tiêu Hóa - Vinmec',
-                          imageAsset: 'assets/images/img_doc_blood_test.png',
-                          keyFindings: [
-                            {'label': 'Nexium 40mg', 'value': '14 viên (1v/ngày)', 'status': 'Đang dùng'},
-                            {'label': 'Amoxicillin 500mg', 'value': '56 viên (4v/ngày)', 'status': 'Đang dùng'},
-                            {'label': 'Clarithromycin 500mg', 'value': '28 viên (2v/ngày)', 'status': 'Đang dùng'},
-                          ],
-                        ),
-                        onDrugTap: (drug) => DocumentViewerModal.show(
-                          context,
-                          title: 'Chi Tiết Thuốc: $drug',
-                          category: 'Dược thư y tế',
-                          date: '18/04/2024',
-                          hospital: 'Dược thư Quốc Gia Việt Nam',
-                          imageAsset: 'assets/images/img_doc_blood_test.png',
-                          keyFindings: [
-                            {'label': 'Tên hoạt chất', 'value': drug, 'status': 'Kê đơn'},
-                            {'label': 'Chỉ định điều trị', 'value': 'Diệt khuẩn HP & Loét dạ dày', 'status': 'Đạt chuẩn'},
-                            {'label': 'Cảnh báo dị ứng', 'value': 'Không có chống chỉ định với BN', 'status': 'Bình thường'},
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: const BoxDecoration(
+                                color: AppColors.surfaceWarm,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.folder_open_outlined,
+                                  size: 28,
+                                  color: AppColors.iceOlive,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            const Text(
+                              'Chưa Có Tài Liệu Nào',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.iceTextNavy,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Hồ sơ của bạn chưa có tài liệu bệnh án, kết quả xét nghiệm hay toa thuốc nào. Hãy sử dụng chức năng chụp quét ở trên hoặc đính kèm ảnh khi thêm đợt khám mới.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.iceTextSlate,
+                                height: 1.4,
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 16),
-                    ],
-                    if (showXray) ...[
-                      DocumentXrayCard(
-                        onTapDetail: () => DocumentViewerModal.show(
-                          context,
-                          title: 'Phim X-Quang Ngực Thẳng Kỹ Thuật Số',
-                          category: 'Chẩn đoán hình ảnh',
-                          date: '10/01/2024',
-                          hospital: 'Khoa Chẩn Đoán Hình Ảnh',
-                          imageAsset: 'assets/images/img_doc_xray.png',
-                          keyFindings: [
-                            {'label': 'Trường phổi 2 bên', 'value': 'Sáng đều, không ứ khí', 'status': 'Bình thường'},
-                            {'label': 'Bóng tim', 'value': 'Kích thước bình thường, ICT < 0.5', 'status': 'Bình thường'},
-                            {'label': 'Góc sườn hoành', 'value': 'Hai bên sáng nhọn, không dịch', 'status': 'Bình thường'},
-                            {'label': 'Khung xương lồng ngực', 'value': 'Không gãy vỡ, không tổn thương', 'status': 'Bình thường'},
-                          ],
+                    ] else ...[
+                      if (showBlood) ...[
+                        DocumentBloodTestCard(
+                          onTapDetail: () => DocumentViewerModal.show(
+                            context,
+                            title: 'Xét Nghiệm Huyết Học Tổng Quát (CBC)',
+                            category: 'Huyết học & Sinh hóa',
+                            date: '18/04/2024',
+                            hospital: 'BV Đa Khoa Quốc Tế Vinmec',
+                            imageAsset: 'assets/images/img_doc_blood_test.png',
+                            keyFindings: [
+                              {'label': 'Bạch cầu (WBC)', 'value': '7.2 K/uL', 'status': 'Bình thường'},
+                              {'label': 'Hồng cầu (RBC)', 'value': '4.65 M/uL', 'status': 'Bình thường'},
+                              {'label': 'Huyết sắc tố (Hb)', 'value': '138 g/L', 'status': 'Bình thường'},
+                              {'label': 'Tiểu cầu (PLT)', 'value': '248 K/uL', 'status': 'Bình thường'},
+                              {'label': 'Đường huyết đói (Glucose)', 'value': '5.2 mmol/L', 'status': 'Bình thường'},
+                            ],
+                          ),
+                          onMoreTap: () => _showSnack('Tùy chọn: Tải về • Đổi tên • Xóa'),
                         ),
-                        onMoreTap: () => _showSnack('Tùy chọn: Tải về • Đổi tên • Xóa'),
-                      ),
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
+                      ],
+                      if (showEndo) ...[
+                        DocumentEndoscopyCard(
+                          onTapDetail: () => DocumentViewerModal.show(
+                            context,
+                            title: 'Kết Quả Nội Soi Dạ Dày HP (+)',
+                            category: 'Thăm dò chức năng',
+                            date: '18/04/2024',
+                            hospital: 'Khoa Tiêu hóa - Gan mật Vinmec',
+                            imageAsset: 'assets/images/img_doc_endoscopy.png',
+                            keyFindings: [
+                              {'label': 'Thực quản', 'value': 'Bình thường, không viêm', 'status': 'Bình thường'},
+                              {'label': 'Hang vị dạ dày', 'value': 'Phù nề, trợt nông 2-3mm', 'status': 'Viêm nhẹ'},
+                              {'label': 'Helicobacter Pylori', 'value': 'CLO-Test Dương tính (++)', 'status': 'Cảnh báo (+)'},
+                              {'label': 'Hành tá tràng', 'value': 'Niêm mạc nhẵn, co bóp tốt', 'status': 'Bình thường'},
+                            ],
+                          ),
+                          onMoreTap: () => _showSnack('Tùy chọn: Tải về • Đổi tên • Xóa'),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      if (showRx) ...[
+                        DocumentPrescriptionOcrCard(
+                          onViewScannedRx: () => DocumentViewerModal.show(
+                            context,
+                            title: 'Đơn Thuốc Ngoại Trú Đã Quét OCR',
+                            category: 'Toa thuốc điện tử',
+                            date: '18/04/2024',
+                            hospital: 'Khoa Tiêu Hóa - Vinmec',
+                            imageAsset: 'assets/images/img_doc_blood_test.png',
+                            keyFindings: [
+                              {'label': 'Nexium 40mg', 'value': '14 viên (1v/ngày)', 'status': 'Đang dùng'},
+                              {'label': 'Amoxicillin 500mg', 'value': '56 viên (4v/ngày)', 'status': 'Đang dùng'},
+                              {'label': 'Clarithromycin 500mg', 'value': '28 viên (2v/ngày)', 'status': 'Đang dùng'},
+                            ],
+                          ),
+                          onDrugTap: (drug) => DocumentViewerModal.show(
+                            context,
+                            title: 'Chi Tiết Thuốc: $drug',
+                            category: 'Dược thư y tế',
+                            date: '18/04/2024',
+                            hospital: 'Dược thư Quốc Gia Việt Nam',
+                            imageAsset: 'assets/images/img_doc_blood_test.png',
+                            keyFindings: [
+                              {'label': 'Tên hoạt chất', 'value': drug, 'status': 'Kê đơn'},
+                              {'label': 'Chỉ định điều trị', 'value': 'Diệt khuẩn HP & Loét dạ dày', 'status': 'Đạt chuẩn'},
+                              {'label': 'Cảnh báo dị ứng', 'value': 'Không có chống chỉ định với BN', 'status': 'Bình thường'},
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      if (showXray) ...[
+                        DocumentXrayCard(
+                          onTapDetail: () => DocumentViewerModal.show(
+                            context,
+                            title: 'Phim X-Quang Ngực Thẳng Kỹ Thuật Số',
+                            category: 'Chẩn đoán hình ảnh',
+                            date: '10/01/2024',
+                            hospital: 'Khoa Chẩn Đoán Hình Ảnh',
+                            imageAsset: 'assets/images/img_doc_xray.png',
+                            keyFindings: [
+                              {'label': 'Trường phổi 2 bên', 'value': 'Sáng đều, không ứ khí', 'status': 'Bình thường'},
+                              {'label': 'Bóng tim', 'value': 'Kích thước bình thường, ICT < 0.5', 'status': 'Bình thường'},
+                              {'label': 'Góc sườn hoành', 'value': 'Hai bên sáng nhọn, không dịch', 'status': 'Bình thường'},
+                              {'label': 'Khung xương lồng ngực', 'value': 'Không gãy vỡ, không tổn thương', 'status': 'Bình thường'},
+                            ],
+                          ),
+                          onMoreTap: () => _showSnack('Tùy chọn: Tải về • Đổi tên • Xóa'),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                     ],
                     ShareDoctorQuickAction(
                       onCreateQr: () => ShareDoctorQrModal.show(context),

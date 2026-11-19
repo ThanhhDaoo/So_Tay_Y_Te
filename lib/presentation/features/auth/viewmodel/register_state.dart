@@ -41,7 +41,7 @@ class RegisterState {
     this.acceptedTerms = false,
     this.passwordStrength = PasswordStrength.medium,
     this.gender = 'Nam',
-    this.bloodType = 'O+',
+    this.bloodType = 'Chưa rõ',
     this.dateOfBirth,
     this.createdAccount,
     this.errorMessage,
