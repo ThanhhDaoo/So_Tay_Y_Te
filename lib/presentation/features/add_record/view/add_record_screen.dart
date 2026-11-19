@@ -51,51 +51,22 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
   void initState() {
     super.initState();
     final edit = widget.recordToEdit;
-    _titleController = TextEditingController(
-      text: edit?.title ?? 'Khám Chuyên Khoa Tiêu Hóa',
-    );
-    _facilityController = TextEditingController(
-      text: edit?.facilityName ?? 'Bệnh viện Đa khoa Quốc tế Vinmec',
-    );
-    _doctorController = TextEditingController(
-      text: edit?.doctorName ?? 'BS. Trần Văn Hùng',
-    );
-    _diagnosisController = TextEditingController(
-      text: edit?.diagnosis ?? 'Viêm dạ dày - tá tràng mạn tính HP (+)',
-    );
-    _symptomsController = TextEditingController(
-      text: edit?.description ?? 'Đau âm ỉ thượng vị, ợ hơi nhẹ sau ăn.',
-    );
-    _bpController = TextEditingController(
-      text: edit?.bloodPressure ?? '120/80',
-    );
-    _hrController = TextEditingController(
-      text: edit?.heartRate ?? '72',
-    );
+    _titleController = TextEditingController(text: edit?.title ?? '');
+    _facilityController = TextEditingController(text: edit?.facilityName ?? '');
+    _doctorController = TextEditingController(text: edit?.doctorName ?? '');
+    _diagnosisController = TextEditingController(text: edit?.diagnosis ?? '');
+    _symptomsController = TextEditingController(text: edit?.description ?? '');
+    _bpController = TextEditingController(text: edit?.bloodPressure ?? '');
+    _hrController = TextEditingController(text: edit?.heartRate ?? '');
 
     _selectedDate = edit?.date ?? DateTime.now();
-    _selectedSpecialty = edit?.department ?? 'Tiêu hóa';
+    _selectedSpecialty = edit?.department ?? 'Khám tổng quát';
     if (!_specialties.contains(_selectedSpecialty)) {
       _specialties.insert(0, _selectedSpecialty);
     }
 
     if (edit?.prescription?.medicines != null && edit!.prescription!.medicines.isNotEmpty) {
       _medicines.addAll(edit.prescription!.medicines);
-    } else if (edit == null) {
-      _medicines.addAll([
-        const Medicine(
-          id: '1',
-          name: 'Nexium 40mg',
-          dosage: '1 viên/lần',
-          frequency: 'Trước ăn sáng 30p',
-        ),
-        const Medicine(
-          id: '2',
-          name: 'Amoxicillin 500mg',
-          dosage: '2 viên/lần',
-          frequency: '2 lần/ngày sau ăn',
-        ),
-      ]);
     }
 
     if (edit?.attachments != null && edit!.attachments.isNotEmpty) {

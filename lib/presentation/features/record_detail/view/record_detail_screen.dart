@@ -437,14 +437,18 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _event.facilityName ?? 'Bệnh viện Đa khoa Quốc tế Vinmec Central Park',
+                          (_event.facilityName != null && _event.facilityName!.isNotEmpty)
+                              ? _event.facilityName!
+                              : 'Chưa cập nhật cơ sở khám',
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _event.department ?? 'Khoa Tiêu hóa - Gan mật • Phòng khám VIP 3',
-                          style: const TextStyle(fontSize: 13, color: AppColors.iceTextSlate),
-                        ),
+                        if (_event.department != null && _event.department!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            _event.department!,
+                            style: const TextStyle(fontSize: 13, color: AppColors.iceTextSlate),
+                          ),
+                        ],
                         const SizedBox(height: 10),
                         const Divider(height: 1, color: AppColors.iceCardBorder),
                         const SizedBox(height: 10),
@@ -463,7 +467,7 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                                   Text(
                                     _event.doctorName != null && _event.doctorName!.isNotEmpty
                                         ? (_event.doctorName!.startsWith('BS') ? _event.doctorName! : 'BS. ${_event.doctorName}')
-                                        : 'BS. Trần Văn Hùng',
+                                        : 'Chưa cập nhật bác sĩ điều trị',
                                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.iceTextNavy),
                                   ),
                                   const Text(
