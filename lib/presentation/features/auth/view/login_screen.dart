@@ -132,10 +132,13 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!hasActiveSession || !mounted) return;
 
     if (_viewModel.state.requiresAppLockUnlock) {
+      if (AppRoutes.isAppLockShowing) return;
+      AppRoutes.isAppLockShowing = true;
       Navigator.pushNamed(
         context,
         AppRoutes.appLock,
         arguments: () {
+          AppRoutes.isAppLockShowing = false;
           if (mounted) {
             _handleLoginSuccess();
           }

@@ -30,11 +30,18 @@ class _AppLockScreenState extends State<AppLockScreen> {
   @override
   void initState() {
     super.initState();
+    AppRoutes.isAppLockShowing = true;
     _viewModel = widget.viewModel ?? SecuritySettingsViewModel();
     // Auto-prompt Face ID upon opening if biometrics is enabled
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _attemptBiometricAuth();
     });
+  }
+
+  @override
+  void dispose() {
+    AppRoutes.isAppLockShowing = false;
+    super.dispose();
   }
 
   Future<void> _attemptBiometricAuth() async {
@@ -52,6 +59,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
           localizedReason: 'Xác thực Face ID để mở khóa Sổ Tay Y Tế',
         );
         if (success && mounted) {
+          AppRoutes.isAppLockShowing = false;
           widget.onUnlocked();
           return;
         }
@@ -77,6 +85,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
 
         if (isValid) {
           HapticFeedback.lightImpact();
+          AppRoutes.isAppLockShowing = false;
           widget.onUnlocked();
         } else {
           HapticFeedback.heavyImpact();

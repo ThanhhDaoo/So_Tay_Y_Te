@@ -28,6 +28,9 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String appLock = '/app-lock';
 
+  /// Cờ kiểm soát màn hình khóa đang hiển thị, tránh mở lặp khi nhận lifecycle events
+  static bool isAppLockShowing = false;
+
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final routeName = settings.name ?? '';
     // Chặn các URI callback của Supabase OAuth (?code=..., ?error=..., #access_token=...) không bị đẩy thành màn hình lỗi
@@ -100,8 +103,10 @@ class AppRoutes {
       case appLock:
         final onUnlocked = settings.arguments as VoidCallback? ?? () {};
         return MaterialPageRoute(
+          settings: settings,
           builder: (ctx) => AppLockScreen(
             onUnlocked: () {
+              isAppLockShowing = false;
               Navigator.of(ctx).pop();
               onUnlocked();
             },

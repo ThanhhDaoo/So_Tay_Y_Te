@@ -28,7 +28,6 @@ class SoTayYTeApp extends StatefulWidget {
 
 class _SoTayYTeAppState extends State<SoTayYTeApp> with WidgetsBindingObserver {
   DateTime? _lastBackgroundedTime;
-  bool _isAppLockOpen = false;
 
   @override
   void initState() {
@@ -46,7 +45,10 @@ class _SoTayYTeAppState extends State<SoTayYTeApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) return;
 
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    // Chỉ ghi nhận thời điểm khóa khi app thực sự vào background (paused).
+    // Tuyệt đối KHÔNG bắt `inactive` vì hệ thống iOS hiển thị Face ID dialog,
+    // camera/gallery permission sheets, notification banner đều phát sinh `inactive`.
+    if (state == AppLifecycleState.paused) {
       _lastBackgroundedTime = DateTime.now();
     } else if (state == AppLifecycleState.resumed) {
       _checkAutoLock();
@@ -54,7 +56,10 @@ class _SoTayYTeAppState extends State<SoTayYTeApp> with WidgetsBindingObserver {
   }
 
   Future<void> _checkAutoLock() async {
-    if (_lastBackgroundedTime == null || _isAppLockOpen) return;
+    if (_lastBackgroundedTime == null || AppRoutes.isAppLockShowing) return;
+
+    final backgroundTime = _lastBackgroundedTime;
+    _lastBackgroundedTime = null;
 
     try {
       if (!sl.isRegistered<AppPreferencesDataSource>()) return;
@@ -65,17 +70,16 @@ class _SoTayYTeAppState extends State<SoTayYTeApp> with WidgetsBindingObserver {
 
       if ((hasPin || isBioEnabled) && sessionUserId != null && sessionUserId.isNotEmpty) {
         final timeout = await prefs.getAutoLockTimeout(); // 0: immediate, 1: 1 minute
-        final elapsedSeconds = DateTime.now().difference(_lastBackgroundedTime!).inSeconds;
+        final elapsedSeconds = DateTime.now().difference(backgroundTime!).inSeconds;
 
-        if (timeout == 0 || elapsedSeconds >= 60) {
+        if (timeout == 0 || elapsedSeconds >= (timeout * 60)) {
           final nav = SoTayYTeApp.navigatorKey.currentState;
-          if (nav != null) {
-            _isAppLockOpen = true;
+          if (nav != null && !AppRoutes.isAppLockShowing) {
+            AppRoutes.isAppLockShowing = true;
             nav.pushNamed(
               AppRoutes.appLock,
               arguments: () {
-                _isAppLockOpen = false;
-                _lastBackgroundedTime = null;
+                AppRoutes.isAppLockShowing = false;
               },
             );
           }

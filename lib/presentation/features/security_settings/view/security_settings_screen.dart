@@ -110,9 +110,13 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   state: state,
                   onToggleBiometrics: _viewModel.toggleBiometricLock,
                   onLockNow: () {
+                    if (AppRoutes.isAppLockShowing) return;
+                    AppRoutes.isAppLockShowing = true;
                     Navigator.of(context).pushNamed(
                       AppRoutes.appLock,
-                      arguments: () {},
+                      arguments: () {
+                        AppRoutes.isAppLockShowing = false;
+                      },
                     );
                   },
                   onChangePin: () {

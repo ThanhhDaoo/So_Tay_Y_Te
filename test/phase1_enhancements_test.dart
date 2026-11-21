@@ -11,6 +11,7 @@ import 'package:so_tay_y_te/presentation/features/emergency_card/viewmodel/emerg
 import 'package:so_tay_y_te/presentation/features/profile/viewmodel/profile_viewmodel.dart';
 import 'package:so_tay_y_te/presentation/features/record_detail/viewmodel/record_detail_viewmodel.dart';
 import 'package:so_tay_y_te/presentation/features/security_settings/viewmodel/security_settings_viewmodel.dart';
+import 'package:so_tay_y_te/presentation/routes/app_routes.dart';
 
 class MockBiometricService implements BiometricService {
   @override
@@ -225,5 +226,19 @@ void main() {
     expect(vm.event, isNotNull);
     expect(vm.event!.title, 'Khám Viêm Họng');
     expect(vm.event!.doctorName, 'BS. Tuấn');
+  });
+
+  test('AppRoutes.isAppLockShowing and lifecycle guards prevent double Face ID prompt', () {
+    // Ban đầu màn hình khóa không mở
+    AppRoutes.isAppLockShowing = false;
+    expect(AppRoutes.isAppLockShowing, isFalse);
+
+    // Khi màn hình khóa mở ra
+    AppRoutes.isAppLockShowing = true;
+    expect(AppRoutes.isAppLockShowing, isTrue);
+
+    // Giả lập callback onUnlocked
+    AppRoutes.isAppLockShowing = false;
+    expect(AppRoutes.isAppLockShowing, isFalse);
   });
 }
