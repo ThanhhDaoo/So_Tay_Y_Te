@@ -132,6 +132,13 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
   String? _currentAvatar;
   bool _isSaving = false;
 
+  final _genderOptions = const [
+    'Chưa rõ',
+    'Nam',
+    'Nữ',
+    'Khác',
+  ];
+
   final _bloodOptions = const [
     'Chưa rõ',
     'O+',
@@ -142,6 +149,11 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
     'A-',
     'B-',
     'AB-',
+  ];
+
+  final _organDonorOptions = const [
+    'CHƯA ĐĂNG KÝ',
+    'ĐÃ ĐĂNG KÝ',
   ];
 
   @override
@@ -157,11 +169,11 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
     final initialRegionClean = (!rawReg.contains('@') && rawReg != 'Chưa cập nhật') ? rawReg : '';
     _regionCtrl = TextEditingController(text: initialRegionClean);
 
-    _gender = widget.initialGender ?? 'Nam';
-    _bloodType = widget.initialBloodType ?? 'Chưa rõ';
-    if (!_bloodOptions.contains(_bloodType)) {
-      _bloodType = 'Chưa rõ';
-    }
+    final rawGender = widget.initialGender?.trim() ?? 'Chưa rõ';
+    _gender = _genderOptions.contains(rawGender) ? rawGender : 'Chưa rõ';
+
+    final rawBlood = widget.initialBloodType?.trim() ?? 'Chưa rõ';
+    _bloodType = _bloodOptions.contains(rawBlood) ? rawBlood : 'Chưa rõ';
 
     if (widget.initialDob != null && widget.initialDob!.isNotEmpty) {
       final parts = widget.initialDob!.split(RegExp(r'[\/\-]'));
@@ -174,7 +186,8 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
       }
     }
 
-    _organDonor = widget.initialOrganDonor ?? 'CHƯA ĐĂNG KÝ';
+    final rawDonor = widget.initialOrganDonor?.trim().toUpperCase() ?? 'CHƯA ĐĂNG KÝ';
+    _organDonor = _organDonorOptions.contains(rawDonor) ? rawDonor : 'CHƯA ĐĂNG KÝ';
     _currentAvatar = widget.initialAvatarUrl;
   }
 
@@ -450,13 +463,11 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(
-                                  value: _gender,
+                                  value: _genderOptions.contains(_gender) ? _gender : 'Chưa rõ',
                                   isExpanded: true,
-                                  items: const [
-                                    DropdownMenuItem(value: 'Nam', child: Text('Nam', style: TextStyle(fontSize: 13))),
-                                    DropdownMenuItem(value: 'Nữ', child: Text('Nữ', style: TextStyle(fontSize: 13))),
-                                    DropdownMenuItem(value: 'Khác', child: Text('Khác', style: TextStyle(fontSize: 13))),
-                                  ],
+                                  items: _genderOptions
+                                      .map((g) => DropdownMenuItem(value: g, child: Text(g, style: const TextStyle(fontSize: 13))))
+                                      .toList(),
                                   onChanged: (v) {
                                     if (v != null) setState(() => _gender = v);
                                   },
@@ -487,7 +498,7 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(
-                                  value: _bloodType,
+                                  value: _bloodOptions.contains(_bloodType) ? _bloodType : 'Chưa rõ',
                                   isExpanded: true,
                                   items: _bloodOptions
                                       .map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontSize: 13))))
@@ -516,7 +527,7 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(
-                                  value: _organDonor,
+                                  value: _organDonorOptions.contains(_organDonor) ? _organDonor : 'CHƯA ĐĂNG KÝ',
                                   isExpanded: true,
                                   items: const [
                                     DropdownMenuItem(value: 'CHƯA ĐĂNG KÝ', child: Text('Chưa đăng ký', style: TextStyle(fontSize: 12.5))),

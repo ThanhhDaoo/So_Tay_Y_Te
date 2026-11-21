@@ -622,6 +622,7 @@ class _PhoneOtpBottomSheetState extends State<PhoneOtpBottomSheet> {
                   ),
                 ),
                 items: const [
+                  DropdownMenuItem(value: 'Chưa rõ', child: Text('Chưa rõ')),
                   DropdownMenuItem(value: 'Nam', child: Text('Nam')),
                   DropdownMenuItem(value: 'Nữ', child: Text('Nữ')),
                   DropdownMenuItem(value: 'Khác', child: Text('Khác')),

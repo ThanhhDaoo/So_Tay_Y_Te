@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:so_tay_y_te/core/di/injection_container.dart';
@@ -8,6 +9,7 @@ import 'package:so_tay_y_te/domain/entities/user_account.dart';
 import 'package:so_tay_y_te/domain/repositories/auth_repository.dart';
 import 'package:so_tay_y_te/domain/repositories/medical_record_repository.dart';
 import 'package:so_tay_y_te/presentation/features/emergency_card/viewmodel/emergency_card_viewmodel.dart';
+import 'package:so_tay_y_te/presentation/features/profile/view/widgets/edit_personal_profile_sheet.dart';
 import 'package:so_tay_y_te/presentation/features/profile/viewmodel/profile_viewmodel.dart';
 import 'package:so_tay_y_te/presentation/features/record_detail/viewmodel/record_detail_viewmodel.dart';
 import 'package:so_tay_y_te/presentation/features/security_settings/viewmodel/security_settings_viewmodel.dart';
@@ -240,5 +242,37 @@ void main() {
     // Giả lập callback onUnlocked
     AppRoutes.isAppLockShowing = false;
     expect(AppRoutes.isAppLockShowing, isFalse);
+  });
+
+  testWidgets('EditPersonalProfileSheet handles "Chưa rõ" gender and blood type without crashing', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: EditPersonalProfileSheet(
+            initialFullName: 'Nguyễn Văn A',
+            initialGender: 'Chưa rõ',
+            initialBloodType: 'Chưa rõ',
+            initialOrganDonor: null,
+            onSave: ({
+              required fullName,
+              allergies,
+              avatarUrl,
+              bloodType,
+              chronicConditions,
+              dateOfBirth,
+              emergencyContact,
+              gender,
+              height,
+              organDonor,
+              region,
+              weight,
+            }) async {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Cập Nhật Thông Tin Cá Nhân'), findsOneWidget);
+    expect(find.text('Họ và tên *'), findsOneWidget);
   });
 }

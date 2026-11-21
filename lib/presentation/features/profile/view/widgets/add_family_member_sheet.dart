@@ -26,7 +26,7 @@ class _AddFamilyMemberSheetState extends State<AddFamilyMemberSheet> {
   String _selectedBlood = 'O+';
 
   final _relations = ['Bản thân', 'Vợ / Chồng', 'Con cái', 'Bố mẹ', 'Ông bà'];
-  final _bloodTypes = ['O+', 'A+', 'B+', 'AB+', 'O-', 'A-'];
+  final _bloodTypes = ['Chưa rõ', 'O+', 'A+', 'B+', 'AB+', 'O-', 'A-'];
 
   @override
   void dispose() {
