@@ -16,6 +16,7 @@ Widget buildSafeAvatarImage({
   if (imageSource.startsWith('http://') || imageSource.startsWith('https://')) {
     return Image.network(
       imageSource,
+      key: ValueKey(imageSource),
       width: width,
       height: height,
       fit: fit,
@@ -34,6 +35,7 @@ Widget buildSafeAvatarImage({
   if (file.existsSync()) {
     return Image.file(
       file,
+      key: ValueKey(imageSource),
       width: width,
       height: height,
       fit: fit,
@@ -50,6 +52,7 @@ Widget buildSafeAvatarImage({
 
   return Image.asset(
     imageSource.isNotEmpty ? imageSource : fallbackAsset,
+    key: ValueKey(imageSource),
     width: width,
     height: height,
     fit: fit,
@@ -68,7 +71,7 @@ Widget buildSafeAvatarImage({
 /// sau đó sao chép vào bộ nhớ ứng dụng và gọi hàm callback với đường dẫn file.
 Future<void> pickAndSaveAvatar(
   BuildContext context, {
-  required Function(String localPath) onAvatarSaved,
+  required Future<void> Function(String localPath) onAvatarSaved,
 }) async {
   final source = await showModalBottomSheet<ImageSource>(
     context: context,
@@ -117,7 +120,7 @@ Future<void> pickAndSaveAvatar(
       final ext = picked.path.split('.').last;
       final fileName = 'avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
       final savedFile = await File(picked.path).copy('${appDir.path}/$fileName');
-      onAvatarSaved(savedFile.path);
+      await onAvatarSaved(savedFile.path);
     }
   } catch (e) {
     debugPrint('Error picking avatar: $e');
