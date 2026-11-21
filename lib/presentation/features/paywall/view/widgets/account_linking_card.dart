@@ -48,12 +48,15 @@ class AccountLinkingCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                'Liên Kết Tài Khoản Bảo Mật',
-                style: AppTypography.heading3.copyWith(
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.iceTextNavy,
+              Expanded(
+                child: Text(
+                  'Liên Kết Tài Khoản Bảo Mật',
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.heading3.copyWith(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.iceTextNavy,
+                  ),
                 ),
               ),
             ],
@@ -116,14 +119,17 @@ class AccountLinkingCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      linkedProvider == 'Phone'
-                          ? 'Đã xác thực OTP (+84)'
-                          : 'Sử dụng Số Điện Thoại (SMS OTP)',
-                      style: AppTypography.labelSemiBold.copyWith(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.iceTextNavy,
+                    Flexible(
+                      child: Text(
+                        linkedProvider == 'Phone'
+                            ? 'Đã xác thực OTP (+84)'
+                            : 'Sử dụng Số Điện Thoại (SMS OTP)',
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.labelSemiBold.copyWith(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.iceTextNavy,
+                        ),
                       ),
                     ),
                   ],
@@ -145,12 +151,15 @@ class AccountLinkingCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              Text(
-                'Tuân thủ tiêu chuẩn bảo mật dữ liệu y tế ISO 27799',
-                style: AppTypography.caption.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF6D7A77),
+              Flexible(
+                child: Text(
+                  'Tuân thủ tiêu chuẩn bảo mật dữ liệu y tế ISO 27799',
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.caption.copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF6D7A77),
+                  ),
                 ),
               ),
             ],

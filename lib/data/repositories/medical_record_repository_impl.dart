@@ -1,12 +1,18 @@
+import 'package:flutter/foundation.dart';
 import '../../domain/entities/medical_event.dart';
 import '../../domain/repositories/medical_record_repository.dart';
+import '../../domain/repositories/sync_repository.dart';
 import '../datasources/local/medical_local_datasource.dart';
 import '../models/medical_event_model.dart';
 
 class MedicalRecordRepositoryImpl implements MedicalRecordRepository {
   final MedicalLocalDataSource localDataSource;
+  final SyncRepository? syncRepository;
 
-  MedicalRecordRepositoryImpl({required this.localDataSource});
+  MedicalRecordRepositoryImpl({
+    required this.localDataSource,
+    this.syncRepository,
+  });
 
   @override
   Future<List<MedicalEvent>> getMedicalTimeline({String? userId}) async {
@@ -42,6 +48,9 @@ class MedicalRecordRepositoryImpl implements MedicalRecordRepository {
       updatedAt: event.updatedAt,
     );
     await localDataSource.insertOrUpdateEvent(model);
+    syncRepository?.syncLocalToCloud().catchError((e) {
+      debugPrint('[AutoCloudSync] Sync in background failed: $e');
+    });
   }
 
   @override

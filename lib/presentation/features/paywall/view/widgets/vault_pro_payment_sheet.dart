@@ -1,21 +1,27 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/di/injection_container.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../data/datasources/local/app_preferences_datasource.dart';
 import '../../viewmodel/paywall_state.dart';
+import '../../viewmodel/paywall_viewmodel.dart';
 
 class VaultProPaymentSheet extends StatefulWidget {
   final PlanType selectedPlan;
   final VoidCallback onSuccess;
+  final PaywallViewModel? viewModel;
 
   const VaultProPaymentSheet({
     super.key,
     required this.selectedPlan,
     required this.onSuccess,
+    this.viewModel,
   });
 
   static void show(
     BuildContext context, {
     required PlanType selectedPlan,
     required VoidCallback onSuccess,
+    PaywallViewModel? viewModel,
   }) {
     showModalBottomSheet<void>(
       context: context,
@@ -24,6 +30,7 @@ class VaultProPaymentSheet extends StatefulWidget {
       builder: (_) => VaultProPaymentSheet(
         selectedPlan: selectedPlan,
         onSuccess: onSuccess,
+        viewModel: viewModel,
       ),
     );
   }
@@ -36,15 +43,20 @@ class _VaultProPaymentSheetState extends State<VaultProPaymentSheet> {
   int _selectedMethod = 0; // 0: Apple Pay, 1: Visa/Master, 2: Momo, 3: VietQR
   bool _isProcessing = false;
 
-  void _confirmPayment() {
+  Future<void> _confirmPayment() async {
     setState(() => _isProcessing = true);
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) {
-        setState(() => _isProcessing = false);
-        Navigator.pop(context);
-        widget.onSuccess();
+    if (widget.viewModel != null) {
+      await widget.viewModel!.subscribeToPlan(widget.selectedPlan);
+    } else {
+      if (sl.isRegistered<AppPreferencesDataSource>()) {
+        await sl<AppPreferencesDataSource>().setProStatus(true);
       }
-    });
+    }
+    if (mounted) {
+      setState(() => _isProcessing = false);
+      Navigator.pop(context);
+      widget.onSuccess();
+    }
   }
 
   @override
@@ -72,15 +84,20 @@ class _VaultProPaymentSheetState extends State<VaultProPaymentSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: const [
-                  Icon(Icons.workspace_premium, color: Color(0xFFC59B27), size: 24),
-                  SizedBox(width: 8),
-                  Text(
-                    'Xác Nhận Đăng Ký Vault Pro',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
-                  ),
-                ],
+              Expanded(
+                child: Row(
+                  children: const [
+                    Icon(Icons.workspace_premium, color: Color(0xFFC59B27), size: 24),
+                    SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Xác Nhận Đăng Ký Vault Pro',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.close, color: AppColors.iceTextMuted),
@@ -102,17 +119,24 @@ class _VaultProPaymentSheetState extends State<VaultProPaymentSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.selectedPlan.title,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF92400E)),
-                    ),
-                    const SizedBox(height: 2),
-                    const Text('Dùng thử miễn phí 7 ngày đầu', style: TextStyle(fontSize: 12, color: Color(0xFFB45309))),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.selectedPlan.title,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF92400E)),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Dùng thử miễn phí 7 ngày đầu',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 12, color: Color(0xFFB45309)),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   widget.selectedPlan.price,
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
@@ -150,9 +174,12 @@ class _VaultProPaymentSheetState extends State<VaultProPaymentSheet> {
                     children: [
                       Icon(Icons.lock, size: 18),
                       SizedBox(width: 8),
-                      Text(
-                        'Kích Hoạt Dùng Thử 7 Ngày (0đ)',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                      Flexible(
+                        child: Text(
+                          'Kích Hoạt Dùng Thử 7 Ngày (0đ)',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                        ),
                       ),
                     ],
                   ),

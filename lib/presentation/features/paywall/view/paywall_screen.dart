@@ -49,12 +49,22 @@ class _PaywallScreenState extends State<PaywallScreen> {
     VaultProPaymentSheet.show(
       context,
       selectedPlan: plan,
+      viewModel: _viewModel,
       onSuccess: () {
         _showSnack(
           'Chúc mừng bạn đã nâng cấp thành công ${plan.title}! Toàn bộ tính năng Pro đã được mở khóa.',
         );
       },
     );
+  }
+
+  Future<void> _onRestorePurchases() async {
+    final success = await _viewModel.restorePurchases();
+    if (success) {
+      _showSnack('Đã khôi phục thành công gói đăng ký Vault Pro!');
+    } else {
+      _showSnack('Không tìm thấy thông tin đăng ký hợp lệ.');
+    }
   }
 
   @override
@@ -123,6 +133,33 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     ),
                     sliver: SliverList.list(
                       children: [
+                        if (state.isPro) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F5E9),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFF81C784)),
+                            ),
+                            child: Row(
+                              children: const [
+                                Icon(Icons.verified_rounded, color: Color(0xFF2E7D32), size: 22),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Tài khoản của bạn đã được nâng cấp Vault Pro!',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF1B5E20),
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                         const VaultBrandHero(),
                         const SizedBox(height: 22),
                         const VaultFeaturesChecklist(),
@@ -160,6 +197,17 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         ),
                         const SizedBox(height: 20),
                         const TrustAssurancesRow(),
+                        const SizedBox(height: 12),
+                        Center(
+                          child: TextButton.icon(
+                            onPressed: state.isProcessing ? null : _onRestorePurchases,
+                            icon: const Icon(Icons.restore_rounded, size: 16, color: Color(0xFF4E5547)),
+                            label: const Text(
+                              'Khôi phục giao dịch mua trước đây',
+                              style: TextStyle(color: Color(0xFF4E5547), fontSize: 13, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),

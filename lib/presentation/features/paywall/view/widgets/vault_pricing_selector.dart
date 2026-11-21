@@ -108,7 +108,9 @@ class _YearlyPlanCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
                           children: [
                             Text(
                               'Gói Năm',
@@ -118,7 +120,6 @@ class _YearlyPlanCard extends StatelessWidget {
                                 color: AppColors.iceTextNavy,
                               ),
                             ),
-                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -287,7 +288,9 @@ class _SimplePlanCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
                       children: [
                         Text(
                           plan.title,
@@ -297,8 +300,7 @@ class _SimplePlanCard extends StatelessWidget {
                             color: AppColors.iceTextNavy,
                           ),
                         ),
-                        if (plan.durationBadge != null) ...[
-                          const SizedBox(width: 6),
+                        if (plan.durationBadge != null)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
@@ -317,7 +319,6 @@ class _SimplePlanCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                        ],
                       ],
                     ),
                     const SizedBox(height: 2),

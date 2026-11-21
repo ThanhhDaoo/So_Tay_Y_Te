@@ -50,22 +50,30 @@ class PaywallState {
     this.selectedPlan = PlanType.yearly,
     this.isProcessing = false,
     this.linkedProvider,
+    this.isPro = false,
+    this.feedbackMessage,
   });
 
   final PlanType selectedPlan;
   final bool isProcessing;
   final String? linkedProvider;
+  final bool isPro;
+  final String? feedbackMessage;
 
   PaywallState copyWith({
     PlanType? selectedPlan,
     bool? isProcessing,
     String? linkedProvider,
+    bool? isPro,
+    String? feedbackMessage,
+    bool clearFeedbackMessage = false,
   }) {
     return PaywallState(
       selectedPlan: selectedPlan ?? this.selectedPlan,
       isProcessing: isProcessing ?? this.isProcessing,
       linkedProvider: linkedProvider ?? this.linkedProvider,
+      isPro: isPro ?? this.isPro,
+      feedbackMessage: clearFeedbackMessage ? null : (feedbackMessage ?? this.feedbackMessage),
     );
   }
 }
-

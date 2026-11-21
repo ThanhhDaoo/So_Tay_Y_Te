@@ -4,13 +4,17 @@ abstract class SubscriptionRemoteDataSource {
 }
 
 class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
+  final bool shouldSucceed;
+
+  SubscriptionRemoteDataSourceImpl({this.shouldSucceed = true});
+
   @override
   Future<bool> purchaseProSubscription(String packageId) async {
-    return true;
+    return shouldSucceed;
   }
 
   @override
   Future<bool> restorePurchases() async {
-    return true;
+    return shouldSucceed;
   }
 }

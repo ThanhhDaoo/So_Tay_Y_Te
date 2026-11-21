@@ -23,6 +23,26 @@ class ExtractedDrugItem {
   final String dosage;
 }
 
+class MedicalDocumentItem {
+  final String id;
+  final String title;
+  final DocumentCategory category;
+  final String date;
+  final String hospital;
+  final String imagePath;
+  final List<Map<String, String>> keyFindings;
+
+  const MedicalDocumentItem({
+    required this.id,
+    required this.title,
+    required this.category,
+    required this.date,
+    required this.hospital,
+    required this.imagePath,
+    this.keyFindings = const [],
+  });
+}
+
 class DocumentsState {
   const DocumentsState({
     required this.selectedCategory,
@@ -31,6 +51,7 @@ class DocumentsState {
     this.savedStorageMb = 0,
     this.totalStorageGb = '0 MB',
     this.totalDocCount = 0,
+    this.documents = const [],
   });
 
   final DocumentCategory selectedCategory;
@@ -39,6 +60,7 @@ class DocumentsState {
   final int savedStorageMb;
   final String totalStorageGb;
   final int totalDocCount;
+  final List<MedicalDocumentItem> documents;
 
   DocumentsState copyWith({
     DocumentCategory? selectedCategory,
@@ -47,6 +69,7 @@ class DocumentsState {
     int? savedStorageMb,
     String? totalStorageGb,
     int? totalDocCount,
+    List<MedicalDocumentItem>? documents,
   }) {
     return DocumentsState(
       selectedCategory: selectedCategory ?? this.selectedCategory,
@@ -55,6 +78,7 @@ class DocumentsState {
       savedStorageMb: savedStorageMb ?? this.savedStorageMb,
       totalStorageGb: totalStorageGb ?? this.totalStorageGb,
       totalDocCount: totalDocCount ?? this.totalDocCount,
+      documents: documents ?? this.documents,
     );
   }
 }

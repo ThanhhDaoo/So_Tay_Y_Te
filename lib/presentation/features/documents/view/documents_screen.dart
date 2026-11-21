@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -119,11 +120,19 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                     AiOcrScannerCard(
                       onScanCamera: () => AiOcrScannerModal.show(
                         context,
-                        onScanComplete: () => _showSnack('Đã thêm 1 đơn thuốc mới quét vào kho!'),
+                        documentsViewModel: _viewModel,
+                        onScanComplete: () {
+                          _viewModel.loadDocuments();
+                          _showSnack('Đã thêm 1 đơn thuốc mới quét vào kho!');
+                        },
                       ),
                       onSelectFromAlbum: () => AiOcrScannerModal.show(
                         context,
-                        onScanComplete: () => _showSnack('Đã phân tích và lưu tài liệu từ album!'),
+                        documentsViewModel: _viewModel,
+                        onScanComplete: () {
+                          _viewModel.loadDocuments();
+                          _showSnack('Đã phân tích và lưu tài liệu từ album!');
+                        },
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -143,21 +152,28 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Tài Liệu Gần Đây',
-                          style: AppTypography.heading3.copyWith(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.iceTextNavy,
+                        Flexible(
+                          child: Text(
+                            'Tài Liệu Gần Đây',
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.heading3.copyWith(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.iceTextNavy,
+                            ),
                           ),
                         ),
-                        Text(
-                          'Sắp xếp: Mới nhất',
-                          style: AppTypography.caption.copyWith(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.44,
-                            color: const Color(0xFF3D4947),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            'Sắp xếp: Mới nhất',
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.caption.copyWith(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.44,
+                              color: const Color(0xFF3D4947),
+                            ),
                           ),
                         ),
                       ],
@@ -211,6 +227,26 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                    ] else if (state.documents.isNotEmpty) ...[
+                      for (final doc in state.documents.where((d) => state.selectedCategory == DocumentCategory.all || d.category == state.selectedCategory)) ...[
+                        _DynamicDocumentCard(
+                          doc: doc,
+                          onTap: () => DocumentViewerModal.show(
+                            context,
+                            title: doc.title,
+                            category: doc.category.label,
+                            date: doc.date,
+                            hospital: doc.hospital,
+                            imageAsset: doc.imagePath,
+                            keyFindings: doc.keyFindings,
+                          ),
+                          onDelete: () async {
+                            await _viewModel.deleteDocument(doc.id);
+                            _showSnack('Đã xóa tài liệu: ${doc.title}');
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                     ] else ...[
                       if (showBlood) ...[
                         DocumentBloodTestCard(
@@ -314,6 +350,124 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _DynamicDocumentCard extends StatelessWidget {
+  final MedicalDocumentItem doc;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _DynamicDocumentCard({
+    required this.doc,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isLocalFile = !doc.imagePath.startsWith('assets/');
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5DFD4)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    color: AppColors.surfaceWarm,
+                    child: isLocalFile && File(doc.imagePath).existsSync()
+                        ? Image.file(File(doc.imagePath), fit: BoxFit.cover)
+                        : Image.asset(
+                            doc.imagePath.startsWith('assets/')
+                                ? doc.imagePath
+                                : 'assets/images/img_doc_blood_test.png',
+                            fit: BoxFit.cover,
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.iceOlive.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              doc.category.label,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.iceOlive,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            doc.date,
+                            style: const TextStyle(fontSize: 11, color: AppColors.iceTextSlate),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        doc.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.iceTextNavy,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        doc.hospital,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.iceTextSlate,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20, color: Colors.black38),
+                  onPressed: onDelete,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

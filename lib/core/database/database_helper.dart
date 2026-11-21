@@ -98,6 +98,47 @@ class AppDatabaseHelper implements DatabaseHelper {
 
     // 5. Bảng tài khoản người dùng bảo mật chuẩn y tế
     await _createAuthTables(db);
+
+    // 6. Bảng thành viên gia đình
+    await _createFamilyMembersTable(db);
+
+    // 7. Bảng tài liệu y tế
+    await _createMedicalDocumentsTable(db);
+  }
+
+  Future<void> _createMedicalDocumentsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS medical_documents (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        category TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        hospital TEXT,
+        date TEXT NOT NULL,
+        summary TEXT,
+        created_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createFamilyMembersTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS family_members (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        relationship TEXT NOT NULL,
+        blood_type TEXT,
+        dob TEXT,
+        gender TEXT,
+        phone TEXT,
+        allergies TEXT,
+        chronic_conditions TEXT,
+        avatar_asset TEXT,
+        created_at TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<void> _createAuthTables(Database db) async {
@@ -135,6 +176,8 @@ class AppDatabaseHelper implements DatabaseHelper {
     await db.execute('PRAGMA foreign_keys = ON');
     // Đảm bảo các bảng auth và medical_events luôn tồn tại kể cả khi mở DB cũ
     await _createAuthTables(db);
+    await _createFamilyMembersTable(db);
+    await _createMedicalDocumentsTable(db);
     await _ensureMedicalEventsSchema(db);
 
     // Dọn dẹp tài khoản mẫu tự động seed từ phiên bản dev cũ (nếu có)

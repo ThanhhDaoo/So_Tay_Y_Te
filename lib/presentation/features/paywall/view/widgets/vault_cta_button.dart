@@ -48,12 +48,15 @@ class VaultCtaButton extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Dùng thử 7 ngày miễn phí - Bắt đầu ngay',
-                          style: AppTypography.labelSemiBold.copyWith(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                        Flexible(
+                          child: Text(
+                            'Dùng thử 7 ngày miễn phí - Bắt đầu ngay',
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.labelSemiBold.copyWith(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ],

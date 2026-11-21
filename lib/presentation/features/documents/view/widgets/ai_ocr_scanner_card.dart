@@ -40,46 +40,49 @@ class AiOcrScannerCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.20),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      'SỔ TAY Y TẾ AI PRO',
-                      style: AppTypography.caption.copyWith(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                        color: Colors.white,
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.20),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'AI PRO',
+                        style: AppTypography.caption.copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF9CF2E8),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color(0x999CF2E8),
-                          blurRadius: 4,
-                          spreadRadius: 1,
-                        ),
-                      ],
+                    const SizedBox(width: 6),
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF9CF2E8),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x999CF2E8),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 6),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 8,
@@ -153,20 +156,23 @@ class AiOcrScannerCard extends StatelessWidget {
                         children: [
                           SvgPicture.asset(
                             'assets/icons/ic_doc_camera.svg',
-                            width: 16,
-                            height: 15,
+                            width: 15,
+                            height: 14,
                             colorFilter: const ColorFilter.mode(
                               Color(0xFF4E5547),
                               BlendMode.srcIn,
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Chụp Toa Ngay',
-                            style: AppTypography.labelSemiBold.copyWith(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF4E5547),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              'Chụp Toa Ngay',
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.labelSemiBold.copyWith(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF4E5547),
+                              ),
                             ),
                           ),
                         ],
@@ -197,20 +203,23 @@ class AiOcrScannerCard extends StatelessWidget {
                         children: [
                           SvgPicture.asset(
                             'assets/icons/ic_doc_gallery.svg',
-                            width: 16,
-                            height: 16,
+                            width: 15,
+                            height: 15,
                             colorFilter: const ColorFilter.mode(
                               Colors.white,
                               BlendMode.srcIn,
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Chọn Từ Album',
-                            style: AppTypography.labelSemiBold.copyWith(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              'Chọn Từ Album',
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.labelSemiBold.copyWith(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ],

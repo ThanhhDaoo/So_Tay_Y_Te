@@ -109,7 +109,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onSelectMember: _viewModel.selectMember,
                     onAddMemberTap: () => AddFamilyMemberSheet.show(
                       context,
-                      onAdd: (name, rel, blood) {
+                      onAdd: (name, rel, blood) async {
+                        await _viewModel.addFamilyMember(
+                          name: name,
+                          relationship: rel,
+                          bloodType: blood,
+                        );
                         _showSnack('Đã thêm hồ sơ: $name ($rel, $blood)');
                       },
                     ),

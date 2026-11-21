@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/user_session_manager.dart';
 import '../../../../domain/repositories/auth_repository.dart';
@@ -136,29 +137,60 @@ class EmergencyCardViewModel extends ChangeNotifier {
   }
 
   /// Kích hoạt gọi người thân khẩn cấp (ICE).
-  void callPrimaryContact() {
+  Future<void> callPrimaryContact() async {
     final c = _state.primaryContact;
     _state = _state.copyWith(
       lastActionMessage: 'Đang kết nối cuộc gọi tới ${c.name} (${c.phone})...',
     );
     notifyListeners();
+
+    if (c.phone.isNotEmpty) {
+      final cleanPhone = c.phone.replaceAll(RegExp(r'[^0-9+]'), '');
+      if (cleanPhone.isNotEmpty) {
+        final uri = Uri.parse('tel:$cleanPhone');
+        try {
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri);
+          }
+        } catch (_) {}
+      }
+    }
   }
 
   /// Kích hoạt gọi bác sĩ điều trị.
-  void callDoctor() {
+  Future<void> callDoctor() async {
     final c = _state.doctorContact;
     _state = _state.copyWith(
       lastActionMessage: 'Đang kết nối cuộc gọi tới ${c.name} (${c.phone})...',
     );
     notifyListeners();
+
+    if (c.phone.isNotEmpty) {
+      final cleanPhone = c.phone.replaceAll(RegExp(r'[^0-9+]'), '');
+      if (cleanPhone.isNotEmpty) {
+        final uri = Uri.parse('tel:$cleanPhone');
+        try {
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri);
+          }
+        } catch (_) {}
+      }
+    }
   }
 
   /// Kích hoạt gọi tổng đài cấp cứu 115.
-  void callEmergency115() {
+  Future<void> callEmergency115() async {
     _state = _state.copyWith(
       lastActionMessage: 'Đang gọi Tổng đài Cấp cứu Quốc gia 115...',
     );
     notifyListeners();
+
+    final uri = Uri.parse('tel:115');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      }
+    } catch (_) {}
   }
 
   void clearActionMessage() {

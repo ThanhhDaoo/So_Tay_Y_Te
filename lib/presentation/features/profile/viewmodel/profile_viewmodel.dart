@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../../../core/database/database_helper.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/user_session_manager.dart';
 import '../../../../domain/repositories/auth_repository.dart';
@@ -130,21 +131,122 @@ class ProfileViewModel extends ChangeNotifier {
             immunizations: const [],
           );
 
+          final dbFamilyChips = <FamilyMemberChip>[];
+          final dbFamilyProfiles = <String, MemberMedicalProfile>{};
+
+          if (sl.isRegistered<DatabaseHelper>()) {
+            try {
+              final db = await sl<DatabaseHelper>().database;
+              final rows = await db.query(
+                'family_members',
+                where: 'user_id = ?',
+                whereArgs: [session.id],
+                orderBy: 'created_at ASC',
+              );
+              for (final row in rows) {
+                final famId = row['id'] as String;
+                final famName = row['name'] as String;
+                final famRel = row['relationship'] as String;
+                final famBlood = row['blood_type'] as String? ?? 'Chưa rõ';
+                final famDob = row['dob'] as String? ?? 'Chưa rõ';
+                final famAvatar = row['avatar_asset'] as String? ?? 'assets/images/img_profile_avatar.png';
+
+                dbFamilyChips.add(FamilyMemberChip(
+                  id: famId,
+                  name: famName,
+                  subtitle: famRel,
+                  avatarAsset: famAvatar,
+                ));
+
+                dbFamilyProfiles[famId] = MemberMedicalProfile(
+                  id: famId,
+                  fullName: famName,
+                  recordCode: 'FAM-${famId.length >= 4 ? famId.substring(famId.length - 4) : famId}',
+                  bhytStatus: 'BHYT: Chưa liên kết',
+                  dob: famDob,
+                  region: regionDisplay,
+                  heroImageAsset: famAvatar,
+                  vitalsUpdatedAt: 'Chưa có',
+                  bloodType: famBlood,
+                  bloodNote: 'Đã khai báo',
+                  bmiValue: '--',
+                  bmiStatusLabel: 'Chưa tính',
+                  heightText: '-- cm',
+                  weightText: '-- kg',
+                  allergies: const [],
+                  chronicConditions: const [],
+                  immunizations: const [],
+                );
+              }
+            } catch (_) {}
+          }
+
           final updatedProfiles = Map<String, MemberMedicalProfile>.from(_state.profilesById);
           updatedProfiles['primary'] = primaryProfile;
+          updatedProfiles.addAll(dbFamilyProfiles);
 
           final updatedMembers = [
             primaryMember,
-            ..._state.familyMembers.where((m) => m.id != 'primary' && m.id != 'thu_trang'),
+            ...dbFamilyChips,
           ];
+
+          final currentSelected = _state.selectedMemberId;
+          final nextSelected = updatedProfiles.containsKey(currentSelected) ? currentSelected : 'primary';
 
           _state = _state.copyWith(
             familyMembers: updatedMembers,
             profilesById: updatedProfiles,
-            selectedMemberId: 'primary',
+            selectedMemberId: nextSelected,
           );
           notifyListeners();
         }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> addFamilyMember({
+    required String name,
+    required String relationship,
+    required String bloodType,
+    String? dob,
+  }) async {
+    try {
+      if (sl.isRegistered<AuthRepository>() && sl.isRegistered<DatabaseHelper>()) {
+        final auth = sl<AuthRepository>();
+        final session = await auth.getActiveSession();
+        if (session != null) {
+          final db = await sl<DatabaseHelper>().database;
+          final newId = 'fam_${DateTime.now().millisecondsSinceEpoch}';
+          await db.insert('family_members', {
+            'id': newId,
+            'user_id': session.id,
+            'name': name.trim(),
+            'relationship': relationship.trim(),
+            'blood_type': bloodType.trim(),
+            'dob': dob ?? 'Chưa rõ',
+            'gender': 'Chưa rõ',
+            'phone': '',
+            'allergies': '',
+            'chronic_conditions': '',
+            'avatar_asset': 'assets/images/img_profile_avatar.png',
+            'created_at': DateTime.now().toIso8601String(),
+          });
+          await loadCurrentUserProfile();
+          selectMember(newId);
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> deleteFamilyMember(String memberId) async {
+    try {
+      if (sl.isRegistered<DatabaseHelper>()) {
+        final db = await sl<DatabaseHelper>().database;
+        await db.delete('family_members', where: 'id = ?', whereArgs: [memberId]);
+        if (_state.selectedMemberId == memberId) {
+          _state = _state.copyWith(selectedMemberId: 'primary');
+        }
+        await loadCurrentUserProfile();
       }
     } catch (_) {}
   }

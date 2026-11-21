@@ -39,28 +39,35 @@ class SecurityStorageBanner extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  SvgPicture.asset(
-                    'assets/icons/ic_doc_e2ee_shield.svg',
-                    width: 14,
-                    height: 18,
-                    colorFilter: const ColorFilter.mode(
-                      Color(0xFF00685F),
-                      BlendMode.srcIn,
+              Expanded(
+                child: Row(
+                  children: [
+                    SvgPicture.asset(
+                      'assets/icons/ic_doc_e2ee_shield.svg',
+                      width: 14,
+                      height: 18,
+                      colorFilter: const ColorFilter.mode(
+                        Color(0xFF00685F),
+                        BlendMode.srcIn,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Kho Tài Liệu Mã Hóa E2EE',
-                    style: AppTypography.heading3.copyWith(
-                      fontSize: 16.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.iceTextNavy,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Kho Tài Liệu Mã Hóa E2EE',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.heading3.copyWith(
+                          fontSize: 16.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.iceTextNavy,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -157,14 +164,18 @@ class SecurityStorageBanner extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Đã lưu $docCount chứng từ y khoa',
-                style: AppTypography.caption.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF3D4947),
+              Flexible(
+                child: Text(
+                  'Đã lưu $docCount chứng từ y khoa',
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.caption.copyWith(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF3D4947),
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 'Khả dụng: $totalStorageGb',
                 style: AppTypography.caption.copyWith(

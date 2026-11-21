@@ -1,0 +1,194 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:so_tay_y_te/core/di/injection_container.dart';
+import 'package:so_tay_y_te/core/security/biometric_service.dart';
+import 'package:so_tay_y_te/data/datasources/local/app_preferences_datasource.dart';
+import 'package:so_tay_y_te/domain/entities/medical_event.dart';
+import 'package:so_tay_y_te/domain/entities/user_account.dart';
+import 'package:so_tay_y_te/domain/repositories/auth_repository.dart';
+import 'package:so_tay_y_te/domain/repositories/medical_record_repository.dart';
+import 'package:so_tay_y_te/presentation/features/emergency_card/viewmodel/emergency_card_viewmodel.dart';
+import 'package:so_tay_y_te/presentation/features/profile/viewmodel/profile_viewmodel.dart';
+import 'package:so_tay_y_te/presentation/features/record_detail/viewmodel/record_detail_viewmodel.dart';
+import 'package:so_tay_y_te/presentation/features/security_settings/viewmodel/security_settings_viewmodel.dart';
+
+class MockBiometricService implements BiometricService {
+  @override
+  Future<bool> authenticate({required String localizedReason}) async => true;
+
+  @override
+  Future<List<BiometricHardwareType>> getAvailableBiometrics() async => [BiometricHardwareType.face];
+
+  @override
+  Future<bool> isBiometricAvailable() async => true;
+}
+
+class MockMedicalRepo implements MedicalRecordRepository {
+  final Map<String, MedicalEvent> _events = {};
+
+  @override
+  Future<void> saveMedicalEvent(MedicalEvent event) async {
+    _events[event.id] = event;
+  }
+
+  @override
+  Future<MedicalEvent?> getMedicalEventById(String id) async {
+    return _events[id];
+  }
+
+  @override
+  Future<List<MedicalEvent>> getMedicalTimeline({String? userId}) async => _events.values.toList();
+
+  @override
+  Future<void> deleteMedicalEvent(String id) async {
+    _events.remove(id);
+  }
+
+  @override
+  Future<String> exportHealthPdf() async => 'dummy.pdf';
+}
+
+class MockTestAuthRepo implements AuthRepository {
+  final UserAccount _user = UserAccount(
+    id: 'usr_test_1',
+    patientCode: 'STYT-112233',
+    fullName: 'Trần Văn An',
+    primaryContact: '0901234567',
+    passwordHash: 'hash',
+    salt: 'salt',
+    dateOfBirth: '1990-05-15',
+    gender: 'Nam',
+    bloodType: 'O+',
+    createdAt: DateTime.now(),
+  );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+
+  @override
+  Future<UserAccount?> getActiveSession() async => _user;
+
+  @override
+  Future<Map<String, dynamic>?> getUserProfileDetails(String userId) async {
+    return {
+      'height': '172',
+      'weight': '68',
+      'blood_type': 'O+',
+      'allergies': 'Penicillin',
+      'chronic_conditions': 'Viêm dạ dày',
+      'emergency_contact': '0988776655',
+      'region': 'Hà Nội',
+    };
+  }
+
+  @override
+  Future<UserAccount> updateUserProfile({
+    required String userId,
+    required String fullName,
+    String? dateOfBirth,
+    String? gender,
+    String? bloodType,
+    String? height,
+    String? weight,
+    String? emergencyContact,
+    String? allergies,
+    String? chronicConditions,
+    String? organDonor,
+    String? region,
+    String? avatarUrl,
+  }) async => _user;
+}
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  late AppPreferencesDataSource prefs;
+  late MockTestAuthRepo authRepo;
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    prefs = AppPreferencesDataSourceImpl();
+    authRepo = MockTestAuthRepo();
+
+    sl.reset();
+    sl.registerSingleton<AppPreferencesDataSource>(prefs);
+    sl.registerSingleton<AuthRepository>(authRepo);
+  });
+
+  tearDown(() async {
+    await sl.reset();
+  });
+
+  test('EmergencyCardViewModel triggers contact actions smoothly', () async {
+    final vm = EmergencyCardViewModel();
+    await vm.loadProfile();
+
+    await vm.callPrimaryContact();
+    expect(vm.state.lastActionMessage, contains('kết nối cuộc gọi'));
+
+    await vm.callDoctor();
+    expect(vm.state.lastActionMessage, contains('kết nối cuộc gọi'));
+
+    await vm.callEmergency115();
+    expect(vm.state.lastActionMessage, contains('115'));
+  });
+
+  test('ProfileViewModel switches and manages family profiles cleanly', () async {
+    final vm = ProfileViewModel();
+    await vm.loadCurrentUserProfile();
+
+    expect(vm.state.familyMembers.length, greaterThanOrEqualTo(1));
+    expect(vm.state.selectedMemberId, 'primary');
+    expect(vm.state.activeProfile.fullName, 'Trần Văn An');
+
+    // Add family member
+    await vm.addFamilyMember(
+      name: 'Trần Bảo Long',
+      relationship: 'Con cái',
+      bloodType: 'O+',
+      dob: '2018-08-20',
+    );
+
+    expect(vm.state.familyMembers.length, greaterThanOrEqualTo(1));
+
+    // Switch selection
+    vm.selectMember('primary');
+    expect(vm.state.selectedMemberId, 'primary');
+    expect(vm.state.activeProfile.fullName, 'Trần Văn An');
+  });
+
+  test('SecuritySettingsViewModel creates and exports backup archive', () async {
+    final vm = SecuritySettingsViewModel(
+      preferencesDataSource: prefs,
+      biometricService: MockBiometricService(),
+    );
+
+    await vm.exportBackup();
+    expect(vm.state.lastBackupTime, isNotNull);
+    expect(vm.state.feedbackMessage, contains('thành công'));
+
+    await vm.restoreBackup();
+    expect(vm.state.feedbackMessage, contains('thành công'));
+  });
+
+  test('RecordDetailViewModel loads event from MedicalRecordRepository', () async {
+    final repo = MockMedicalRepo();
+    final event = MedicalEvent(
+      id: 'REC-TEST-99',
+      title: 'Khám Viêm Họng',
+      description: 'Đau rát họng 3 ngày',
+      date: DateTime.now(),
+      type: MedicalEventType.generalCheckup,
+      doctorName: 'BS. Tuấn',
+      facilityName: 'BV Tai Mũi Họng',
+    );
+    await repo.saveMedicalEvent(event);
+
+    final vm = RecordDetailViewModel(repository: repo);
+    await vm.fetchDetail('REC-TEST-99');
+
+    expect(vm.event, isNotNull);
+    expect(vm.event!.title, 'Khám Viêm Họng');
+    expect(vm.event!.doctorName, 'BS. Tuấn');
+  });
+}

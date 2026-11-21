@@ -7,8 +7,10 @@ class TrustAssurancesRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 16,
+      runSpacing: 8,
       children: [
         Row(
           mainAxisSize: MainAxisSize.min,

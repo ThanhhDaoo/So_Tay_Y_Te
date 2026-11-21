@@ -1,17 +1,24 @@
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/datasources/local/app_preferences_datasource.dart';
 import '../../data/datasources/local/auth_local_datasource.dart';
 import '../../data/datasources/local/medical_local_datasource.dart';
 import '../../data/datasources/remote/auth_remote_datasource.dart';
 import '../../data/datasources/remote/firebase_auth_datasource.dart';
+import '../../data/datasources/remote/medical_sync_remote_datasource.dart';
+import '../../data/datasources/remote/subscription_remote_datasource.dart';
 import '../../data/datasources/remote/supabase_auth_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../data/repositories/medical_record_repository_impl.dart';
+import '../../data/repositories/sync_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/medical_record_repository.dart';
+import '../../domain/repositories/sync_repository.dart';
 import '../../domain/usecases/medical/delete_medical_event_usecase.dart';
 import '../../domain/usecases/medical/get_medical_timeline_usecase.dart';
 import '../../domain/usecases/medical/save_medical_event_usecase.dart';
+import '../../domain/usecases/sync/sync_both_ways_usecase.dart';
+import '../../domain/usecases/sync/sync_local_to_cloud_usecase.dart';
 import '../config/firebase_config.dart';
 import '../config/supabase_config.dart';
 import '../database/database_helper.dart';
@@ -100,6 +107,18 @@ class InjectionContainer {
       );
     }
 
+    if (!sl.isRegistered<MedicalSyncRemoteDataSource>()) {
+      sl.registerLazySingleton<MedicalSyncRemoteDataSource>(
+        () => MedicalSyncRemoteDataSourceImpl(client: SupabaseConfig.client),
+      );
+    }
+
+    if (!sl.isRegistered<SubscriptionRemoteDataSource>()) {
+      sl.registerLazySingleton<SubscriptionRemoteDataSource>(
+        () => SubscriptionRemoteDataSourceImpl(),
+      );
+    }
+
     // 3. Repositories
     if (!sl.isRegistered<AuthRepository>()) {
       sl.registerLazySingleton<AuthRepository>(
@@ -113,10 +132,21 @@ class InjectionContainer {
       );
     }
 
+    if (!sl.isRegistered<SyncRepository>()) {
+      sl.registerLazySingleton<SyncRepository>(
+        () => SyncRepositoryImpl(
+          localDataSource: sl<MedicalLocalDataSource>(),
+          remoteDataSource: sl<MedicalSyncRemoteDataSource>(),
+          preferences: sl.isRegistered<SharedPreferences>() ? sl<SharedPreferences>() : null,
+        ),
+      );
+    }
+
     if (!sl.isRegistered<MedicalRecordRepository>()) {
       sl.registerLazySingleton<MedicalRecordRepository>(
         () => MedicalRecordRepositoryImpl(
           localDataSource: sl<MedicalLocalDataSource>(),
+          syncRepository: sl<SyncRepository>(),
         ),
       );
     }
@@ -137,6 +167,18 @@ class InjectionContainer {
     if (!sl.isRegistered<DeleteMedicalEventUseCase>()) {
       sl.registerLazySingleton<DeleteMedicalEventUseCase>(
         () => DeleteMedicalEventUseCase(sl<MedicalRecordRepository>()),
+      );
+    }
+
+    if (!sl.isRegistered<SyncLocalToCloudUseCase>()) {
+      sl.registerLazySingleton<SyncLocalToCloudUseCase>(
+        () => SyncLocalToCloudUseCase(sl<SyncRepository>()),
+      );
+    }
+
+    if (!sl.isRegistered<SyncBothWaysUseCase>()) {
+      sl.registerLazySingleton<SyncBothWaysUseCase>(
+        () => SyncBothWaysUseCase(sl<SyncRepository>()),
       );
     }
   }

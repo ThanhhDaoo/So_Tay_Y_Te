@@ -10,6 +10,7 @@ import '../viewmodel/security_settings_viewmodel.dart';
 import 'widgets/app_lock_biometrics_card.dart';
 import 'widgets/backup_restore_card.dart';
 import 'widgets/change_pin_modal.dart';
+import 'widgets/cloud_sync_card.dart';
 import 'widgets/danger_zone_wipe_card.dart';
 import 'widgets/encryption_privacy_card.dart';
 import 'widgets/master_shield_security_card.dart';
@@ -142,7 +143,15 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // 4. Sao Lưu & Khôi Phục Dữ Liệu
+                // 4. Đồng Bộ Đám Mây Supabase Cloud
+                CloudSyncCard(
+                  state: state,
+                  onSyncNow: _viewModel.syncCloudNow,
+                  onToggleAutoSync: _viewModel.toggleAutoCloudSync,
+                ),
+                const SizedBox(height: 20),
+
+                // 5. Sao Lưu & Khôi Phục Dữ Liệu
                 BackupRestoreCard(
                   state: state,
                   onExportBackup: _viewModel.exportBackup,

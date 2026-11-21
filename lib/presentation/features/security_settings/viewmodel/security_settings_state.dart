@@ -23,6 +23,9 @@ class SecuritySettingsState {
   final String lastBackupSize;
   final SecurityOperation currentOperation;
   final String? feedbackMessage;
+  final bool isSyncingCloud;
+  final DateTime? lastCloudSyncTime;
+  final bool isAutoCloudSyncEnabled;
 
   const SecuritySettingsState({
     this.isBiometricLockEnabled = false,
@@ -37,7 +40,21 @@ class SecuritySettingsState {
     this.lastBackupSize = '7.2 MB',
     this.currentOperation = SecurityOperation.none,
     this.feedbackMessage,
+    this.isSyncingCloud = false,
+    this.lastCloudSyncTime,
+    this.isAutoCloudSyncEnabled = true,
   });
+
+  String get cloudSyncTimeLabel {
+    if (lastCloudSyncTime == null) return 'Chưa đồng bộ';
+    final now = DateTime.now();
+    final diff = now.difference(lastCloudSyncTime!);
+    if (diff.inMinutes < 2) return 'Vừa xong';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} phút trước';
+    final hh = lastCloudSyncTime!.hour.toString().padLeft(2, '0');
+    final mm = lastCloudSyncTime!.minute.toString().padLeft(2, '0');
+    return '$hh:$mm Hôm nay';
+  }
 
   SecuritySettingsState copyWith({
     bool? isBiometricLockEnabled,
@@ -53,6 +70,9 @@ class SecuritySettingsState {
     SecurityOperation? currentOperation,
     String? feedbackMessage,
     bool clearFeedbackMessage = false,
+    bool? isSyncingCloud,
+    DateTime? lastCloudSyncTime,
+    bool? isAutoCloudSyncEnabled,
   }) {
     return SecuritySettingsState(
       isBiometricLockEnabled: isBiometricLockEnabled ?? this.isBiometricLockEnabled,
@@ -68,6 +88,9 @@ class SecuritySettingsState {
       lastBackupSize: lastBackupSize ?? this.lastBackupSize,
       currentOperation: currentOperation ?? this.currentOperation,
       feedbackMessage: clearFeedbackMessage ? null : (feedbackMessage ?? this.feedbackMessage),
+      isSyncingCloud: isSyncingCloud ?? this.isSyncingCloud,
+      lastCloudSyncTime: lastCloudSyncTime ?? this.lastCloudSyncTime,
+      isAutoCloudSyncEnabled: isAutoCloudSyncEnabled ?? this.isAutoCloudSyncEnabled,
     );
   }
 }
