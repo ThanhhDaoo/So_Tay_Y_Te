@@ -16,6 +16,7 @@ class EditPersonalProfileSheet extends StatefulWidget {
   final String? initialOrganDonor;
   final String? initialRegion;
   final String? initialAvatarUrl;
+  final String? sheetTitle;
   final VoidCallback? onPickAvatar;
   final Future<void> Function(String newAvatarPath)? onAvatarChanged;
   final Future<void> Function({
@@ -35,6 +36,7 @@ class EditPersonalProfileSheet extends StatefulWidget {
 
   const EditPersonalProfileSheet({
     super.key,
+    this.sheetTitle,
     required this.initialFullName,
     this.initialDob,
     this.initialGender,
@@ -54,6 +56,7 @@ class EditPersonalProfileSheet extends StatefulWidget {
 
   static void show(
     BuildContext context, {
+    String? sheetTitle,
     required String initialFullName,
     String? initialDob,
     String? initialGender,
@@ -88,6 +91,7 @@ class EditPersonalProfileSheet extends StatefulWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => EditPersonalProfileSheet(
+        sheetTitle: sheetTitle,
         initialFullName: initialFullName,
         initialDob: initialDob,
         initialGender: initialGender,
@@ -300,13 +304,13 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.badge_outlined, color: AppColors.iceOlive, size: 22),
-                    SizedBox(width: 8),
+                    const Icon(Icons.badge_outlined, color: AppColors.iceOlive, size: 22),
+                    const SizedBox(width: 8),
                     Text(
-                      'Cập Nhật Thông Tin Cá Nhân',
-                      style: TextStyle(
+                      widget.sheetTitle ?? 'Cập Nhật Thông Tin Cá Nhân',
+                      style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
                         color: AppColors.iceTextNavy,

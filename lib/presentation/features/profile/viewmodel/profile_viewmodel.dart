@@ -19,10 +19,12 @@ class ProfileViewModel extends ChangeNotifier {
         final authRepo = sl<AuthRepository>();
         final session = await authRepo.getActiveSession();
         if (session != null && !session.isGuest) {
-          final shortName = session.fullName.trim().split(' ').last;
+          final primaryMemberName = session.fullName.trim().isNotEmpty
+              ? session.fullName.trim()
+              : 'Hồ sơ gốc';
           final primaryMember = FamilyMemberChip(
             id: 'primary',
-            name: shortName,
+            name: primaryMemberName,
             subtitle: 'Chính • Hồ sơ gốc',
             avatarAsset: session.avatarUrl ?? 'assets/images/img_profile_thu_trang.png',
           );
@@ -149,7 +151,55 @@ class ProfileViewModel extends ChangeNotifier {
                 final famRel = row['relationship'] as String;
                 final famBlood = row['blood_type'] as String? ?? 'Chưa rõ';
                 final famDob = row['dob'] as String? ?? 'Chưa rõ';
+                final famGender = row['gender'] as String? ?? 'Chưa rõ';
+                final famPhone = row['phone'] as String? ?? '';
                 final famAvatar = row['avatar_asset'] as String? ?? 'assets/images/img_profile_avatar.png';
+                final famAllergiesRaw = row['allergies'] as String? ?? '';
+                final famConditionsRaw = row['chronic_conditions'] as String? ?? '';
+                final famHeight = row['height'] as String? ?? '';
+                final famWeight = row['weight'] as String? ?? '';
+
+                List<String> famAllergiesList = const [];
+                if (famAllergiesRaw.trim().isNotEmpty && famAllergiesRaw != 'Không có') {
+                  famAllergiesList = famAllergiesRaw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+                }
+                final famAllergyItems = famAllergiesList.map((a) => AllergyItem(
+                  title: a,
+                  severityLabel: 'Cảnh báo',
+                  isHighRisk: true,
+                  reaction: 'Cần lưu ý khi kê đơn y tế',
+                  iconAsset: 'assets/icons/ic_prof_allergy_pill.svg',
+                )).toList();
+
+                List<String> famConditionsList = const [];
+                if (famConditionsRaw.trim().isNotEmpty && famConditionsRaw != 'Không có') {
+                  famConditionsList = famConditionsRaw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+                }
+                final famConditionItems = famConditionsList.map((c) => ChronicConditionItem(
+                  title: c,
+                  statusText: 'Đang theo dõi',
+                  iconAsset: 'assets/icons/ic_prof_condition_stomach.svg',
+                )).toList();
+
+                String famHeightStr = famHeight.isNotEmpty ? '$famHeight cm' : '-- cm';
+                String famWeightStr = famWeight.isNotEmpty ? '$famWeight kg' : '-- kg';
+                String famBmiVal = '--';
+                String famBmiLabel = 'Chưa tính';
+                final hNum = double.tryParse(famHeight);
+                final wNum = double.tryParse(famWeight);
+                if (hNum != null && wNum != null && hNum > 0) {
+                  final bmi = wNum / ((hNum / 100) * (hNum / 100));
+                  famBmiVal = bmi.toStringAsFixed(1);
+                  if (bmi < 18.5) {
+                    famBmiLabel = 'Thiếu cân';
+                  } else if (bmi < 24.9) {
+                    famBmiLabel = 'Bình thường';
+                  } else if (bmi < 29.9) {
+                    famBmiLabel = 'Tiền béo phì';
+                  } else {
+                    famBmiLabel = 'Béo phì';
+                  }
+                }
 
                 dbFamilyChips.add(FamilyMemberChip(
                   id: famId,
@@ -161,6 +211,9 @@ class ProfileViewModel extends ChangeNotifier {
                 dbFamilyProfiles[famId] = MemberMedicalProfile(
                   id: famId,
                   fullName: famName,
+                  relationship: famRel,
+                  gender: famGender,
+                  contact: famPhone,
                   recordCode: 'FAM-${famId.length >= 4 ? famId.substring(famId.length - 4) : famId}',
                   bhytStatus: 'BHYT: Chưa liên kết',
                   dob: famDob,
@@ -169,12 +222,12 @@ class ProfileViewModel extends ChangeNotifier {
                   vitalsUpdatedAt: 'Chưa có',
                   bloodType: famBlood,
                   bloodNote: 'Đã khai báo',
-                  bmiValue: '--',
-                  bmiStatusLabel: 'Chưa tính',
-                  heightText: '-- cm',
-                  weightText: '-- kg',
-                  allergies: const [],
-                  chronicConditions: const [],
+                  bmiValue: famBmiVal,
+                  bmiStatusLabel: famBmiLabel,
+                  heightText: famHeightStr,
+                  weightText: famWeightStr,
+                  allergies: famAllergyItems,
+                  chronicConditions: famConditionItems,
                   immunizations: const [],
                 );
               }
@@ -209,6 +262,13 @@ class ProfileViewModel extends ChangeNotifier {
     required String relationship,
     required String bloodType,
     String? dob,
+    String? gender,
+    String? phone,
+    String? height,
+    String? weight,
+    String? allergies,
+    String? chronicConditions,
+    String? avatarAsset,
   }) async {
     try {
       if (sl.isRegistered<AuthRepository>() && sl.isRegistered<DatabaseHelper>()) {
@@ -224,16 +284,73 @@ class ProfileViewModel extends ChangeNotifier {
             'relationship': relationship.trim(),
             'blood_type': bloodType.trim(),
             'dob': dob ?? 'Chưa rõ',
-            'gender': 'Chưa rõ',
-            'phone': '',
-            'allergies': '',
-            'chronic_conditions': '',
-            'avatar_asset': 'assets/images/img_profile_avatar.png',
+            'gender': gender ?? 'Chưa rõ',
+            'phone': phone ?? '',
+            'allergies': allergies ?? '',
+            'chronic_conditions': chronicConditions ?? '',
+            'avatar_asset': avatarAsset ?? 'assets/images/img_profile_avatar.png',
+            'height': height ?? '',
+            'weight': weight ?? '',
             'created_at': DateTime.now().toIso8601String(),
           });
           await loadCurrentUserProfile();
           selectMember(newId);
         }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> updateFamilyMemberProfile({
+    required String memberId,
+    required String fullName,
+    String? dateOfBirth,
+    String? gender,
+    String? bloodType,
+    String? height,
+    String? weight,
+    String? emergencyContact,
+    String? allergies,
+    String? chronicConditions,
+    String? avatarUrl,
+  }) async {
+    try {
+      if (sl.isRegistered<DatabaseHelper>()) {
+        final db = await sl<DatabaseHelper>().database;
+        final updateValues = <String, dynamic>{
+          'name': fullName.trim(),
+        };
+        if (dateOfBirth != null) updateValues['dob'] = dateOfBirth.trim();
+        if (gender != null) updateValues['gender'] = gender.trim();
+        if (bloodType != null) updateValues['blood_type'] = bloodType.trim();
+        if (emergencyContact != null) updateValues['phone'] = emergencyContact.trim();
+        if (allergies != null) updateValues['allergies'] = allergies.trim();
+        if (chronicConditions != null) updateValues['chronic_conditions'] = chronicConditions.trim();
+        if (height != null) updateValues['height'] = height.trim();
+        if (weight != null) updateValues['weight'] = weight.trim();
+        if (avatarUrl != null) updateValues['avatar_asset'] = avatarUrl.trim();
+
+        await db.update(
+          'family_members',
+          updateValues,
+          where: 'id = ?',
+          whereArgs: [memberId],
+        );
+        await loadCurrentUserProfile();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> updateFamilyMemberAvatar(String memberId, String imagePath) async {
+    try {
+      if (sl.isRegistered<DatabaseHelper>()) {
+        final db = await sl<DatabaseHelper>().database;
+        await db.update(
+          'family_members',
+          {'avatar_asset': imagePath},
+          where: 'id = ?',
+          whereArgs: [memberId],
+        );
+        await loadCurrentUserProfile();
       }
     } catch (_) {}
   }

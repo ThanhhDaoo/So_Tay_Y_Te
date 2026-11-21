@@ -85,6 +85,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context, _) {
           final state = _viewModel.state;
           final activeProfile = state.activeProfile;
+          final isPrimary = activeProfile.id == 'primary';
+          final primaryMember = state.familyMembers.firstWhere(
+            (m) => m.id == 'primary',
+            orElse: () => state.familyMembers.first,
+          );
           final activeChip = state.familyMembers.firstWhere(
             (m) => m.id == state.selectedMemberId,
             orElse: () => state.familyMembers.first,
@@ -96,8 +101,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: ProfileHeader(
                   activeMemberName: activeChip.name,
                   activeAvatarAsset: activeChip.avatarAsset,
-                  onProfileTap: () =>
-                      _showSnack('Đang xem hồ sơ: ${activeProfile.fullName}'),
+                  isViewingFamilyMember: !isPrimary,
+                  primaryMemberName: primaryMember.name,
+                  onProfileTap: () {
+                    if (!isPrimary) {
+                      _viewModel.selectMember('primary');
+                      _showSnack('Đã quay lại hồ sơ gốc: ${primaryMember.name}');
+                    } else {
+                      _showSnack('Đang xem hồ sơ gốc: ${activeProfile.fullName}');
+                    }
+                  },
                 ),
               ),
               SliverPadding(
@@ -115,7 +128,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           relationship: rel,
                           bloodType: blood,
                         );
-                        _showSnack('Đã thêm hồ sơ: $name ($rel, $blood)');
+                        _showSnack('Đã thêm hồ sơ: $name ($rel). Chạm "Hồ sơ gốc" để quay lại tài khoản của bạn.');
                       },
                     ),
                     onVaultProTap: () =>
@@ -134,25 +147,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     ProfilePatientHeroCard(
                       profile: activeProfile,
+                      isPrimary: isPrimary,
+                      onDeleteTap: !isPrimary
+                          ? () => _confirmDeleteFamilyMember(
+                                context,
+                                activeProfile.id,
+                                activeProfile.fullName,
+                              )
+                          : null,
                       onPickAvatar: () => pickAndSaveAvatar(
                         context,
                         onAvatarSaved: (localPath) async {
-                          await _viewModel.updateAvatar(localPath);
+                          if (isPrimary) {
+                            await _viewModel.updateAvatar(localPath);
+                          } else {
+                            await _viewModel.updateFamilyMemberAvatar(
+                              activeProfile.id,
+                              localPath,
+                            );
+                          }
                           _showSnack('Đã cập nhật ảnh đại diện thành công!');
                         },
                       ),
                       onEditTap: () {
                         EditPersonalProfileSheet.show(
                           context,
+                          sheetTitle: isPrimary
+                              ? 'Cập Nhật Hồ Sơ Gốc'
+                              : 'Cập Nhật Hồ Sơ: ${activeProfile.fullName}',
                           initialFullName: activeProfile.fullName,
                           initialDob: activeProfile.dob,
+                          initialGender: activeProfile.gender,
                           initialBloodType: activeProfile.bloodType,
-                          initialHeight: activeProfile.heightText,
-                          initialWeight: activeProfile.weightText,
+                          initialHeight: activeProfile.heightText.replaceAll(' cm', ''),
+                          initialWeight: activeProfile.weightText.replaceAll(' kg', ''),
+                          initialEmergencyContact: activeProfile.contact,
                           initialRegion: (activeProfile.region != 'Chưa cập nhật' && !activeProfile.region.contains('@')) ? activeProfile.region : '',
                           initialAvatarUrl: activeProfile.heroImageAsset,
                           onAvatarChanged: (newPath) async {
-                            await _viewModel.updateAvatar(newPath);
+                            if (isPrimary) {
+                              await _viewModel.updateAvatar(newPath);
+                            } else {
+                              await _viewModel.updateFamilyMemberAvatar(
+                                activeProfile.id,
+                                newPath,
+                              );
+                            }
                             _showSnack('Đã cập nhật ảnh đại diện thành công!');
                           },
                           initialAllergies: activeProfile.allergies.map((a) => a.title).join(', '),
@@ -171,20 +211,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             region,
                             avatarUrl,
                           }) async {
-                            await _viewModel.updateCurrentUserProfile(
-                              fullName: fullName,
-                              dateOfBirth: dateOfBirth,
-                              gender: gender,
-                              bloodType: bloodType,
-                              height: height,
-                              weight: weight,
-                              emergencyContact: emergencyContact,
-                              allergies: allergies,
-                              chronicConditions: chronicConditions,
-                              organDonor: organDonor,
-                              region: region,
-                              avatarUrl: avatarUrl,
-                            );
+                            if (isPrimary) {
+                              await _viewModel.updateCurrentUserProfile(
+                                fullName: fullName,
+                                dateOfBirth: dateOfBirth,
+                                gender: gender,
+                                bloodType: bloodType,
+                                height: height,
+                                weight: weight,
+                                emergencyContact: emergencyContact,
+                                allergies: allergies,
+                                chronicConditions: chronicConditions,
+                                organDonor: organDonor,
+                                region: region,
+                                avatarUrl: avatarUrl,
+                              );
+                            } else {
+                              await _viewModel.updateFamilyMemberProfile(
+                                memberId: activeProfile.id,
+                                fullName: fullName,
+                                dateOfBirth: dateOfBirth,
+                                gender: gender,
+                                bloodType: bloodType,
+                                height: height,
+                                weight: weight,
+                                emergencyContact: emergencyContact,
+                                allergies: allergies,
+                                chronicConditions: chronicConditions,
+                                avatarUrl: avatarUrl,
+                              );
+                            }
                           },
                         );
                       },
@@ -232,6 +288,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _confirmDeleteFamilyMember(
+    BuildContext context,
+    String memberId,
+    String memberName,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận xóa hồ sơ'),
+        content: Text(
+          'Bạn có chắc chắn muốn xóa hồ sơ thành viên "$memberName" không? '
+          'Hồ sơ này sẽ bị xóa khỏi danh sách gia đình và không ảnh hưởng đến tài khoản gốc của bạn.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _viewModel.deleteFamilyMember(memberId);
+              _showSnack('Đã xóa hồ sơ thành viên "$memberName" thành công!');
+            },
+            child: const Text('Xóa'),
+          ),
+        ],
       ),
     );
   }

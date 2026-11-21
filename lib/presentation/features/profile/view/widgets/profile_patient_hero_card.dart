@@ -9,12 +9,16 @@ class ProfilePatientHeroCard extends StatelessWidget {
   const ProfilePatientHeroCard({
     super.key,
     required this.profile,
+    this.isPrimary = true,
     this.onEditTap,
+    this.onDeleteTap,
     this.onPickAvatar,
   });
 
   final MemberMedicalProfile profile;
+  final bool isPrimary;
   final VoidCallback? onEditTap;
+  final VoidCallback? onDeleteTap;
   final VoidCallback? onPickAvatar;
 
   @override
@@ -157,6 +161,36 @@ class ProfilePatientHeroCard extends StatelessWidget {
                           ),
                         ),
                       ],
+                      if (!isPrimary && onDeleteTap != null) ...[
+                        const SizedBox(width: 6),
+                        InkWell(
+                          onTap: onDeleteTap,
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.red.withValues(alpha: 0.35)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.delete_outline, size: 14, color: Colors.red),
+                                SizedBox(width: 2),
+                                Text(
+                                  'Xóa',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -165,6 +199,31 @@ class ProfilePatientHeroCard extends StatelessWidget {
                     runSpacing: 6,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isPrimary
+                              ? AppColors.iceOlive.withValues(alpha: 0.15)
+                              : const Color(0xFFE28743).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          isPrimary
+                              ? 'HỒ SƠ GỐC'
+                              : 'THÀNH VIÊN: ${profile.relationship.toUpperCase()}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
+                            color: isPrimary
+                                ? AppColors.iceOlive
+                                : const Color(0xFFC05621),
+                          ),
+                        ),
+                      ),
                       Text(
                         'Mã hồ sơ: ${profile.recordCode}',
                         style: AppTypography.body.copyWith(

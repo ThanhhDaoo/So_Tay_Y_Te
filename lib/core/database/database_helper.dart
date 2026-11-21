@@ -136,6 +136,8 @@ class AppDatabaseHelper implements DatabaseHelper {
         allergies TEXT,
         chronic_conditions TEXT,
         avatar_asset TEXT,
+        height TEXT,
+        weight TEXT,
         created_at TEXT NOT NULL
       )
     ''');
@@ -255,6 +257,25 @@ class AppDatabaseHelper implements DatabaseHelper {
         if (!existingProfileCols.contains(entry.key)) {
           try {
             await db.execute('ALTER TABLE user_profile ADD COLUMN ${entry.key} ${entry.value}');
+          } catch (_) {}
+        }
+      }
+
+      final famInfo = await db.rawQuery('PRAGMA table_info(family_members)');
+      final existingFamCols = famInfo.map((row) => row['name'] as String).toSet();
+      final requiredFamCols = {
+        'height': 'TEXT',
+        'weight': 'TEXT',
+        'gender': 'TEXT',
+        'phone': 'TEXT',
+        'allergies': 'TEXT',
+        'chronic_conditions': 'TEXT',
+        'avatar_asset': 'TEXT',
+      };
+      for (final entry in requiredFamCols.entries) {
+        if (!existingFamCols.contains(entry.key)) {
+          try {
+            await db.execute('ALTER TABLE family_members ADD COLUMN ${entry.key} ${entry.value}');
           } catch (_) {}
         }
       }

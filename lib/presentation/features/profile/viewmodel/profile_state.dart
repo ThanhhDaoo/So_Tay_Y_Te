@@ -67,6 +67,8 @@ class MemberMedicalProfile {
     required this.dob,
     required this.region,
     this.contact = '',
+    this.relationship = 'Bản thân',
+    this.gender = 'Chưa rõ',
     required this.heroImageAsset,
     required this.vitalsUpdatedAt,
     required this.bloodType,
@@ -87,6 +89,8 @@ class MemberMedicalProfile {
   final String dob;
   final String region;
   final String contact;
+  final String relationship;
+  final String gender;
   final String heroImageAsset;
   final String vitalsUpdatedAt;
   final String bloodType;
@@ -98,6 +102,8 @@ class MemberMedicalProfile {
   final List<AllergyItem> allergies;
   final List<ChronicConditionItem> chronicConditions;
   final List<ImmunizationItem> immunizations;
+
+  bool get isPrimary => id == 'primary';
 }
 
 class ProfileState {

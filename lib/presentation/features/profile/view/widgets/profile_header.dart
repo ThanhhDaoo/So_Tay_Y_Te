@@ -9,11 +9,15 @@ class ProfileHeader extends StatelessWidget {
     super.key,
     required this.activeMemberName,
     required this.activeAvatarAsset,
+    this.isViewingFamilyMember = false,
+    this.primaryMemberName = '',
     this.onProfileTap,
   });
 
   final String activeMemberName;
   final String activeAvatarAsset;
+  final bool isViewingFamilyMember;
+  final String primaryMemberName;
   final VoidCallback? onProfileTap;
 
   @override
@@ -74,7 +78,7 @@ class ProfileHeader extends StatelessWidget {
                 ],
               ),
               Material(
-                color: AppColors.surfaceCream,
+                color: isViewingFamilyMember ? const Color(0xFFFBF4EB) : AppColors.surfaceCream,
                 borderRadius: BorderRadius.circular(12),
                 child: InkWell(
                   onTap: onProfileTap,
@@ -87,42 +91,83 @@ class ProfileHeader extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0x99E5DFD4),
+                        color: isViewingFamilyMember
+                            ? const Color(0xFFD6A770)
+                            : const Color(0x99E5DFD4),
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.iceAccentCream,
-                            border: Border.all(
-                              color: AppColors.surfaceLight,
-                              width: 1,
-                            ),
+                    child: isViewingFamilyMember
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.arrow_back_rounded,
+                                size: 14,
+                                color: Color(0xFF9C5A14),
+                              ),
+                              const SizedBox(width: 4),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 100),
+                                child: Text(
+                                  activeMemberName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF9C5A14),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Text(
+                                '(Về tôi)',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF9C5A14),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppColors.iceAccentCream,
+                                  border: Border.all(
+                                    color: AppColors.surfaceLight,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: ClipOval(
+                                  child: buildSafeAvatarImage(
+                                    imageSource: activeAvatarAsset,
+                                    fallbackAsset: 'assets/images/img_profile_avatar.png',
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 120),
+                                child: Text(
+                                  activeMemberName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.labelSemiBold.copyWith(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.iceTextNavy,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          child: ClipOval(
-                            child: buildSafeAvatarImage(
-                              imageSource: activeAvatarAsset,
-                              fallbackAsset: 'assets/images/img_profile_avatar.png',
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          activeMemberName,
-                          style: AppTypography.labelSemiBold.copyWith(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.iceTextNavy,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
                 ),
               ),

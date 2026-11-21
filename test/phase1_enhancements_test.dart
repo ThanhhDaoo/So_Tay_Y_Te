@@ -140,6 +140,8 @@ void main() {
     expect(vm.state.familyMembers.length, greaterThanOrEqualTo(1));
     expect(vm.state.selectedMemberId, 'primary');
     expect(vm.state.activeProfile.fullName, 'Trần Văn An');
+    // Đảm bảo tên hiển thị trên chip chính không bị cắt ngắn (không dùng split(' ').last)
+    expect(vm.state.familyMembers.first.name, 'Trần Văn An');
 
     // Add family member
     await vm.addFamilyMember(
@@ -151,10 +153,43 @@ void main() {
 
     expect(vm.state.familyMembers.length, greaterThanOrEqualTo(1));
 
-    // Switch selection
+    // Switch selection back to primary
     vm.selectMember('primary');
     expect(vm.state.selectedMemberId, 'primary');
     expect(vm.state.activeProfile.fullName, 'Trần Văn An');
+    expect(vm.state.activeProfile.isPrimary, isTrue);
+  });
+
+  test('Adding and editing family member isolates data from primary user', () async {
+    final vm = ProfileViewModel();
+    await vm.loadCurrentUserProfile();
+
+    final primaryNameBefore = vm.state.profilesById['primary']!.fullName;
+    final primaryAllergiesBefore = vm.state.profilesById['primary']!.allergies;
+
+    // Thêm thành viên mới
+    await vm.addFamilyMember(
+      name: 'Nguyễn Thị Mỹ Linh',
+      relationship: 'Vợ / Chồng',
+      bloodType: 'A+',
+      dob: '1992-04-10',
+      allergies: 'Hải sản',
+      chronicConditions: 'Đau nửa đầu',
+    );
+
+    // Hồ sơ gốc không được bị thay đổi hoặc ghi đè
+    expect(vm.state.profilesById['primary']!.fullName, primaryNameBefore);
+    expect(vm.state.profilesById['primary']!.allergies.length, primaryAllergiesBefore.length);
+
+    // Cập nhật thông tin thành viên gia đình
+    await vm.updateFamilyMemberProfile(
+      memberId: 'fam_test_01',
+      fullName: 'Nguyễn Mỹ Linh (Đã Sửa)',
+      bloodType: 'B+',
+    );
+
+    // Dữ liệu tài khoản gốc vẫn giữ nguyên tuyệt đối
+    expect(vm.state.profilesById['primary']!.fullName, primaryNameBefore);
   });
 
   test('SecuritySettingsViewModel creates and exports backup archive', () async {
