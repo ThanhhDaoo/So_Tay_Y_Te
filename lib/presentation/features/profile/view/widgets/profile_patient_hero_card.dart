@@ -276,10 +276,10 @@ class ProfilePatientHeroCard extends StatelessWidget {
                           iconAsset: 'assets/icons/ic_prof_location.svg',
                           text: 'Khu vực: ${(profile.region.isNotEmpty && !profile.region.contains('@') && profile.region != 'Chưa cập nhật') ? profile.region : 'Chưa cập nhật'}',
                         ),
-                        if (profile.contact.isNotEmpty)
+                        if (profile.contact.isNotEmpty && !profile.contact.contains('@'))
                           _MetaItem(
                             iconAsset: 'assets/icons/ic_prof_verified_user.svg',
-                            text: 'Liên hệ: ${profile.contact}',
+                            text: 'ICE: ${profile.contact}',
                           ),
                       ],
                     ),

@@ -162,7 +162,9 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
     _nameCtrl = TextEditingController(text: widget.initialFullName);
     _heightCtrl = TextEditingController(text: widget.initialHeight?.replaceAll(' cm', '') ?? '');
     _weightCtrl = TextEditingController(text: widget.initialWeight?.replaceAll(' kg', '') ?? '');
-    _iceContactCtrl = TextEditingController(text: widget.initialEmergencyContact ?? '');
+    final rawIce = widget.initialEmergencyContact?.trim() ?? '';
+    final initialIceClean = (!rawIce.contains('@')) ? rawIce : '';
+    _iceContactCtrl = TextEditingController(text: initialIceClean);
     _allergiesCtrl = TextEditingController(text: widget.initialAllergies ?? '');
     _conditionsCtrl = TextEditingController(text: widget.initialChronicConditions ?? '');
     final rawReg = widget.initialRegion?.trim() ?? '';

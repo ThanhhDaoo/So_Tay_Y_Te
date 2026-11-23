@@ -62,9 +62,24 @@ class ProfileViewModel extends ChangeNotifier {
           String bmiVal = '--';
           String bmiLabel = 'Chưa tính';
           String regionDisplay = 'Chưa cập nhật';
+          String iceContact = '';
 
           final details = await authRepo.getUserProfileDetails(session.id);
           if (details != null) {
+            final rawIce = details['emergency_contact'] as String?;
+            if (rawIce != null && rawIce.trim().isNotEmpty && !rawIce.contains('@')) {
+              iceContact = rawIce.trim();
+            } else if (rawIce != null && rawIce.contains('@')) {
+              // Tự động dọn dẹp dữ liệu cũ nếu bị lưu nhầm email đăng nhập vào người thân khẩn cấp
+              try {
+                await authRepo.updateUserProfile(
+                  userId: session.id,
+                  fullName: session.fullName,
+                  emergencyContact: '',
+                );
+              } catch (_) {}
+            }
+
             final rawRegion = details['region'] as String?;
             if (rawRegion != null &&
                 rawRegion.trim().isNotEmpty &&
@@ -133,7 +148,7 @@ class ProfileViewModel extends ChangeNotifier {
             bhytStatus: 'BHYT: Chưa liên kết',
             dob: dobFormatted,
             region: regionDisplay,
-            contact: session.primaryContact,
+            contact: iceContact,
             heroImageAsset: resolvedPrimaryAvatar.isNotEmpty
                 ? resolvedPrimaryAvatar
                 : 'assets/images/img_profile_hero_portrait.png',

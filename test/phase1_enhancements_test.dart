@@ -278,6 +278,36 @@ void main() {
     expect(find.text('Họ và tên *'), findsOneWidget);
   });
 
+  testWidgets('EditPersonalProfileSheet sanitizes email out of emergencyContact field', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: EditPersonalProfileSheet(
+            initialFullName: 'Nguyễn Văn A',
+            initialEmergencyContact: 'user.test@gmail.com',
+            onSave: ({
+              required fullName,
+              allergies,
+              avatarUrl,
+              bloodType,
+              chronicConditions,
+              dateOfBirth,
+              emergencyContact,
+              gender,
+              height,
+              organDonor,
+              region,
+              weight,
+            }) async {},
+          ),
+        ),
+      ),
+    );
+
+    // Emergency contact input should NOT contain the email
+    expect(find.text('user.test@gmail.com'), findsNothing);
+  });
+
   test('SafeAvatarHelper resolves old sandbox paths to current Documents directory', () {
     // 1. URL mạng và Asset giữ nguyên
     expect(SafeAvatarHelper.resolveImagePath('https://example.com/avatar.jpg'), 'https://example.com/avatar.jpg');

@@ -96,7 +96,7 @@ class AuthRepositoryImpl implements AuthRepository {
           ? DateTime.tryParse(user.dateOfBirth!)
           : null,
       bloodType: user.bloodType,
-      emergencyContact: user.primaryContact,
+      emergencyContact: (user.primaryContact.contains('@')) ? null : user.primaryContact,
       isPro: await localDataSource.getProStatus(),
     );
   }
@@ -117,7 +117,7 @@ class AuthRepositoryImpl implements AuthRepository {
         return UserProfile(
           id: existingGuest.id,
           fullName: existingGuest.fullName,
-          emergencyContact: existingGuest.primaryContact,
+          emergencyContact: (existingGuest.primaryContact.contains('@')) ? null : existingGuest.primaryContact,
           isPro: false,
         );
       }
@@ -146,7 +146,7 @@ class AuthRepositoryImpl implements AuthRepository {
         return UserProfile(
           id: savedGuest.id,
           fullName: savedGuest.fullName,
-          emergencyContact: savedGuest.primaryContact,
+          emergencyContact: (savedGuest.primaryContact.contains('@')) ? null : savedGuest.primaryContact,
           isPro: false,
         );
       } catch (_) {}
@@ -190,7 +190,7 @@ class AuthRepositoryImpl implements AuthRepository {
     return UserProfile(
       id: guestId,
       fullName: guestUser.fullName,
-      emergencyContact: guestUser.primaryContact,
+      emergencyContact: (guestUser.primaryContact.contains('@')) ? null : guestUser.primaryContact,
       isPro: false,
     );
   }

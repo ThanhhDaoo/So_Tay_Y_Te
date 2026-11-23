@@ -67,11 +67,22 @@ class EmergencyCardViewModel extends ChangeNotifier {
 
             final ice = details['emergency_contact'] as String?;
             if (ice != null && ice.trim().isNotEmpty) {
-              primaryIce = EmergencyContactInfo(
-                label: 'NGƯỜI THÂN KHẨN CẤP (ICE)',
-                name: ice.trim(),
-                phone: ice.trim(),
-              );
+              if (!ice.contains('@')) {
+                primaryIce = EmergencyContactInfo(
+                  label: 'NGƯỜI THÂN KHẨN CẤP (ICE)',
+                  name: ice.trim(),
+                  phone: ice.trim(),
+                );
+              } else {
+                // Tự động dọn dẹp nếu trước đó bị lưu nhầm email vào trường khẩn cấp ICE
+                try {
+                  await auth.updateUserProfile(
+                    userId: session.id,
+                    fullName: session.fullName,
+                    emergencyContact: '',
+                  );
+                } catch (_) {}
+              }
             }
 
             final all = details['allergies'] as String?;

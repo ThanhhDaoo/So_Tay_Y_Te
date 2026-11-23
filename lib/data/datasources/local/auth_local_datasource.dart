@@ -247,7 +247,8 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
         );
       }
 
-      // Đồng bộ hồ sơ user_profile tương ứng
+      // Đồng bộ hồ sơ user_profile tương ứng (không gán email làm liên hệ khẩn cấp ICE)
+      final safeEmergencyContact = (mergedUser.primaryContact.contains('@')) ? '' : mergedUser.primaryContact;
       await txn.insert(
         'user_profile',
         {
@@ -257,7 +258,7 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
           'blood_type': mergedUser.bloodType ?? 'Chưa rõ',
           'allergies': 'Không có',
           'chronic_conditions': 'Không có',
-          'emergency_contact': mergedUser.primaryContact,
+          'emergency_contact': safeEmergencyContact,
           'is_pro': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
