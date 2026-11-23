@@ -193,7 +193,11 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       dateOfBirth: preservedDob,
       gender: preservedGender,
       bloodType: preservedBloodType,
-      avatarUrl: user.avatarUrl ?? existingByContact?.avatarUrl,
+      avatarUrl: (existingByContact?.avatarUrl != null &&
+              existingByContact!.avatarUrl!.isNotEmpty &&
+              !existingByContact.avatarUrl!.startsWith('assets/'))
+          ? existingByContact.avatarUrl
+          : (user.avatarUrl ?? existingByContact?.avatarUrl),
       isGuest: user.isGuest,
       createdAt: existingByContact?.createdAt ?? user.createdAt,
     );

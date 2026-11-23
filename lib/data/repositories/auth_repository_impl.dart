@@ -1382,8 +1382,11 @@ class AuthRepositoryImpl implements AuthRepository {
       dateOfBirth: dob,
       gender: gender,
       bloodType: bloodType,
-      avatarUrl:
-          avatarUrl ?? existingLocal?.avatarUrl ?? 'assets/images/img_profile_avatar.png',
+      avatarUrl: (existingLocal?.avatarUrl != null &&
+              existingLocal!.avatarUrl!.isNotEmpty &&
+              !existingLocal.avatarUrl!.startsWith('assets/'))
+          ? existingLocal.avatarUrl
+          : (avatarUrl ?? existingLocal?.avatarUrl ?? 'assets/images/img_profile_avatar.png'),
       createdAt: existingLocal?.createdAt ?? DateTime.now(),
     );
 

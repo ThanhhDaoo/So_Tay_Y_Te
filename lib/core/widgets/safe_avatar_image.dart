@@ -4,6 +4,43 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import '../theme/app_colors.dart';
 
+/// Helper quản lý và phân giải an toàn đường dẫn ảnh đại diện trên iOS & Android.
+/// Đặc biệt xử lý trường hợp iOS thay đổi Sandbox Application UUID sau mỗi lần build/reinstall.
+class SafeAvatarHelper {
+  static String? documentsDirPath;
+
+  static Future<void> init() async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      documentsDirPath = dir.path;
+    } catch (_) {}
+  }
+
+  /// Tự động phân giải đường dẫn ảnh:
+  /// Nếu đường dẫn chứa UUID cũ của iOS sandbox (sau khi rebuild ứng dụng)
+  /// hoặc chỉ là tên file tương đối, hàm sẽ tìm file tương ứng trong thư mục Documents hiện tại.
+  static String resolveImagePath(String? rawPath) {
+    if (rawPath == null || rawPath.isEmpty) return '';
+    if (rawPath.startsWith('http://') ||
+        rawPath.startsWith('https://') ||
+        rawPath.startsWith('assets/')) {
+      return rawPath;
+    }
+
+    final directFile = File(rawPath);
+    if (directFile.existsSync()) return rawPath;
+
+    final fileName = rawPath.split('/').last;
+    if (fileName.isNotEmpty && documentsDirPath != null) {
+      final currentFile = File('$documentsDirPath/$fileName');
+      if (currentFile.existsSync()) {
+        return currentFile.path;
+      }
+    }
+    return rawPath;
+  }
+}
+
 /// Helper widget hiển thị an toàn ảnh đại diện từ Network, File cục bộ hoặc Asset dự phòng.
 Widget buildSafeAvatarImage({
   required String imageSource,
@@ -13,10 +50,12 @@ Widget buildSafeAvatarImage({
   BoxFit fit = BoxFit.cover,
   Alignment alignment = Alignment.center,
 }) {
-  if (imageSource.startsWith('http://') || imageSource.startsWith('https://')) {
+  final resolvedSource = SafeAvatarHelper.resolveImagePath(imageSource);
+
+  if (resolvedSource.startsWith('http://') || resolvedSource.startsWith('https://')) {
     return Image.network(
-      imageSource,
-      key: ValueKey(imageSource),
+      resolvedSource,
+      key: ValueKey(resolvedSource),
       width: width,
       height: height,
       fit: fit,
@@ -31,11 +70,11 @@ Widget buildSafeAvatarImage({
     );
   }
 
-  final file = File(imageSource);
+  final file = File(resolvedSource);
   if (file.existsSync()) {
     return Image.file(
       file,
-      key: ValueKey(imageSource),
+      key: ValueKey(file.path),
       width: width,
       height: height,
       fit: fit,
@@ -51,8 +90,8 @@ Widget buildSafeAvatarImage({
   }
 
   return Image.asset(
-    imageSource.isNotEmpty ? imageSource : fallbackAsset,
-    key: ValueKey(imageSource),
+    resolvedSource.isNotEmpty ? resolvedSource : fallbackAsset,
+    key: ValueKey(resolvedSource),
     width: width,
     height: height,
     fit: fit,
@@ -117,6 +156,7 @@ Future<void> pickAndSaveAvatar(
     final picked = await picker.pickImage(source: source, imageQuality: 85);
     if (picked != null) {
       final appDir = await getApplicationDocumentsDirectory();
+      SafeAvatarHelper.documentsDirPath = appDir.path;
       final ext = picked.path.split('.').last;
       final fileName = 'avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
       final savedFile = await File(picked.path).copy('${appDir.path}/$fileName');

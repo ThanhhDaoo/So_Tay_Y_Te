@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:so_tay_y_te/core/di/injection_container.dart';
 import 'package:so_tay_y_te/core/security/biometric_service.dart';
+import 'package:so_tay_y_te/core/widgets/safe_avatar_image.dart';
 import 'package:so_tay_y_te/data/datasources/local/app_preferences_datasource.dart';
 import 'package:so_tay_y_te/domain/entities/medical_event.dart';
 import 'package:so_tay_y_te/domain/entities/user_account.dart';
@@ -274,5 +276,23 @@ void main() {
 
     expect(find.text('Cập Nhật Thông Tin Cá Nhân'), findsOneWidget);
     expect(find.text('Họ và tên *'), findsOneWidget);
+  });
+
+  test('SafeAvatarHelper resolves old sandbox paths to current Documents directory', () {
+    // 1. URL mạng và Asset giữ nguyên
+    expect(SafeAvatarHelper.resolveImagePath('https://example.com/avatar.jpg'), 'https://example.com/avatar.jpg');
+    expect(SafeAvatarHelper.resolveImagePath('assets/images/img_profile_avatar.png'), 'assets/images/img_profile_avatar.png');
+
+    // 2. Đường dẫn cũ chứa UUID khác được trỏ về Documents hiện tại nếu file tồn tại
+    final tempDir = Directory.systemTemp.createTempSync('avatar_test');
+    SafeAvatarHelper.documentsDirPath = tempDir.path;
+    final testFile = File('${tempDir.path}/avatar_12345.jpg');
+    testFile.writeAsStringSync('dummy content');
+
+    const oldIosPath = '/var/mobile/Containers/Data/Application/OLD-UUID-1234/Documents/avatar_12345.jpg';
+    final resolved = SafeAvatarHelper.resolveImagePath(oldIosPath);
+    expect(resolved, testFile.path);
+
+    tempDir.deleteSync(recursive: true);
   });
 }

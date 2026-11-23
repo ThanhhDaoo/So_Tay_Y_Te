@@ -26,6 +26,7 @@ import '../security/biometric_service.dart';
 import '../services/notification_service.dart';
 import '../services/ocr_service.dart';
 import '../services/pdf_report_service.dart';
+import '../widgets/safe_avatar_image.dart';
 
 final sl = GetIt.instance;
 
@@ -35,7 +36,10 @@ class InjectionContainer {
   InjectionContainer._internal();
 
   static Future<void> init() async {
-    // 0. Khởi tạo Cloud Backend Services (Supabase & Firebase)
+    // 0. Khởi tạo SafeAvatarHelper để giải quyết UUID sandbox trên iOS
+    await SafeAvatarHelper.init();
+
+    // 1. Khởi tạo Cloud Backend Services (Supabase & Firebase)
     await SupabaseConfig.initialize();
     await FirebaseConfig.initialize();
 

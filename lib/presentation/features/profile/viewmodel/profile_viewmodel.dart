@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../../../core/database/database_helper.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/user_session_manager.dart';
+import '../../../../core/widgets/safe_avatar_image.dart';
 import '../../../../domain/repositories/auth_repository.dart';
 import 'profile_state.dart';
 
@@ -22,11 +24,25 @@ class ProfileViewModel extends ChangeNotifier {
           final primaryMemberName = session.fullName.trim().isNotEmpty
               ? session.fullName.trim()
               : 'Hồ sơ gốc';
+          final resolvedPrimaryAvatar = SafeAvatarHelper.resolveImagePath(session.avatarUrl);
+          if (resolvedPrimaryAvatar != session.avatarUrl &&
+              resolvedPrimaryAvatar.isNotEmpty &&
+              File(resolvedPrimaryAvatar).existsSync()) {
+            try {
+              authRepo.updateUserProfile(
+                userId: session.id,
+                fullName: session.fullName,
+                avatarUrl: resolvedPrimaryAvatar,
+              );
+            } catch (_) {}
+          }
           final primaryMember = FamilyMemberChip(
             id: 'primary',
             name: primaryMemberName,
             subtitle: 'Chính • Hồ sơ gốc',
-            avatarAsset: session.avatarUrl ?? 'assets/images/img_profile_thu_trang.png',
+            avatarAsset: resolvedPrimaryAvatar.isNotEmpty
+                ? resolvedPrimaryAvatar
+                : 'assets/images/img_profile_thu_trang.png',
           );
 
           String dobFormatted = 'Chưa cập nhật';
@@ -118,7 +134,9 @@ class ProfileViewModel extends ChangeNotifier {
             dob: dobFormatted,
             region: regionDisplay,
             contact: session.primaryContact,
-            heroImageAsset: session.avatarUrl ?? 'assets/images/img_profile_hero_portrait.png',
+            heroImageAsset: resolvedPrimaryAvatar.isNotEmpty
+                ? resolvedPrimaryAvatar
+                : 'assets/images/img_profile_hero_portrait.png',
             vitalsUpdatedAt: 'Chưa có',
             bloodType: session.bloodType != null && session.bloodType != 'Chưa rõ'
                 ? session.bloodType!
@@ -154,6 +172,20 @@ class ProfileViewModel extends ChangeNotifier {
                 final famGender = row['gender'] as String? ?? 'Chưa rõ';
                 final famPhone = row['phone'] as String? ?? '';
                 final famAvatar = row['avatar_asset'] as String? ?? 'assets/images/img_profile_avatar.png';
+                final resolvedFamAvatar = SafeAvatarHelper.resolveImagePath(famAvatar);
+                if (resolvedFamAvatar != famAvatar &&
+                    resolvedFamAvatar.isNotEmpty &&
+                    File(resolvedFamAvatar).existsSync()) {
+                  try {
+                    db.update(
+                      'family_members',
+                      {'avatar_asset': resolvedFamAvatar},
+                      where: 'id = ?',
+                      whereArgs: [famId],
+                    );
+                  } catch (_) {}
+                }
+
                 final famAllergiesRaw = row['allergies'] as String? ?? '';
                 final famConditionsRaw = row['chronic_conditions'] as String? ?? '';
                 final famHeight = row['height'] as String? ?? '';
@@ -205,7 +237,7 @@ class ProfileViewModel extends ChangeNotifier {
                   id: famId,
                   name: famName,
                   subtitle: famRel,
-                  avatarAsset: famAvatar,
+                  avatarAsset: resolvedFamAvatar,
                 ));
 
                 dbFamilyProfiles[famId] = MemberMedicalProfile(
@@ -218,7 +250,7 @@ class ProfileViewModel extends ChangeNotifier {
                   bhytStatus: 'BHYT: Chưa liên kết',
                   dob: famDob,
                   region: regionDisplay,
-                  heroImageAsset: famAvatar,
+                  heroImageAsset: resolvedFamAvatar,
                   vitalsUpdatedAt: 'Chưa có',
                   bloodType: famBlood,
                   bloodNote: 'Đã khai báo',
