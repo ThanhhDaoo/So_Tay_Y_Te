@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../core/widgets/safe_avatar_image.dart';
 import '../../domain/entities/medical_event.dart';
 import 'prescription_model.dart';
 
@@ -42,15 +43,23 @@ class MedicalEventModel extends MedicalEvent {
     List<String> parsedAttachments = [];
     if (json['attachments'] != null) {
       if (json['attachments'] is List) {
-        parsedAttachments = (json['attachments'] as List<dynamic>).map((e) => e.toString()).toList();
+        parsedAttachments = (json['attachments'] as List<dynamic>)
+            .map((e) => SafeAvatarHelper.resolveImagePath(e.toString()))
+            .toList();
       } else if (json['attachments'] is String && (json['attachments'] as String).isNotEmpty) {
         try {
           final decoded = jsonDecode(json['attachments'] as String);
           if (decoded is List) {
-            parsedAttachments = decoded.map((e) => e.toString()).toList();
+            parsedAttachments = decoded
+                .map((e) => SafeAvatarHelper.resolveImagePath(e.toString()))
+                .toList();
           }
         } catch (_) {
-          parsedAttachments = (json['attachments'] as String).split(',').where((s) => s.isNotEmpty).toList();
+          parsedAttachments = (json['attachments'] as String)
+              .split(',')
+              .where((s) => s.isNotEmpty)
+              .map((e) => SafeAvatarHelper.resolveImagePath(e.trim()))
+              .toList();
         }
       }
     }

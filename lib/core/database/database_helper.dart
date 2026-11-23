@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -193,6 +194,58 @@ class AppDatabaseHelper implements DatabaseHelper {
       where: 'id = ?',
       whereArgs: ['default-demo-user-01'],
     );
+
+    // Đồng bộ dữ liệu bảng quan hệ prescriptions & medicines từ medical_events (nếu có đơn thuốc)
+    await _syncPrescriptionsFromMedicalEvents(db);
+  }
+
+  Future<void> _syncPrescriptionsFromMedicalEvents(Database db) async {
+    try {
+      final events = await db.query(
+        'medical_events',
+        where: 'prescription_json IS NOT NULL AND prescription_json != ""',
+      );
+      for (final ev in events) {
+        final evId = ev['id'] as String;
+        final presJsonStr = ev['prescription_json'] as String?;
+        if (presJsonStr == null || presJsonStr.isEmpty) continue;
+
+        final decoded = jsonDecode(presJsonStr);
+        if (decoded is Map<String, dynamic>) {
+          final presId = decoded['id'] as String? ?? 'pres_$evId';
+          await db.insert(
+            'prescriptions',
+            {
+              'id': presId,
+              'event_id': evId,
+              'doctor_name': decoded['doctor_name'] ?? decoded['doctorName'] ?? '',
+              'hospital': decoded['hospital'] ?? '',
+              'issued_date': decoded['issued_date'] ?? decoded['issuedDate'] ?? DateTime.now().toIso8601String(),
+              'note': decoded['note'] ?? '',
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+
+          final meds = decoded['medicines'] as List<dynamic>? ?? [];
+          for (final m in meds) {
+            if (m is Map<String, dynamic>) {
+              await db.insert(
+                'medicines',
+                {
+                  'id': m['id'] ?? 'med_${DateTime.now().millisecondsSinceEpoch}',
+                  'prescription_id': presId,
+                  'name': m['name'] ?? '',
+                  'dosage': m['dosage'] ?? '',
+                  'frequency': m['frequency'] ?? m['instruction'] ?? '',
+                  'instructions': m['instruction'] ?? m['instructions'] ?? m['frequency'] ?? '',
+                },
+                conflictAlgorithm: ConflictAlgorithm.replace,
+              );
+            }
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _ensureMedicalEventsSchema(Database db) async {

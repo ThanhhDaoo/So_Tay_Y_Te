@@ -183,10 +183,17 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       }
     }
 
+    final preservedFullName = (existingByContact?.fullName != null &&
+            existingByContact!.fullName.trim().isNotEmpty &&
+            existingByContact.fullName != 'Chủ hồ sơ' &&
+            existingByContact.fullName != 'Hồ sơ gốc')
+        ? existingByContact.fullName
+        : user.fullName;
+
     final mergedUser = UserAccountModel(
       id: user.id,
       patientCode: resolvedPatientCode,
-      fullName: user.fullName,
+      fullName: preservedFullName,
       primaryContact: user.primaryContact,
       passwordHash: preservedPasswordHash,
       salt: preservedSalt,
@@ -247,22 +254,41 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
         );
       }
 
-      // Đồng bộ hồ sơ user_profile tương ứng (không gán email làm liên hệ khẩn cấp ICE)
-      final safeEmergencyContact = (mergedUser.primaryContact.contains('@')) ? '' : mergedUser.primaryContact;
-      await txn.insert(
+      // Đồng bộ hồ sơ user_profile tương ứng: KHÔNG ghi đè dữ liệu người dùng đã chỉnh sửa
+      final existingProfileRows = await txn.query(
         'user_profile',
-        {
-          'id': mergedUser.id,
-          'full_name': mergedUser.fullName,
-          'date_of_birth': mergedUser.dateOfBirth,
-          'blood_type': mergedUser.bloodType ?? 'Chưa rõ',
-          'allergies': 'Không có',
-          'chronic_conditions': 'Không có',
-          'emergency_contact': safeEmergencyContact,
-          'is_pro': 0,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
+        where: 'id = ?',
+        whereArgs: [mergedUser.id],
+        limit: 1,
       );
+
+      if (existingProfileRows.isNotEmpty) {
+        await txn.update(
+          'user_profile',
+          {
+            'full_name': mergedUser.fullName,
+            if (mergedUser.dateOfBirth != null) 'date_of_birth': mergedUser.dateOfBirth,
+            if (mergedUser.bloodType != null && mergedUser.bloodType != 'Chưa rõ') 'blood_type': mergedUser.bloodType,
+          },
+          where: 'id = ?',
+          whereArgs: [mergedUser.id],
+        );
+      } else {
+        final safeEmergencyContact = (mergedUser.primaryContact.contains('@')) ? '' : mergedUser.primaryContact;
+        await txn.insert(
+          'user_profile',
+          {
+            'id': mergedUser.id,
+            'full_name': mergedUser.fullName,
+            'date_of_birth': mergedUser.dateOfBirth,
+            'blood_type': mergedUser.bloodType ?? 'Chưa rõ',
+            'allergies': 'Không có',
+            'chronic_conditions': 'Không có',
+            'emergency_contact': safeEmergencyContact,
+            'is_pro': 0,
+          },
+        );
+      }
     });
 
     final identities = await _getIdentitiesForUser(db, mergedUser.id);

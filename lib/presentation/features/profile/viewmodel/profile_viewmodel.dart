@@ -20,7 +20,7 @@ class ProfileViewModel extends ChangeNotifier {
       if (sl.isRegistered<AuthRepository>()) {
         final authRepo = sl<AuthRepository>();
         final session = await authRepo.getActiveSession();
-        if (session != null && !session.isGuest) {
+        if (session != null) {
           final primaryMemberName = session.fullName.trim().isNotEmpty
               ? session.fullName.trim()
               : 'Hồ sơ gốc';
@@ -174,10 +174,18 @@ class ProfileViewModel extends ChangeNotifier {
               final db = await sl<DatabaseHelper>().database;
               final rows = await db.query(
                 'family_members',
-                where: 'user_id = ?',
+                where: 'user_id = ? OR user_id IS NULL OR user_id = "" OR user_id LIKE "guest-%"',
                 whereArgs: [session.id],
                 orderBy: 'created_at ASC',
               );
+              try {
+                await db.update(
+                  'family_members',
+                  {'user_id': session.id},
+                  where: 'user_id != ? OR user_id IS NULL',
+                  whereArgs: [session.id],
+                );
+              } catch (_) {}
               for (final row in rows) {
                 final famId = row['id'] as String;
                 final famName = row['name'] as String;

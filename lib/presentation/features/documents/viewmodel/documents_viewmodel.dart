@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../../../../core/database/database_helper.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/widgets/safe_avatar_image.dart';
 import '../../../../domain/repositories/auth_repository.dart';
 import '../../../../domain/repositories/medical_record_repository.dart';
 import 'documents_state.dart';
@@ -90,7 +91,7 @@ class DocumentsViewModel extends ChangeNotifier {
               category: cat,
               date: r['date'] as String,
               hospital: r['hospital'] as String? ?? 'Cơ sở khám bệnh',
-              imagePath: r['file_path'] as String,
+              imagePath: SafeAvatarHelper.resolveImagePath(r['file_path'] as String),
               keyFindings: findings,
             ),
           );

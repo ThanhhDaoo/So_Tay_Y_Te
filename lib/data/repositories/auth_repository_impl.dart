@@ -728,9 +728,6 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<UserAccount?> getActiveSession() async {
-    final rememberMe = await localDataSource.getRememberMe();
-    if (!rememberMe) return null;
-
     final userId = await localDataSource.getSessionUserId();
     if (userId == null) return null;
 
@@ -1316,10 +1313,15 @@ class AuthRepositoryImpl implements AuthRepository {
         ? existingLocal.patientCode
         : SupabaseAuthRemoteDataSourceImpl.derivePatientCodeFromUserId(userId);
 
-    String resolvedName = (fullName != null && fullName.trim().isNotEmpty)
-        ? fullName.trim()
-        : (existingLocal?.fullName ??
-            (cleanEmail != null ? cleanEmail.split('@').first : 'Chủ hồ sơ'));
+    // Ưu tiên giữ nguyên tên người dùng đã lưu hoặc tùy chỉnh trên thiết bị
+    String resolvedName = (existingLocal?.fullName != null &&
+            existingLocal!.fullName.trim().isNotEmpty &&
+            existingLocal.fullName != 'Chủ hồ sơ' &&
+            existingLocal.fullName != 'Hồ sơ gốc')
+        ? existingLocal.fullName
+        : ((fullName != null && fullName.trim().isNotEmpty)
+            ? fullName.trim()
+            : (cleanEmail != null ? cleanEmail.split('@').first : 'Chủ hồ sơ'));
 
     String? dob = existingLocal?.dateOfBirth;
     String? gender = existingLocal?.gender;
