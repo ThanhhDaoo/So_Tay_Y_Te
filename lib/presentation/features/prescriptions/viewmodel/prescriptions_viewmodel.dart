@@ -38,7 +38,11 @@ class PrescriptionsViewModel extends ChangeNotifier {
   Future<void> initNotifications() async {
     await _notificationService.initialize();
     await _notificationService.requestPermissions();
-    await scheduleAllReminders();
+    if (_state.slots.isEmpty) {
+      await _notificationService.cancelAllReminders();
+    } else {
+      await scheduleAllReminders();
+    }
   }
 
   Future<void> loadFromRepository() async {
@@ -54,6 +58,10 @@ class PrescriptionsViewModel extends ChangeNotifier {
         ).toList();
 
         if (eventsWithPrescription.isEmpty) {
+          // Không có đơn thuốc nào: đảm bảo xóa toàn bộ lịch nhắc trên hệ điều hành
+          _state = PrescriptionsState.initial();
+          notifyListeners();
+          await _notificationService.cancelAllReminders();
           return;
         }
 
@@ -212,6 +220,13 @@ class PrescriptionsViewModel extends ChangeNotifier {
   }
 
   Future<void> scheduleAllReminders() async {
+    // Luôn dọn sạch toàn bộ lịch nhắc cũ trên thiết bị trước khi lên lịch mới
+    await _notificationService.cancelAllReminders();
+
+    if (_state.slots.isEmpty) {
+      return;
+    }
+
     for (final slot in _state.slots) {
       final parts = slot.timeLabel.split(':');
       if (parts.length == 2) {
@@ -232,6 +247,15 @@ class PrescriptionsViewModel extends ChangeNotifier {
         );
       }
     }
+  }
+
+  /// Hủy và dọn dẹp sạch toàn bộ lịch nhắc nhở uống thuốc trên thiết bị.
+  Future<void> clearAllReminders() async {
+    await _notificationService.cancelAllReminders();
+    _state = _state.copyWith(
+      lastActionMessage: 'Đã hủy và xóa sạch tất cả chuông thông báo nhắc nhở.',
+    );
+    notifyListeners();
   }
 
   Future<void> testSendInstantReminder() async {

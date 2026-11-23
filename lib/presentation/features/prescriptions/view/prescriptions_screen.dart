@@ -205,7 +205,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
-                              Icons.medication_outlined,
+                              Icons.notifications_off_outlined,
                               size: 32,
                               color: AppColors.rxOlive,
                             ),
@@ -221,12 +221,32 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                           ),
                           const SizedBox(height: 6),
                           const Text(
-                            'Bạn chưa có lịch nhắc uống thuốc hoặc đơn thuốc đang điều trị. Hãy bấm nút Thêm hoặc Quét OCR để lưu đơn thuốc!',
+                            'Bạn chưa có lịch nhắc uống thuốc hoặc đơn thuốc đang điều trị. Mọi thông báo nhắc lịch cũ đã được tắt.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.iceTextSlate,
                               height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          OutlinedButton.icon(
+                            onPressed: _viewModel.clearAllReminders,
+                            icon: const Icon(Icons.notifications_off_outlined, size: 16, color: AppColors.rxOlive),
+                            label: const Text(
+                              'Hủy sạch chuông thông báo cũ',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.rxOlive,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: AppColors.rxBorder),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
                           ),
                         ],

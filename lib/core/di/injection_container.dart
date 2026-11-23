@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
 import '../../data/datasources/local/app_preferences_datasource.dart';
 import '../../data/datasources/local/auth_local_datasource.dart';
 import '../../data/datasources/local/medical_local_datasource.dart';
@@ -73,6 +74,20 @@ class InjectionContainer {
       await dbHelper.init();
       sl.registerSingleton<DatabaseHelper>(dbHelper);
     }
+
+    // Tự động dọn dẹp các thông báo uống thuốc cũ trên hệ thống nếu không còn thuốc nào trong CSDL
+    try {
+      final dbHelper = sl<DatabaseHelper>();
+      final db = await dbHelper.database;
+      final medicineCount = Sqflite.firstIntValue(
+        await db.rawQuery('SELECT COUNT(*) FROM medicines'),
+      ) ?? 0;
+      if (medicineCount == 0 && sl.isRegistered<NotificationService>()) {
+        final notif = sl<NotificationService>();
+        await notif.initialize();
+        await notif.cancelAllReminders();
+      }
+    } catch (_) {}
 
     // 2. DataSources
     if (!sl.isRegistered<AppPreferencesDataSource>()) {

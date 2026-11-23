@@ -1,4 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:sqflite/sqflite.dart';
+import '../../core/database/database_helper.dart';
+import '../../core/di/injection_container.dart';
+import '../../core/services/notification_service.dart';
 import '../../domain/entities/medical_event.dart';
 import '../../domain/repositories/medical_record_repository.dart';
 import '../../domain/repositories/sync_repository.dart';
@@ -56,6 +60,18 @@ class MedicalRecordRepositoryImpl implements MedicalRecordRepository {
   @override
   Future<void> deleteMedicalEvent(String id) async {
     await localDataSource.deleteEvent(id);
+    try {
+      if (sl.isRegistered<NotificationService>() && sl.isRegistered<DatabaseHelper>()) {
+        final db = await sl<DatabaseHelper>().database;
+        final count = Sqflite.firstIntValue(
+          await db.rawQuery('SELECT COUNT(*) FROM medicines'),
+        ) ?? 0;
+        if (count == 0) {
+          final notif = sl<NotificationService>();
+          await notif.cancelAllReminders();
+        }
+      }
+    } catch (_) {}
   }
 
   @override

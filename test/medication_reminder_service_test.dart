@@ -132,6 +132,83 @@ void main() {
       expect(viewModel.state.lastActionMessage, contains('15 phút nữa'));
     });
 
+    test('clearAllReminders cancels all reminders in service and sets confirmation message', () async {
+      expect(mockService.scheduled.length, equals(4));
+
+      await viewModel.clearAllReminders();
+
+      expect(mockService.scheduled.isEmpty, isTrue);
+      expect(viewModel.state.lastActionMessage, contains('Đã hủy'));
+    });
+
+    test('initNotifications cancels all reminders when initial state has no slots', () async {
+      final emptyMockService = MockNotificationService();
+      // Pre-seed with mock reminder to verify it gets wiped
+      await emptyMockService.scheduleDailyMedicationReminder(
+        id: 111,
+        title: 'Old Ghost Reminder',
+        body: 'Old med',
+        hour: 8,
+        minute: 0,
+      );
+      expect(emptyMockService.scheduled.length, equals(1));
+
+      final emptyVm = PrescriptionsViewModel(
+        notificationService: emptyMockService,
+        initialState: PrescriptionsState.initial(),
+      );
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(emptyMockService.scheduled.isEmpty, isTrue);
+      expect(emptyVm.state.slots.isEmpty, isTrue);
+    });
+
+    testWidgets('PrescriptionsScreen renders empty state and cleans up old reminders',
+        (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final emptyMockService = MockNotificationService();
+      await emptyMockService.scheduleDailyMedicationReminder(
+        id: 222,
+        title: 'Old Reminder',
+        body: 'Old med',
+        hour: 9,
+        minute: 0,
+      );
+
+      final emptyVm = PrescriptionsViewModel(
+        notificationService: emptyMockService,
+        initialState: PrescriptionsState.initial(),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PrescriptionsScreen(
+            showBottomNav: false,
+            viewModel: emptyVm,
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chưa Có Đơn Thuốc Nào'), findsOneWidget);
+
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hủy sạch chuông thông báo cũ'), findsOneWidget);
+      await tester.tap(find.text('Hủy sạch chuông thông báo cũ'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(find.textContaining('Đã hủy'), findsOneWidget);
+      expect(emptyMockService.scheduled.isEmpty, isTrue);
+    });
+
     testWidgets('PrescriptionsScreen renders reminder test button and triggers feedback',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);
