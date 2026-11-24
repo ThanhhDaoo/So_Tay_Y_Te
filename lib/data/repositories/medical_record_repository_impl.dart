@@ -1,10 +1,15 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/di/injection_container.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/services/pdf_report_service.dart';
 import '../../core/services/user_session_manager.dart';
 import '../../domain/entities/medical_event.dart';
+import '../../domain/entities/user_profile.dart';
+import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/medical_record_repository.dart';
 import '../../domain/repositories/sync_repository.dart';
 import '../datasources/local/app_preferences_datasource.dart';
@@ -115,7 +120,59 @@ class MedicalRecordRepositoryImpl implements MedicalRecordRepository {
 
   @override
   Future<String> exportHealthPdf() async {
-    // Logic render và lưu file PDF
-    return '/storage/health_summary.pdf';
+    final events = await getMedicalTimeline();
+    final latestEvent = events.isNotEmpty
+        ? events.first
+        : MedicalEvent(
+            id: 'SUMMARY-${DateTime.now().millisecondsSinceEpoch}',
+            title: 'Tóm Tắt Hồ Sơ Sức Khỏe Cá Nhân',
+            description: 'Báo cáo tổng hợp từ Sổ Tay Y Tế.',
+            date: DateTime.now(),
+            type: MedicalEventType.generalCheckup,
+          );
+
+    UserProfile? patientProfile;
+    if (sl.isRegistered<AuthRepository>()) {
+      try {
+        final authRepo = sl<AuthRepository>();
+        final session = await authRepo.getActiveSession();
+        if (session != null) {
+          final details = await authRepo.getUserProfileDetails(session.id);
+          final rawAllergies = details?['allergies']?.toString().trim() ?? '';
+          final rawIce = details?['emergency_contact']?.toString().trim();
+          patientProfile = UserProfile(
+            id: session.id,
+            fullName: session.fullName,
+            bloodType: session.bloodType,
+            emergencyContact: (rawIce != null && rawIce.isNotEmpty && !rawIce.contains('@'))
+                ? rawIce
+                : (!session.primaryContact.contains('@') ? session.primaryContact : null),
+            allergies: rawAllergies.isNotEmpty
+                ? rawAllergies.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+                : const [],
+          );
+        } else {
+          patientProfile = await authRepo.getCurrentUser();
+        }
+      } catch (_) {}
+    }
+
+    final pdfService = sl.isRegistered<PdfReportService>()
+        ? sl<PdfReportService>()
+        : PdfReportServiceImpl();
+    final bytes = await pdfService.generateMedicalRecordPdf(
+      record: latestEvent,
+      patientProfile: patientProfile,
+    );
+
+    Directory outDir;
+    try {
+      outDir = await getTemporaryDirectory();
+    } catch (_) {
+      outDir = Directory.systemTemp;
+    }
+    final outFile = File('${outDir.path}/health_summary_${DateTime.now().millisecondsSinceEpoch}.pdf');
+    await outFile.writeAsBytes(bytes, flush: true);
+    return outFile.path;
   }
 }

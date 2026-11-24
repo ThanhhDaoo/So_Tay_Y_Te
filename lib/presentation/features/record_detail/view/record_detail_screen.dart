@@ -6,6 +6,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/medical_event.dart';
 import '../../../../domain/entities/medicine.dart';
 import '../../../../domain/entities/prescription.dart';
+import '../../../../domain/entities/user_profile.dart';
+import '../../../../domain/repositories/auth_repository.dart';
 import '../../../../domain/repositories/medical_record_repository.dart';
 import '../../add_record/view/add_record_screen.dart';
 
@@ -110,11 +112,47 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
     });
   }
 
+  Future<UserProfile?> _loadCurrentPatientProfile() async {
+    if (!sl.isRegistered<AuthRepository>()) return null;
+    try {
+      final authRepo = sl<AuthRepository>();
+      final session = await authRepo.getActiveSession();
+      if (session == null) {
+        return await authRepo.getCurrentUser();
+      }
+      final details = await authRepo.getUserProfileDetails(session.id);
+      final rawAllergies = details?['allergies']?.toString().trim() ?? '';
+      final rawConditions = details?['chronic_conditions']?.toString().trim() ?? '';
+      final allergyList = rawAllergies.isNotEmpty
+          ? rawAllergies.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+          : const <String>[];
+      final conditionList = rawConditions.isNotEmpty
+          ? rawConditions.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+          : const <String>[];
+      final emergency = details?['emergency_contact']?.toString().trim();
+
+      return UserProfile(
+        id: session.id,
+        fullName: session.fullName,
+        dateOfBirth: session.dateOfBirth != null ? DateTime.tryParse(session.dateOfBirth!) : null,
+        bloodType: session.bloodType,
+        allergies: allergyList,
+        chronicConditions: conditionList,
+        emergencyContact: (emergency != null && emergency.isNotEmpty && !emergency.contains('@'))
+            ? emergency
+            : (!session.primaryContact.contains('@') ? session.primaryContact : null),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _exportPdf(BuildContext context) async {
     final pdfService = widget.pdfReportService ??
         (sl.isRegistered<PdfReportService>() ? sl<PdfReportService>() : PdfReportServiceImpl());
     try {
-      await pdfService.printRecord(record: _event);
+      final profile = await _loadCurrentPatientProfile();
+      await pdfService.printRecord(record: _event, patientProfile: profile);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -128,7 +166,8 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
     final pdfService = widget.pdfReportService ??
         (sl.isRegistered<PdfReportService>() ? sl<PdfReportService>() : PdfReportServiceImpl());
     try {
-      await pdfService.shareRecordPdf(record: _event);
+      final profile = await _loadCurrentPatientProfile();
+      await pdfService.shareRecordPdf(record: _event, patientProfile: profile);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -71,6 +71,8 @@ class VitalReportsState {
   final String dossierCode;
   final String doctorName;
   final String signatureSha256;
+  final String allergyBannerText;
+  final bool hasSevereAllergy;
 
   // Vitals summary
   final String latestValue;
@@ -100,6 +102,8 @@ class VitalReportsState {
     this.dossierCode = '#MV-892401',
     this.doctorName = 'TS.BS. Lê Quang Minh',
     this.signatureSha256 = 'SHA256: 7f8a9...b401',
+    this.allergyBannerText = '• PENICILLIN (Sốc phản vệ độ 2) • ASPIRIN / NSAIDs (Khó thở co thắt)',
+    this.hasSevereAllergy = true,
     this.latestValue = '118/78',
     this.latestUnit = 'mmHg',
     this.latestTimestamp = 'Hôm nay 07:15',
@@ -164,6 +168,8 @@ class VitalReportsState {
     String? dossierCode,
     String? doctorName,
     String? signatureSha256,
+    String? allergyBannerText,
+    bool? hasSevereAllergy,
     String? latestValue,
     String? latestUnit,
     String? latestTimestamp,
@@ -189,6 +195,8 @@ class VitalReportsState {
       dossierCode: dossierCode ?? this.dossierCode,
       doctorName: doctorName ?? this.doctorName,
       signatureSha256: signatureSha256 ?? this.signatureSha256,
+      allergyBannerText: allergyBannerText ?? this.allergyBannerText,
+      hasSevereAllergy: hasSevereAllergy ?? this.hasSevereAllergy,
       latestValue: latestValue ?? this.latestValue,
       latestUnit: latestUnit ?? this.latestUnit,
       latestTimestamp: latestTimestamp ?? this.latestTimestamp,

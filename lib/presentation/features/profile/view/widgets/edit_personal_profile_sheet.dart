@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../../core/utils/input_validators.dart';
 import '../../../../../core/widgets/safe_avatar_image.dart';
 
 class EditPersonalProfileSheet extends StatefulWidget {
@@ -559,6 +560,7 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
                             TextFormField(
                               controller: _heightCtrl,
                               keyboardType: TextInputType.number,
+                              validator: InputValidators.validateHeightCm,
                               decoration: _inputDeco(hint: 'VD: 165'),
                               style: const TextStyle(fontSize: 13),
                             ),
@@ -574,6 +576,7 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
                             TextFormField(
                               controller: _weightCtrl,
                               keyboardType: TextInputType.number,
+                              validator: InputValidators.validateWeightKg,
                               decoration: _inputDeco(hint: 'VD: 58'),
                               style: const TextStyle(fontSize: 13),
                             ),

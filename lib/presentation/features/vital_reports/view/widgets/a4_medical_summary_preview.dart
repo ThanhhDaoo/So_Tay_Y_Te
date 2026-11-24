@@ -354,12 +354,14 @@ class A4MedicalSummaryPreview extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
 
-                        // Severe Allergy Banner
+                        // Allergy Status Banner
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppColors.reportAllergyBannerBg,
+                            color: state.hasSevereAllergy
+                                ? AppColors.reportAllergyBannerBg
+                                : const Color(0xFFF0F4EC),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Column(
@@ -375,11 +377,15 @@ class A4MedicalSummaryPreview extends StatelessWidget {
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: Text(
-                                      'CẢNH BÁO DỊ ỨNG THUỐC NGHIÊM TRỌNG (HIGH RISK)',
+                                      state.hasSevereAllergy
+                                          ? 'CẢNH BÁO DỊ ỨNG THUỐC NGHIÊM TRỌNG (HIGH RISK)'
+                                          : 'GHI NHẬN TIỀN SỬ DỊ ỨNG THUỐC / DỊ NGUYÊN',
                                       style: AppTypography.caption.copyWith(
                                         fontSize: 8,
                                         fontWeight: FontWeight.w700,
-                                        color: AppColors.reportZoneRed,
+                                        color: state.hasSevereAllergy
+                                            ? AppColors.reportZoneRed
+                                            : AppColors.iceOlive,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -389,11 +395,13 @@ class A4MedicalSummaryPreview extends StatelessWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '• PENICILLIN (Sốc phản vệ độ 2) • ASPIRIN / NSAIDs (Khó thở co thắt)',
+                                state.allergyBannerText,
                                 style: AppTypography.caption.copyWith(
                                   fontSize: 8,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.reportAllergyTextRed,
+                                  color: state.hasSevereAllergy
+                                      ? AppColors.reportAllergyTextRed
+                                      : AppColors.iceTextSlate,
                                 ),
                               ),
                             ],
@@ -411,7 +419,7 @@ class A4MedicalSummaryPreview extends StatelessWidget {
                               spacing: 4,
                               children: [
                                 Text(
-                                  'ĐƠN THUỐC ĐANG DÙNG (02 LOẠI)',
+                                  'ĐƠN THUỐC ĐANG DÙNG (${state.activePrescriptions.length.toString().padLeft(2, "0")} LOẠI)',
                                   style: AppTypography.caption.copyWith(
                                     fontSize: 8,
                                     fontWeight: FontWeight.w700,

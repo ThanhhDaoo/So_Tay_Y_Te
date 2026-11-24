@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/input_validators.dart';
 import '../../../../domain/entities/medical_event.dart';
 import '../../../../domain/entities/medicine.dart';
 import '../../../../domain/entities/prescription.dart';
@@ -622,6 +623,7 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                                 controller: _bpController,
                                 label: 'Huyết áp (mmHg)',
                                 hint: '120/80',
+                                validator: InputValidators.validateBloodPressure,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -630,6 +632,7 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                                 controller: _hrController,
                                 label: 'Nhịp tim (bpm)',
                                 hint: '72',
+                                validator: InputValidators.validateHeartRate,
                               ),
                             ),
                           ],

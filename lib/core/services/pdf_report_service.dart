@@ -226,6 +226,22 @@ class PdfReportServiceImpl implements PdfReportService {
   }
 
   pw.Widget _buildClinicalSection(MedicalEvent record, pw.Font fontBold) {
+    final facility = (record.facilityName != null && record.facilityName!.trim().isNotEmpty)
+        ? record.facilityName!.trim()
+        : ((record.prescription?.hospital != null && record.prescription!.hospital!.trim().isNotEmpty)
+            ? record.prescription!.hospital!.trim()
+            : 'Chưa cập nhật cơ sở y tế');
+    final doctor = (record.doctorName != null && record.doctorName!.trim().isNotEmpty)
+        ? record.doctorName!.trim()
+        : ((record.prescription != null && record.prescription!.doctorName.trim().isNotEmpty)
+            ? record.prescription!.doctorName.trim()
+            : 'Chưa cập nhật bác sĩ');
+    final diagnosis = (record.diagnosis != null && record.diagnosis!.trim().isNotEmpty)
+        ? record.diagnosis!.trim()
+        : record.title;
+    final hasBp = record.bloodPressure != null && record.bloodPressure!.trim().isNotEmpty;
+    final hasHr = record.heartRate != null && record.heartRate!.trim().isNotEmpty;
+
     return pw.Container(
       padding: const pw.EdgeInsets.all(10),
       decoration: pw.BoxDecoration(
@@ -242,16 +258,22 @@ class PdfReportServiceImpl implements PdfReportService {
           ),
           pw.SizedBox(height: 6),
           pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Text('Bệnh viện / Cơ sở: ', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-              pw.Text(record.prescription?.hospital ?? 'Bệnh viện Đa khoa Quốc tế', style: const pw.TextStyle(fontSize: 9)),
+              pw.Expanded(
+                child: pw.Text(facility, style: const pw.TextStyle(fontSize: 9)),
+              ),
             ],
           ),
           pw.SizedBox(height: 3),
           pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Text('Bác sĩ khám: ', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-              pw.Text(record.prescription?.doctorName ?? 'BS. CKII Lê Hoàng Tuấn', style: const pw.TextStyle(fontSize: 9)),
+              pw.Expanded(
+                child: pw.Text(doctor, style: const pw.TextStyle(fontSize: 9)),
+              ),
             ],
           ),
           pw.SizedBox(height: 3),
@@ -260,10 +282,31 @@ class PdfReportServiceImpl implements PdfReportService {
             children: [
               pw.Text('Chẩn đoán: ', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
               pw.Expanded(
-                child: pw.Text(record.title, style: const pw.TextStyle(fontSize: 9)),
+                child: pw.Text(diagnosis, style: const pw.TextStyle(fontSize: 9)),
               ),
             ],
           ),
+          if (hasBp || hasHr) ...[
+            pw.SizedBox(height: 3),
+            pw.Row(
+              children: [
+                if (hasBp)
+                  pw.Expanded(
+                    child: pw.Text(
+                      'Huyết áp: ${record.bloodPressure!.trim()} mmHg',
+                      style: const pw.TextStyle(fontSize: 9),
+                    ),
+                  ),
+                if (hasHr)
+                  pw.Expanded(
+                    child: pw.Text(
+                      'Nhịp tim: ${record.heartRate!.trim()} bpm',
+                      style: const pw.TextStyle(fontSize: 9),
+                    ),
+                  ),
+              ],
+            ),
+          ],
           if (record.description != null && record.description!.isNotEmpty) ...[
             pw.SizedBox(height: 3),
             pw.Row(
@@ -323,7 +366,11 @@ class PdfReportServiceImpl implements PdfReportService {
   }
 
   pw.Widget _buildSignatureSection(MedicalEvent record, pw.Font fontBold) {
-    final docName = record.prescription?.doctorName ?? 'BS. CKII Lê Hoàng Tuấn';
+    final docName = (record.doctorName != null && record.doctorName!.trim().isNotEmpty)
+        ? record.doctorName!.trim()
+        : ((record.prescription != null && record.prescription!.doctorName.trim().isNotEmpty)
+            ? record.prescription!.doctorName.trim()
+            : 'Chưa cập nhật bác sĩ');
 
     return pw.Container(
       margin: const pw.EdgeInsets.only(top: 10),

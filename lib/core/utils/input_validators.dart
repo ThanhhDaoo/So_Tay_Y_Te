@@ -199,4 +199,63 @@ class InputValidators {
     }
     return null;
   }
+
+  /// Kiểm tra định dạng Huyết áp (tùy chọn): SYS/DIA (VD: 120/80)
+  static String? validateBloodPressure(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final clean = value.trim();
+    final parts = clean.split('/');
+    if (parts.length != 2) {
+      return 'Nhập theo dạng Tâm thu/Tâm trương (VD: 120/80)';
+    }
+    final sys = int.tryParse(parts[0].trim());
+    final dia = int.tryParse(parts[1].trim());
+    if (sys == null || dia == null || sys < 40 || sys > 300 || dia < 20 || dia > 200) {
+      return 'Chỉ số huyết áp ngoài ngưỡng sinh học (40-300 / 20-200)';
+    }
+    if (sys <= dia) {
+      return 'Huyết áp tâm thu phải lớn hơn tâm trương';
+    }
+    return null;
+  }
+
+  /// Kiểm tra Nhịp tim (tùy chọn): 25 - 260 bpm
+  static String? validateHeartRate(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final hr = int.tryParse(value.trim());
+    if (hr == null || hr < 25 || hr > 260) {
+      return 'Nhịp tim hợp lệ từ 25 đến 260 bpm';
+    }
+    return null;
+  }
+
+  /// Kiểm tra Chiều cao (tùy chọn): 30 - 260 cm
+  static String? validateHeightCm(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final h = double.tryParse(value.trim().replaceAll(',', '.'));
+    if (h == null || h < 30 || h > 260) {
+      return 'Chiều cao hợp lệ: 30 - 260 cm';
+    }
+    return null;
+  }
+
+  /// Kiểm tra Cân nặng (tùy chọn): 1 - 350 kg
+  static String? validateWeightKg(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final w = double.tryParse(value.trim().replaceAll(',', '.'));
+    if (w == null || w < 1 || w > 350) {
+      return 'Cân nặng hợp lệ: 1 - 350 kg';
+    }
+    return null;
+  }
+
+  /// Suy luận chính xác yếu tố Rh từ nhóm máu (O+, O-, AB-...)
+  static String resolveRhFactor(String? bloodType) {
+    if (bloodType == null) return 'Chưa rõ';
+    final clean = bloodType.trim();
+    if (clean.isEmpty || clean == 'Chưa rõ' || clean == '--') return 'Chưa rõ';
+    if (clean.endsWith('-')) return 'Rh Âm';
+    if (clean.endsWith('+')) return 'Rh Dương';
+    return 'Chưa rõ';
+  }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/user_session_manager.dart';
+import '../../../../core/utils/input_validators.dart';
 import '../../../../domain/repositories/auth_repository.dart';
 import 'emergency_card_state.dart';
 
@@ -115,7 +116,7 @@ class EmergencyCardViewModel extends ChangeNotifier {
               fullName: session.fullName.isNotEmpty ? session.fullName : 'Chưa cập nhật',
               demographics: demographics,
               bloodType: hasBlood ? session.bloodType! : '--',
-              rhFactor: hasBlood ? 'Rh Dương' : 'Chưa rõ',
+              rhFactor: hasBlood ? InputValidators.resolveRhFactor(session.bloodType) : 'Chưa rõ',
               height: heightStr,
               weight: weightStr,
               organDonorStatus: organDonor,
@@ -173,9 +174,11 @@ class EmergencyCardViewModel extends ChangeNotifier {
     final cleanPhone = c.phone.replaceAll(RegExp(r'[^0-9+]'), '');
     if (cleanPhone.isEmpty) {
       _state = _state.copyWith(
-        lastActionMessage: 'Chưa có số điện thoại bác sĩ điều trị trong hồ sơ.',
+        lastActionMessage:
+            'Chưa có SĐT bác sĩ riêng — đang kết nối cuộc gọi tới Tổng đài Y tế 115...',
       );
       notifyListeners();
+      await _dialNumber('115');
       return;
     }
 
