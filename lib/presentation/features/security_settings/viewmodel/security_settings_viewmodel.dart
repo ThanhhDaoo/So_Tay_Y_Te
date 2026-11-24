@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -53,6 +54,18 @@ class SecuritySettingsViewModel extends ChangeNotifier {
     final timeoutInt = await _preferencesDataSource.getAutoLockTimeout();
     final privacyEnabled = await _preferencesDataSource.isPrivacyScreenEnabled();
     final autoSyncEnabled = await _preferencesDataSource.isAutoCloudSyncEnabled();
+    final savedBackupTime = await _preferencesDataSource.getLastBackupTime();
+    final savedBackupSize = await _preferencesDataSource.getLastBackupSize();
+
+    String? activeUuid;
+    if (sl.isRegistered<AuthRepository>()) {
+      try {
+        final session = await sl<AuthRepository>().getActiveSession();
+        if (session != null) {
+          activeUuid = session.patientCode.isNotEmpty ? session.patientCode : session.id;
+        }
+      } catch (_) {}
+    }
 
     DateTime? lastSync;
     final syncRepo = _syncRepository ?? (sl.isRegistered<SyncRepository>() ? sl<SyncRepository>() : null);
@@ -69,6 +82,9 @@ class SecuritySettingsViewModel extends ChangeNotifier {
       isPrivacyScreenInMultitaskEnabled: privacyEnabled,
       isAutoCloudSyncEnabled: autoSyncEnabled,
       lastCloudSyncTime: lastSync,
+      guestUuid: activeUuid ?? _state.guestUuid,
+      lastBackupTime: savedBackupTime ?? _state.lastBackupTime,
+      lastBackupSize: savedBackupSize ?? _state.lastBackupSize,
     );
     notifyListeners();
   }
@@ -164,8 +180,9 @@ class SecuritySettingsViewModel extends ChangeNotifier {
   }
 
   void copyGuestUuid() {
+    Clipboard.setData(ClipboardData(text: _state.guestUuid));
     _state = _state.copyWith(
-      feedbackMessage: 'Đã sao chép mã Guest UUID vào bộ nhớ tạm: ${_state.guestUuid}',
+      feedbackMessage: 'Đã sao chép mã định danh vào bộ nhớ tạm: ${_state.guestUuid}',
     );
     notifyListeners();
   }
@@ -196,6 +213,9 @@ class SecuritySettingsViewModel extends ChangeNotifier {
           backupData['medicines'] = await db.query('medicines');
         } catch (_) {}
         try {
+          backupData['medical_documents'] = await db.query('medical_documents');
+        } catch (_) {}
+        try {
           backupData['user_profile'] = await db.query('user_profile');
         } catch (_) {}
         try {
@@ -204,23 +224,25 @@ class SecuritySettingsViewModel extends ChangeNotifier {
       }
 
       final jsonStr = jsonEncode(backupData);
+      final sizeKb = (utf8.encode(jsonStr).length / 1024).clamp(0.1, 999999);
+      final sizeLabel = sizeKb >= 1024
+          ? '${(sizeKb / 1024).toStringAsFixed(1)} MB'
+          : '${sizeKb.toStringAsFixed(1)} KB';
 
       final isTest = !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
       if (!isTest) {
-        try {
-          final dir = await getTemporaryDirectory();
-          final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-          final file = File(p.join(dir.path, 'sotayyte_backup_$timestamp.sotayyte'));
-          await file.writeAsString(jsonStr);
+        final dir = await getTemporaryDirectory();
+        final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+        final file = File(p.join(dir.path, 'sotayyte_backup_$timestamp.sotayyte'));
+        await file.writeAsString(jsonStr, flush: true);
 
-          await SharePlus.instance.share(
-            ShareParams(
-              files: [XFile(file.path)],
-              subject: 'Sao lưu hồ sơ Sổ Tay Y Tế',
-              text: 'Tệp sao lưu mã hóa hồ sơ sức khỏe cá nhân (.sotayyte)',
-            ),
-          );
-        } catch (_) {}
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [XFile(file.path)],
+            subject: 'Sao lưu hồ sơ Sổ Tay Y Tế',
+            text: 'Tệp sao lưu mã hóa hồ sơ sức khỏe cá nhân (.sotayyte)',
+          ),
+        );
       } else {
         await Future.delayed(const Duration(milliseconds: 300));
       }
@@ -229,12 +251,20 @@ class SecuritySettingsViewModel extends ChangeNotifier {
       _state = _state.copyWith(
         currentOperation: SecurityOperation.none,
         lastBackupTime: nowFormatted,
+        lastBackupSize: sizeLabel,
         feedbackMessage: 'Đã xuất tệp dự phòng sao lưu (.sotayyte) thành công!',
       );
-    } catch (_) {
+      _preferencesDataSource
+          .saveLastBackupMetadata(
+            timeLabel: nowFormatted,
+            sizeLabel: sizeLabel,
+          )
+          .catchError((_) {});
+    } catch (e) {
+      debugPrint('[SecuritySettings] exportBackup error: $e');
       _state = _state.copyWith(
         currentOperation: SecurityOperation.none,
-        feedbackMessage: 'Đã xuất tệp dự phòng sao lưu (.sotayyte) thành công!',
+        feedbackMessage: 'Không thể xuất tệp dự phòng: $e',
       );
     }
     notifyListeners();
@@ -253,67 +283,89 @@ class SecuritySettingsViewModel extends ChangeNotifier {
       if (filePath != null) {
         targetFile = File(filePath);
       } else if (!isTest) {
-        try {
-          final dir = await getTemporaryDirectory();
-          final files = dir.listSync().whereType<File>().where((f) => f.path.endsWith('.sotayyte')).toList();
-          if (files.isNotEmpty) {
-            files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
-            targetFile = files.first;
-          }
-        } catch (_) {}
+        final dir = await getTemporaryDirectory();
+        final files = dir
+            .listSync()
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.sotayyte'))
+            .toList();
+        if (files.isNotEmpty) {
+          files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+          targetFile = files.first;
+        }
       } else {
         await Future.delayed(const Duration(milliseconds: 300));
+      }
+
+      if (!isTest && (targetFile == null || !targetFile.existsSync())) {
+        _state = _state.copyWith(
+          currentOperation: SecurityOperation.none,
+          feedbackMessage: 'Không tìm thấy tệp sao lưu (.sotayyte) trên thiết bị.',
+        );
+        notifyListeners();
+        return;
       }
 
       if (targetFile != null && targetFile.existsSync() && _databaseHelper != null) {
         final content = await targetFile.readAsString();
         final data = jsonDecode(content) as Map<String, dynamic>;
 
-        if (data['app'] == 'So_Tay_Y_Te') {
-          final db = await _databaseHelper.database;
-          await db.transaction((txn) async {
-            if (data['medical_events'] is List) {
-              for (final row in data['medical_events'] as List) {
-                await txn.insert('medical_events', Map<String, dynamic>.from(row as Map),
-                    conflictAlgorithm: ConflictAlgorithm.replace);
-              }
-            }
-            if (data['prescriptions'] is List) {
-              for (final row in data['prescriptions'] as List) {
-                await txn.insert('prescriptions', Map<String, dynamic>.from(row as Map),
-                    conflictAlgorithm: ConflictAlgorithm.replace);
-              }
-            }
-            if (data['medicines'] is List) {
-              for (final row in data['medicines'] as List) {
-                await txn.insert('medicines', Map<String, dynamic>.from(row as Map),
-                    conflictAlgorithm: ConflictAlgorithm.replace);
-              }
-            }
-            if (data['user_profile'] is List) {
-              for (final row in data['user_profile'] as List) {
-                await txn.insert('user_profile', Map<String, dynamic>.from(row as Map),
-                    conflictAlgorithm: ConflictAlgorithm.replace);
-              }
-            }
-            if (data['family_members'] is List) {
-              for (final row in data['family_members'] as List) {
-                await txn.insert('family_members', Map<String, dynamic>.from(row as Map),
-                    conflictAlgorithm: ConflictAlgorithm.replace);
-              }
-            }
-          });
+        if (data['app'] != 'So_Tay_Y_Te') {
+          throw const FormatException('Định dạng tệp sao lưu không hợp lệ.');
         }
+
+        final db = await _databaseHelper.database;
+        await db.transaction((txn) async {
+          if (data['medical_events'] is List) {
+            for (final row in data['medical_events'] as List) {
+              await txn.insert('medical_events', Map<String, dynamic>.from(row as Map),
+                  conflictAlgorithm: ConflictAlgorithm.replace);
+            }
+          }
+          if (data['prescriptions'] is List) {
+            for (final row in data['prescriptions'] as List) {
+              await txn.insert('prescriptions', Map<String, dynamic>.from(row as Map),
+                  conflictAlgorithm: ConflictAlgorithm.replace);
+            }
+          }
+          if (data['medicines'] is List) {
+            for (final row in data['medicines'] as List) {
+              await txn.insert('medicines', Map<String, dynamic>.from(row as Map),
+                  conflictAlgorithm: ConflictAlgorithm.replace);
+            }
+          }
+          if (data['medical_documents'] is List) {
+            for (final row in data['medical_documents'] as List) {
+              await txn.insert('medical_documents', Map<String, dynamic>.from(row as Map),
+                  conflictAlgorithm: ConflictAlgorithm.replace);
+            }
+          }
+          if (data['user_profile'] is List) {
+            for (final row in data['user_profile'] as List) {
+              await txn.insert('user_profile', Map<String, dynamic>.from(row as Map),
+                  conflictAlgorithm: ConflictAlgorithm.replace);
+            }
+          }
+          if (data['family_members'] is List) {
+            for (final row in data['family_members'] as List) {
+              await txn.insert('family_members', Map<String, dynamic>.from(row as Map),
+                  conflictAlgorithm: ConflictAlgorithm.replace);
+            }
+          }
+        });
+        AppSessionNotifier.instance.notifyMedicalRecordsChanged();
+        AppSessionNotifier.instance.notifyProfileChanged();
       }
 
       _state = _state.copyWith(
         currentOperation: SecurityOperation.none,
         feedbackMessage: 'Khôi phục cơ sở dữ liệu y tế từ tệp thành công!',
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[SecuritySettings] restoreBackup error: $e');
       _state = _state.copyWith(
         currentOperation: SecurityOperation.none,
-        feedbackMessage: 'Khôi phục cơ sở dữ liệu y tế từ tệp thành công!',
+        feedbackMessage: 'Khôi phục dữ liệu không thành công: $e',
       );
     }
     notifyListeners();

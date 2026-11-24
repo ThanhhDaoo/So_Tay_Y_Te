@@ -124,7 +124,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
                           Navigator.pushNamed(context, AppRoutes.vitalReports),
                     ),
                     const SizedBox(height: 18),
-                    _buildTimelineSectionHeader(),
+                    _buildTimelineSectionHeader(
+                      records.isNotEmpty ? records.first.year : DateTime.now().year,
+                    ),
                     const SizedBox(height: 12),
                     _buildChronologicalSpine(records),
                   ],
@@ -175,7 +177,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
   }
 
-  Widget _buildTimelineSectionHeader() {
+  Widget _buildTimelineSectionHeader(int activeYear) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Row(
@@ -205,9 +207,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
               color: AppColors.iceAccentCream,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: const Text(
-              'Năm 2024',
-              style: TextStyle(
+            child: Text(
+              'Năm $activeYear',
+              style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.44,

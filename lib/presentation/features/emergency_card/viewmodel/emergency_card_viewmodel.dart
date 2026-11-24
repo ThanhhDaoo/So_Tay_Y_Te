@@ -4,6 +4,7 @@ import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/user_session_manager.dart';
 import '../../../../core/utils/input_validators.dart';
 import '../../../../domain/repositories/auth_repository.dart';
+import '../../../../domain/repositories/medical_record_repository.dart';
 import 'emergency_card_state.dart';
 
 /// ViewModel quản lý trạng thái và tương tác cho màn hình Thẻ Cấp Cứu Khẩn Cấp (ICE).
@@ -108,8 +109,27 @@ class EmergencyCardViewModel extends ChangeNotifier {
             }
           }
 
+          EmergencyContactInfo doctorIce = _state.doctorContact;
+          if (sl.isRegistered<MedicalRecordRepository>()) {
+            try {
+              final events = await sl<MedicalRecordRepository>().getMedicalTimeline();
+              for (final e in events) {
+                final docName = e.doctorName?.trim() ?? e.prescription?.doctorName.trim() ?? '';
+                if (docName.isNotEmpty) {
+                  doctorIce = EmergencyContactInfo(
+                    label: 'BS ĐIỀU TRỊ',
+                    name: docName,
+                    phone: doctorIce.phone,
+                  );
+                  break;
+                }
+              }
+            } catch (_) {}
+          }
+
           _state = _state.copyWith(
             primaryContact: primaryIce,
+            doctorContact: doctorIce,
             allergyWarning: allergyWarn,
             chronicConditions: conditions,
             patient: _state.patient.copyWith(

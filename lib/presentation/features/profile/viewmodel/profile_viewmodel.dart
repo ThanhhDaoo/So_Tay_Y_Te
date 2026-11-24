@@ -4,12 +4,31 @@ import '../../../../core/database/database_helper.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/user_session_manager.dart';
 import '../../../../core/widgets/safe_avatar_image.dart';
+import '../../../../domain/entities/medical_event.dart';
 import '../../../../domain/repositories/auth_repository.dart';
+import '../../../../domain/repositories/medical_record_repository.dart';
 import 'profile_state.dart';
 
 class ProfileViewModel extends ChangeNotifier {
+  int _lastRecordsVersion = AppSessionNotifier.instance.medicalRecordsVersion;
+
   ProfileViewModel() : _state = _buildInitialState() {
     loadCurrentUserProfile();
+    AppSessionNotifier.instance.addListener(_onGlobalSessionChanged);
+  }
+
+  void _onGlobalSessionChanged() {
+    final currentVer = AppSessionNotifier.instance.medicalRecordsVersion;
+    if (currentVer != _lastRecordsVersion) {
+      _lastRecordsVersion = currentVer;
+      loadCurrentUserProfile();
+    }
+  }
+
+  @override
+  void dispose() {
+    AppSessionNotifier.instance.removeListener(_onGlobalSessionChanged);
+    super.dispose();
   }
 
   ProfileState _state;
@@ -141,6 +160,31 @@ class ProfileViewModel extends ChangeNotifier {
             iconAsset: 'assets/icons/ic_prof_condition_stomach.svg',
           )).toList();
 
+          final immunizationItems = <ImmunizationItem>[];
+          if (sl.isRegistered<MedicalRecordRepository>()) {
+            try {
+              final events = await sl<MedicalRecordRepository>().getMedicalTimeline();
+              for (final e in events) {
+                final isVax = e.type == MedicalEventType.vaccination ||
+                    (e.department?.toLowerCase().contains('tiêm chủng') ?? false) ||
+                    e.title.toLowerCase().contains('vắc xin') ||
+                    e.title.toLowerCase().contains('tiêm');
+                if (isVax) {
+                  final dStr = '${e.date.day.toString().padLeft(2, "0")}/${e.date.month.toString().padLeft(2, "0")}/${e.date.year}';
+                  immunizationItems.add(
+                    ImmunizationItem(
+                      title: e.diagnosis?.isNotEmpty == true ? e.diagnosis! : e.title,
+                      subtitle: '${e.facilityName ?? "Cơ sở tiêm chủng"} • $dStr',
+                      badgeLabel: 'ĐÃ TIÊM',
+                      isCompleted: true,
+                      iconAsset: 'assets/icons/ic_prof_vaccine_shield.svg',
+                    ),
+                  );
+                }
+              }
+            } catch (_) {}
+          }
+
           final primaryProfile = MemberMedicalProfile(
             id: 'primary',
             fullName: session.fullName.isNotEmpty ? session.fullName : 'Chưa cập nhật',
@@ -163,7 +207,7 @@ class ProfileViewModel extends ChangeNotifier {
             weightText: weightStr,
             allergies: allergyItems,
             chronicConditions: conditionItems,
-            immunizations: const [],
+            immunizations: immunizationItems,
           );
 
           final dbFamilyChips = <FamilyMemberChip>[];
@@ -456,9 +500,10 @@ class ProfileViewModel extends ChangeNotifier {
           region: region,
           avatarUrl: avatarUrl,
         );
-        if (avatarUrl != null) {
-          AppSessionNotifier.instance.notifyAvatarChanged(avatarUrl);
-        }
+        AppSessionNotifier.instance.notifyProfileChanged(
+          fullName: fullName,
+          avatarUrl: avatarUrl,
+        );
         await loadCurrentUserProfile();
       }
     }

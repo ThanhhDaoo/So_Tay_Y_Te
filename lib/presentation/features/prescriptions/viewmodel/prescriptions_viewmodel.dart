@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/services/ocr_service.dart';
+import '../../../../core/services/user_session_manager.dart';
+import '../../../../data/datasources/local/app_preferences_datasource.dart';
 import '../../../../domain/entities/medical_event.dart';
 import '../../../../domain/entities/medicine.dart';
 import '../../../../domain/entities/prescription.dart';
@@ -12,6 +14,8 @@ import 'prescriptions_state.dart';
 class PrescriptionsViewModel extends ChangeNotifier {
   final NotificationService _notificationService;
   final MedicalRecordRepository? _repository;
+  final bool _hasCustomInitialState;
+  int _lastRecordsVersion = AppSessionNotifier.instance.medicalRecordsVersion;
   PrescriptionsState _state;
 
   PrescriptionsState get state => _state;
@@ -28,11 +32,34 @@ class PrescriptionsViewModel extends ChangeNotifier {
             (sl.isRegistered<MedicalRecordRepository>()
                 ? sl<MedicalRecordRepository>()
                 : null),
+        _hasCustomInitialState = initialState != null,
         _state = initialState ?? PrescriptionsState.initial() {
     initNotifications();
-    if (initialState == null) {
+    if (!_hasCustomInitialState) {
+      loadFromRepository();
+      AppSessionNotifier.instance.addListener(_onGlobalSessionChanged);
+    }
+  }
+
+  void _onGlobalSessionChanged() {
+    final currentVer = AppSessionNotifier.instance.medicalRecordsVersion;
+    if (currentVer != _lastRecordsVersion) {
+      _lastRecordsVersion = currentVer;
       loadFromRepository();
     }
+  }
+
+  @override
+  void dispose() {
+    if (!_hasCustomInitialState) {
+      AppSessionNotifier.instance.removeListener(_onGlobalSessionChanged);
+    }
+    super.dispose();
+  }
+
+  String _todayDateKey() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, "0")}-${now.day.toString().padLeft(2, "0")}';
   }
 
   Future<void> initNotifications() async {
@@ -148,10 +175,33 @@ class PrescriptionsViewModel extends ChangeNotifier {
           totalCost: latestEvent.hospitalFee ?? 'Chưa cập nhật chi phí',
         );
 
+        List<String> takenToday = const [];
+        if (sl.isRegistered<AppPreferencesDataSource>()) {
+          try {
+            takenToday = await sl<AppPreferencesDataSource>().getTakenDoseSlotsForDate(_todayDateKey());
+          } catch (_) {}
+        }
+
+        final hydratedSlots = realSlots.map((slot) {
+          if (takenToday.contains(slot.id)) {
+            return slot.copyWith(
+              status: DoseSlotStatus.completed,
+              statusBadge: 'Đã uống hôm nay',
+            );
+          }
+          return slot;
+        }).toList();
+
+        final completedCount = hydratedSlots.where((s) => s.status == DoseSlotStatus.completed).length;
+        final adherence = hydratedSlots.isNotEmpty
+            ? ((completedCount / hydratedSlots.length) * 100).round().clamp(0, 100)
+            : 0;
+
         _state = _state.copyWith(
           planSubtitle: 'Phác đồ: ${latestEvent.title}',
-          slots: realSlots,
+          slots: hydratedSlots,
           activePlan: plan,
+          adherencePercent: adherence,
         );
         notifyListeners();
         await scheduleAllReminders();
@@ -283,7 +333,9 @@ class PrescriptionsViewModel extends ChangeNotifier {
 
     final completed =
         updated.where((s) => s.status == DoseSlotStatus.completed).length;
-    final percent = ((completed / updated.length) * 100).round().clamp(0, 100);
+    final percent = updated.isNotEmpty
+        ? ((completed / updated.length) * 100).round().clamp(0, 100)
+        : 0;
 
     _state = _state.copyWith(
       slots: updated,
@@ -294,6 +346,16 @@ class PrescriptionsViewModel extends ChangeNotifier {
           'Đã ghi nhận uống thuốc đúng giờ! Chỉ số tuân thủ tăng lên $percent%',
     );
     notifyListeners();
+
+    if (sl.isRegistered<AppPreferencesDataSource>()) {
+      final completedIds = updated
+          .where((s) => s.status == DoseSlotStatus.completed)
+          .map((s) => s.id)
+          .toList();
+      sl<AppPreferencesDataSource>()
+          .saveTakenDoseSlotsForDate(_todayDateKey(), completedIds)
+          .catchError((_) {});
+    }
   }
 
   /// Hoãn nhắc uống thuốc thêm 15 phút.
@@ -302,6 +364,21 @@ class PrescriptionsViewModel extends ChangeNotifier {
       lastActionMessage: 'Sẽ nhắc lại cữ thuốc sau 15 phút nữa.',
     );
     notifyListeners();
+
+    final targetSlot = _state.slots.where((s) => s.id == slotId).firstOrNull;
+    final snoozedAt = DateTime.now().add(const Duration(minutes: 15));
+    final medsSummary = targetSlot != null
+        ? targetSlot.medications.map((m) => m.name).join(', ')
+        : 'Đã đến giờ uống cữ thuốc đã hoãn.';
+    _notificationService
+        .scheduleDailyMedicationReminder(
+          id: 88000 + (slotId.hashCode.abs() % 1000),
+          title: '🔔 Nhắc lại cữ thuốc (${targetSlot?.title ?? "Sau 15 phút"})',
+          body: medsSummary,
+          hour: snoozedAt.hour,
+          minute: snoozedAt.minute,
+        )
+        .catchError((_) {});
   }
 
   void notifyUser(String message) {

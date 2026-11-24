@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/widgets/clinical_qr_code_widget.dart';
 
 /// Module mã QR tóm tắt lâm sàng khẩn cấp cho điều dưỡng & bác sĩ.
 class IceQrModuleCard extends StatelessWidget {
   final VoidCallback onExpandQr;
+  final String qrPayload;
 
-  const IceQrModuleCard({super.key, required this.onExpandQr});
+  const IceQrModuleCard({
+    super.key,
+    required this.onExpandQr,
+    this.qrPayload = 'SO-TAY-Y-TE | ICE EMERGENCY PROFILE',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +26,7 @@ class IceQrModuleCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
@@ -32,10 +38,9 @@ class IceQrModuleCard extends StatelessWidget {
                 ),
               ],
             ),
-            child: SvgPicture.asset(
-              'assets/icons/ic_emergency_qr.svg',
-              width: 80,
-              height: 80,
+            child: ClinicalQrCodeWidget(
+              data: qrPayload,
+              size: 88,
             ),
           ),
           const SizedBox(width: 16),
@@ -106,7 +111,10 @@ class IceQrModuleCard extends StatelessWidget {
 }
 
 /// Hiển thị hộp thoại phóng to mã QR lâm sàng khẩn cấp.
-Future<void> showFullScreenEmergencyQrDialog(BuildContext context) {
+Future<void> showFullScreenEmergencyQrDialog(
+  BuildContext context, {
+  String qrPayload = 'SO-TAY-Y-TE | ICE EMERGENCY PROFILE',
+}) {
   return showDialog<void>(
     context: context,
     builder: (dialogContext) => Dialog(
@@ -127,16 +135,15 @@ Future<void> showFullScreenEmergencyQrDialog(BuildContext context) {
             ),
             const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.iceCardBorder),
               ),
-              child: SvgPicture.asset(
-                'assets/icons/ic_emergency_qr.svg',
-                width: 200,
-                height: 200,
+              child: ClinicalQrCodeWidget(
+                data: qrPayload,
+                size: 204,
               ),
             ),
             const SizedBox(height: 16),

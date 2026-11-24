@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/user_session_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../viewmodel/paywall_viewmodel.dart';
 import 'widgets/account_linking_card.dart';
@@ -120,8 +121,14 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   SliverToBoxAdapter(
                     child: PaywallHeader(
                       onBack: () => Navigator.of(context).maybePop(),
-                      onProfileTap: () =>
-                          _showSnack('Tài khoản: Nguyễn Thu Trang (Gói Free)'),
+                      onProfileTap: () {
+                        final activeName = AppSessionNotifier.instance.fullName?.trim();
+                        final displayName = (activeName != null && activeName.isNotEmpty)
+                            ? activeName
+                            : 'Hồ sơ hiện tại';
+                        final tierLabel = state.isPro ? 'Gói Vault Pro' : 'Gói Free';
+                        _showSnack('Tài khoản: $displayName ($tierLabel)');
+                      },
                     ),
                   ),
                   SliverPadding(

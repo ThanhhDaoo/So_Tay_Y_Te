@@ -73,48 +73,60 @@ class _AiOcrScannerModalState extends State<AiOcrScannerModal> with SingleTicker
 
     try {
       final imagePath = await _ocrService.pickImage(source: source);
-      if (imagePath != null) {
-        final parsed = await _ocrService.processPrescriptionImage(imagePath);
+      if (imagePath == null) {
         if (mounted) {
-          setState(() {
-            _scannedImagePath = imagePath;
-            _scannedResult = parsed;
-            _isProcessing = false;
-            _isDone = true;
-          });
-          return;
+          setState(() => _isProcessing = false);
         }
+        return;
       }
-    } catch (_) {}
 
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (mounted) {
-      setState(() {
-        _isProcessing = false;
-        _isDone = true;
-      });
+      final parsed = await _ocrService.processPrescriptionImage(imagePath);
+      if (mounted) {
+        setState(() {
+          _scannedImagePath = imagePath;
+          _scannedResult = parsed;
+          _isProcessing = false;
+          _isDone = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không thể phân tích ảnh: $e')),
+        );
+      }
     }
   }
 
   Future<void> _saveAndClose() async {
-    if (widget.documentsViewModel != null) {
+    if (widget.documentsViewModel != null && _scannedImagePath != null) {
       final res = _scannedResult;
-      final findings = res?.medicines.map((m) => {
-        'label': m.name,
-        'value': '${m.dosage} • ${m.instruction}',
-        'status': 'Đã phân tích',
-      }).toList() ?? [
-        {'label': 'Panadol 500mg', 'value': '2 viên/ngày', 'status': 'Đã phân tích'},
-        {'label': 'Cefuroxim 500mg', 'value': '2 viên/ngày', 'status': 'Đã phân tích'},
-      ];
+      final findings = (res != null && res.medicines.isNotEmpty)
+          ? res.medicines
+              .map((m) => {
+                    'label': m.name,
+                    'value': '${m.dosage} • ${m.instruction}',
+                    'status': 'Đã phân tích',
+                  })
+              .toList()
+          : <Map<String, String>>[
+              {
+                'label': 'Tài liệu y tế',
+                'value': res?.rawText.isNotEmpty == true
+                    ? res!.rawText.split('\n').first
+                    : 'Đã lưu bản chụp gốc',
+                'status': 'Hoàn tất',
+              },
+            ];
 
       await widget.documentsViewModel!.addDocument(
         title: res?.diagnosis != null && res!.diagnosis!.isNotEmpty
             ? 'Đơn thuốc: ${res.diagnosis}'
             : 'Toa thuốc quét bằng AI OCR',
         category: DocumentCategory.prescriptions,
-        filePath: _scannedImagePath ?? 'assets/images/img_doc_blood_test.png',
-        hospital: res?.hospital ?? 'Bệnh viện Bạch Mai',
+        filePath: _scannedImagePath!,
+        hospital: res?.hospital?.isNotEmpty == true ? res!.hospital : 'Cơ sở y tế',
         findings: findings,
       );
     }

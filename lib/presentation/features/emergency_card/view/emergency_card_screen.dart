@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../main_shell/view/main_shell_screen.dart';
+import '../viewmodel/emergency_card_state.dart';
 import '../viewmodel/emergency_card_viewmodel.dart';
 import 'widgets/ice_allergy_warning_card.dart';
 import 'widgets/ice_bottom_nav_bar.dart';
@@ -61,6 +62,11 @@ class _EmergencyCardScreenState extends State<EmergencyCardScreen> {
     _viewModel.clearActionMessage();
   }
 
+  String _buildEmergencyQrPayload(EmergencyCardState state) {
+    final conditions = state.chronicConditions.map((c) => c.title).join(', ');
+    return 'STYT-ICE | BN: ${state.patient.fullName} | Máu: ${state.patient.bloodType} (${state.patient.rhFactor}) | Dị ứng: ${state.allergyWarning.title} | Bệnh nền: ${conditions.isNotEmpty ? conditions : "Không"} | ICE: ${state.primaryContact.phone.isNotEmpty ? state.primaryContact.phone : "115"}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.paddingOf(context).top;
@@ -105,7 +111,11 @@ class _EmergencyCardScreenState extends State<EmergencyCardScreen> {
                   ),
                   const SizedBox(height: 16),
                   IceQrModuleCard(
-                    onExpandQr: () => showFullScreenEmergencyQrDialog(context),
+                    qrPayload: _buildEmergencyQrPayload(state),
+                    onExpandQr: () => showFullScreenEmergencyQrDialog(
+                      context,
+                      qrPayload: _buildEmergencyQrPayload(state),
+                    ),
                   ),
                   if (!widget.readOnlyLockMode) ...[
                     const SizedBox(height: 16),

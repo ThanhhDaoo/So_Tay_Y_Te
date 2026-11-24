@@ -111,7 +111,7 @@ class ProfileState {
     required this.familyMembers,
     required this.selectedMemberId,
     required this.profilesById,
-    this.isEditLocked = true,
+    this.isEditLocked = false,
   });
 
   final List<FamilyMemberChip> familyMembers;

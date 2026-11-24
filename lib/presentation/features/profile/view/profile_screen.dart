@@ -155,21 +155,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 activeProfile.fullName,
                               )
                           : null,
-                      onPickAvatar: () => pickAndSaveAvatar(
-                        context,
-                        onAvatarSaved: (localPath) async {
-                          if (isPrimary) {
-                            await _viewModel.updateAvatar(localPath);
-                          } else {
-                            await _viewModel.updateFamilyMemberAvatar(
-                              activeProfile.id,
-                              localPath,
-                            );
-                          }
-                          _showSnack('Đã cập nhật ảnh đại diện thành công!');
-                        },
-                      ),
+                      onPickAvatar: () {
+                        if (state.isEditLocked) {
+                          _showSnack('Hồ sơ đang bật khóa chỉnh sửa. Hãy bấm Mở khóa ở cuối trang để cập nhật.');
+                          return;
+                        }
+                        pickAndSaveAvatar(
+                          context,
+                          onAvatarSaved: (localPath) async {
+                            if (isPrimary) {
+                              await _viewModel.updateAvatar(localPath);
+                            } else {
+                              await _viewModel.updateFamilyMemberAvatar(
+                                activeProfile.id,
+                                localPath,
+                              );
+                            }
+                            _showSnack('Đã cập nhật ảnh đại diện thành công!');
+                          },
+                        );
+                      },
                       onEditTap: () {
+                        if (state.isEditLocked) {
+                          _showSnack('Hồ sơ đang bật khóa chỉnh sửa. Hãy bấm Mở khóa ở cuối trang để cập nhật.');
+                          return;
+                        }
                         EditPersonalProfileSheet.show(
                           context,
                           sheetTitle: isPrimary
@@ -267,6 +277,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onDetailTap: () => MedicalHistorySheet.show(
                         context,
                         patientName: activeProfile.fullName,
+                        chronicConditions: activeProfile.chronicConditions.map((c) => c.title).toList(),
                       ),
                     ),
                     const SizedBox(height: 18),

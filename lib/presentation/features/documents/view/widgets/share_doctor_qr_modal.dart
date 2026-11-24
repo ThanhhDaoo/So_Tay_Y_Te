@@ -1,5 +1,11 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../../../../core/di/injection_container.dart';
+import '../../../../../core/services/user_session_manager.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/widgets/clinical_qr_code_widget.dart';
+import '../../../../../domain/repositories/auth_repository.dart';
 
 class ShareDoctorQrModal extends StatefulWidget {
   const ShareDoctorQrModal({super.key});
@@ -21,6 +27,40 @@ class _ShareDoctorQrModalState extends State<ShareDoctorQrModal> {
   bool _shareRx = true;
   bool _shareBlood = true;
   bool _shareXray = true;
+  late final String _pinFormatted;
+  late final String _shareToken;
+  String _patientCode = 'STYT-PATIENT';
+
+  @override
+  void initState() {
+    super.initState();
+    final rng = Random();
+    final part1 = (100 + rng.nextInt(900)).toString();
+    final part2 = (100 + rng.nextInt(900)).toString();
+    _pinFormatted = '$part1 - $part2';
+    _shareToken = '${DateTime.now().millisecondsSinceEpoch.toRadixString(36).toUpperCase()}-$part1$part2';
+    _loadSessionCode();
+  }
+
+  Future<void> _loadSessionCode() async {
+    if (!sl.isRegistered<AuthRepository>()) return;
+    try {
+      final session = await sl<AuthRepository>().getActiveSession();
+      if (session != null && mounted) {
+        setState(() => _patientCode = session.patientCode);
+      }
+    } catch (_) {}
+  }
+
+  String get _qrPayload {
+    final scopes = <String>[
+      if (_shareRx) 'RX',
+      if (_shareBlood) 'LAB',
+      if (_shareXray) 'IMG',
+    ].join(',');
+    final patientName = AppSessionNotifier.instance.fullName ?? 'BenhNhan';
+    return 'STYT://SHARE?code=$_patientCode&name=${Uri.encodeComponent(patientName)}&scopes=$scopes&pin=${_pinFormatted.replaceAll(" ", "")}&token=$_shareToken';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +140,13 @@ class _ShareDoctorQrModalState extends State<ShareDoctorQrModal> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.qr_code_2, size: 170, color: AppColors.iceOliveDark),
+                          child: Center(
+                            child: ClinicalQrCodeWidget(
+                              data: _qrPayload,
+                              size: 168,
+                              foregroundColor: AppColors.iceOliveDark,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Container(
@@ -140,22 +186,23 @@ class _ShareDoctorQrModalState extends State<ShareDoctorQrModal> {
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Mã PIN xác thực bác sĩ:', style: TextStyle(fontSize: 12, color: AppColors.iceTextMuted)),
-                          SizedBox(height: 2),
+                        children: [
+                          const Text('Mã PIN xác thực bác sĩ:', style: TextStyle(fontSize: 12, color: AppColors.iceTextMuted)),
+                          const SizedBox(height: 2),
                           Text(
-                            '892 - 410',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 1.5, color: AppColors.iceOliveDark),
+                            _pinFormatted,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 1.5, color: AppColors.iceOliveDark),
                           ),
                         ],
                       ),
                       TextButton.icon(
                         onPressed: () {
+                          Clipboard.setData(ClipboardData(text: _qrPayload));
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Đã sao chép liên kết chia sẻ bảo mật!'),
+                            SnackBar(
+                              content: Text('Đã sao chép liên kết chia sẻ bảo mật (PIN: $_pinFormatted)!'),
                               backgroundColor: AppColors.iceOlive,
-                              duration: Duration(seconds: 1),
+                              duration: const Duration(seconds: 1),
                             ),
                           );
                         },

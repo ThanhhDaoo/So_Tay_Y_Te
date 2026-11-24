@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/user_session_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/medical_event.dart';
 import '../../../../domain/repositories/medical_record_repository.dart';
@@ -12,9 +13,19 @@ class TimelineViewModel extends ChangeNotifier {
 
   TimelineState _state = TimelineState.initial();
   bool _isLoading = false;
+  int _lastRecordsVersion = AppSessionNotifier.instance.medicalRecordsVersion;
 
   TimelineViewModel({this.repository}) {
     loadRecords();
+    AppSessionNotifier.instance.addListener(_onGlobalSessionChanged);
+  }
+
+  void _onGlobalSessionChanged() {
+    final currentVer = AppSessionNotifier.instance.medicalRecordsVersion;
+    if (currentVer != _lastRecordsVersion) {
+      _lastRecordsVersion = currentVer;
+      loadRecords();
+    }
   }
 
   TimelineState get state => _state;
@@ -37,17 +48,17 @@ class TimelineViewModel extends ChangeNotifier {
           TimelineFilterCategory(id: 'all', label: 'Tất cả (${mapped.length})'),
           const TimelineFilterCategory(id: 'checkup', label: 'Khám định kỳ'),
           const TimelineFilterCategory(
+            id: 'treating',
+            label: 'Đang điều trị',
+            dotColor: AppColors.timelineOlive,
+          ),
+          const TimelineFilterCategory(
             id: 'emergency',
             label: 'Cấp cứu',
             dotColor: AppColors.iceDangerText,
             isDangerText: true,
           ),
-          const TimelineFilterCategory(id: 'inpatient', label: 'Nội trú'),
-          const TimelineFilterCategory(
-            id: 'treating',
-            label: 'Đang điều trị',
-            dotColor: AppColors.timelineOlive,
-          ),
+          const TimelineFilterCategory(id: 'vaccination', label: 'Tiêm chủng'),
         ];
 
         String? latestBp;
@@ -99,10 +110,11 @@ class TimelineViewModel extends ChangeNotifier {
     String categoryId = 'checkup';
     if (event.type == MedicalEventType.emergency) {
       categoryId = 'emergency';
-    } else if (event.type == MedicalEventType.vaccination) {
+    } else if (event.type == MedicalEventType.vaccination ||
+        (event.department?.toLowerCase().contains('tiêm chủng') ?? false)) {
       categoryId = 'vaccination';
-    } else if (event.department != null &&
-        event.department!.toLowerCase().contains('tiêu hóa')) {
+    } else if (event.prescription != null &&
+        event.prescription!.medicines.isNotEmpty) {
       categoryId = 'treating';
     }
 
@@ -185,6 +197,7 @@ class TimelineViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    AppSessionNotifier.instance.removeListener(_onGlobalSessionChanged);
     searchController.dispose();
     super.dispose();
   }
