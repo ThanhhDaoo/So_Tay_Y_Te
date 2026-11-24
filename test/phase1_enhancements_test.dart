@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:so_tay_y_te/core/di/injection_container.dart';
 import 'package:so_tay_y_te/core/security/biometric_service.dart';
+import 'package:so_tay_y_te/core/utils/input_validators.dart';
+import 'package:so_tay_y_te/core/widgets/clinical_qr_code_widget.dart';
 import 'package:so_tay_y_te/core/widgets/safe_avatar_image.dart';
 import 'package:so_tay_y_te/data/datasources/local/app_preferences_datasource.dart';
 import 'package:so_tay_y_te/domain/entities/medical_event.dart';
@@ -324,5 +326,41 @@ void main() {
     expect(resolved, testFile.path);
 
     tempDir.deleteSync(recursive: true);
+  });
+
+  test('InputValidators accurately resolves Rh factor and validates clinical bounds', () {
+    expect(InputValidators.resolveRhFactor('O-'), 'Rh Âm');
+    expect(InputValidators.resolveRhFactor('AB-'), 'Rh Âm');
+    expect(InputValidators.resolveRhFactor('O+'), 'Rh Dương');
+    expect(InputValidators.resolveRhFactor('B+'), 'Rh Dương');
+    expect(InputValidators.resolveRhFactor('Chưa rõ'), 'Chưa rõ');
+
+    expect(InputValidators.validateBloodPressure('120/80'), isNull);
+    expect(InputValidators.validateBloodPressure('80/120'), isNotNull);
+    expect(InputValidators.validateBloodPressure('999/999'), isNotNull);
+
+    expect(InputValidators.validateHeartRate('72'), isNull);
+    expect(InputValidators.validateHeartRate('500'), isNotNull);
+
+    expect(InputValidators.validateHeightCm('168'), isNull);
+    expect(InputValidators.validateHeightCm('10'), isNotNull);
+
+    expect(InputValidators.validateWeightKg('62.5'), isNull);
+    expect(InputValidators.validateWeightKg('500'), isNotNull);
+  });
+
+  testWidgets('ClinicalQrCodeWidget renders scannable QR matrix cleanly offline', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: ClinicalQrCodeWidget(
+            data: 'STYT-ICE | BN: Nguyễn Văn A | Máu: O- (Rh Âm)',
+            size: 160,
+          ),
+        ),
+      ),
+    );
+    expect(find.byType(ClinicalQrCodeWidget), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

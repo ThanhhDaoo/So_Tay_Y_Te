@@ -206,7 +206,9 @@ class PrescriptionsViewModel extends ChangeNotifier {
         notifyListeners();
         await scheduleAllReminders();
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[PrescriptionsViewModel] loadFromRepository error: $e');
+    }
   }
 
   Future<void> saveOcrPrescription(ParsedPrescriptionResult result) async {

@@ -45,6 +45,7 @@ abstract class OcrService {
   Future<String?> pickImage({required ImageSource source});
   Future<ParsedPrescriptionResult?> processPrescriptionImage(String imagePath);
   ParsedPrescriptionResult parseText(String text, {String? imagePath});
+  Future<void> dispose();
 }
 
 class OcrServiceImpl implements OcrService {
@@ -280,5 +281,16 @@ class OcrServiceImpl implements OcrService {
       medicines: medicines,
       imagePath: imagePath,
     );
+  }
+
+  @override
+  Future<void> dispose() async {
+    try {
+      await _textRecognizer?.close();
+    } catch (e) {
+      debugPrint('OcrServiceImpl.dispose error: $e');
+    } finally {
+      _textRecognizer = null;
+    }
   }
 }

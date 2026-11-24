@@ -39,6 +39,9 @@ class MockTestOcrService implements OcrService {
       imagePath: 'assets/images/img_doc_blood_test.png',
     );
   }
+
+  @override
+  Future<void> dispose() async {}
 }
 
 class MockMedicalRepoWithData implements MedicalRecordRepository {

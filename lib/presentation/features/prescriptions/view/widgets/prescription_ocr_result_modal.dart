@@ -36,14 +36,29 @@ class PrescriptionOcrResultModal extends StatefulWidget {
 
 class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal> {
   late final OcrService _ocrService;
+  bool _ownsOcrService = false;
   bool _isLoading = false;
   ParsedPrescriptionResult? _result;
 
   @override
   void initState() {
     super.initState();
-    _ocrService = widget.ocrService ??
-        (sl.isRegistered<OcrService>() ? sl<OcrService>() : OcrServiceImpl());
+    if (widget.ocrService != null) {
+      _ocrService = widget.ocrService!;
+    } else if (sl.isRegistered<OcrService>()) {
+      _ocrService = sl<OcrService>();
+    } else {
+      _ocrService = OcrServiceImpl();
+      _ownsOcrService = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_ownsOcrService) {
+      _ocrService.dispose();
+    }
+    super.dispose();
   }
 
   Future<void> _pickAndProcess(ImageSource source) async {

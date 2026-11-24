@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
@@ -48,6 +49,7 @@ class InjectionContainer {
     if (!sl.isRegistered<OcrService>()) {
       sl.registerLazySingleton<OcrService>(
         () => OcrServiceImpl(),
+        dispose: (service) => service.dispose(),
       );
     }
 
@@ -92,7 +94,9 @@ class InjectionContainer {
         await notif.initialize();
         await notif.cancelAllReminders();
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[InjectionContainer] Startup reminder cleanup error: $e');
+    }
 
     // 2. DataSources
     if (!sl.isRegistered<AppPreferencesDataSource>()) {

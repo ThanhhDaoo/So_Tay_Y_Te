@@ -43,6 +43,7 @@ class AiOcrScannerModal extends StatefulWidget {
 class _AiOcrScannerModalState extends State<AiOcrScannerModal> with SingleTickerProviderStateMixin {
   late final AnimationController _animController;
   late final OcrService _ocrService;
+  bool _ownsOcrService = false;
   bool _isProcessing = false;
   bool _isDone = false;
   ParsedPrescriptionResult? _scannedResult;
@@ -51,8 +52,14 @@ class _AiOcrScannerModalState extends State<AiOcrScannerModal> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _ocrService = widget.ocrService ??
-        (sl.isRegistered<OcrService>() ? sl<OcrService>() : OcrServiceImpl());
+    if (widget.ocrService != null) {
+      _ocrService = widget.ocrService!;
+    } else if (sl.isRegistered<OcrService>()) {
+      _ocrService = sl<OcrService>();
+    } else {
+      _ocrService = OcrServiceImpl();
+      _ownsOcrService = true;
+    }
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -64,6 +71,9 @@ class _AiOcrScannerModalState extends State<AiOcrScannerModal> with SingleTicker
 
   @override
   void dispose() {
+    if (_ownsOcrService) {
+      _ocrService.dispose();
+    }
     _animController.dispose();
     super.dispose();
   }

@@ -32,6 +32,9 @@ class MockOcrService implements OcrService {
     final service = OcrServiceImpl();
     return service.parseText(text, imagePath: imagePath);
   }
+
+  @override
+  Future<void> dispose() async {}
 }
 
 class MockPdfReportService implements PdfReportService {

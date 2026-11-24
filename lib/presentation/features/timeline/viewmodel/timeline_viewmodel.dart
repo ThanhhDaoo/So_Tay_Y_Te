@@ -79,7 +79,9 @@ class TimelineViewModel extends ChangeNotifier {
           latestHeartRate: latestHr,
         );
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[TimelineViewModel] loadRecords error: $e');
+    }
 
     _isLoading = false;
     notifyListeners();
