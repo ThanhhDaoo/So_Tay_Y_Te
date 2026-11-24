@@ -1,12 +1,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../../core/di/injection_container.dart';
 import '../../../../../core/services/ocr_service.dart';
+import '../../../../../core/services/user_session_manager.dart';
 import '../../../../../domain/entities/medical_event.dart';
 import '../../../../../domain/entities/medicine.dart';
 import '../../../../../domain/entities/prescription.dart';
 import '../../../../../domain/repositories/medical_record_repository.dart';
+import '../../../../routes/app_routes.dart';
 import '../../viewmodel/documents_state.dart';
 import '../../viewmodel/documents_viewmodel.dart';
 
@@ -50,6 +53,7 @@ class _AiOcrScannerModalState extends State<AiOcrScannerModal> with SingleTicker
   bool _ownsOcrService = false;
   bool _isProcessing = false;
   bool _isDone = false;
+  bool _isSaving = false;
   ParsedPrescriptionResult? _scannedResult;
   String? _scannedImagePath;
 
@@ -86,7 +90,13 @@ class _AiOcrScannerModalState extends State<AiOcrScannerModal> with SingleTicker
     setState(() => _isProcessing = true);
 
     try {
-      final imagePath = await _ocrService.pickImage(source: source);
+      AppRoutes.isExternalPickerActive = true;
+      final String? imagePath;
+      try {
+        imagePath = await _ocrService.pickImage(source: source);
+      } finally {
+        AppRoutes.isExternalPickerActive = false;
+      }
       if (imagePath == null) {
         if (mounted) {
           setState(() => _isProcessing = false);
@@ -114,85 +124,102 @@ class _AiOcrScannerModalState extends State<AiOcrScannerModal> with SingleTicker
   }
 
   Future<void> _saveAndClose() async {
-    final res = _scannedResult;
-    if (widget.documentsViewModel != null && _scannedImagePath != null) {
-      final findings = (res != null && res.medicines.isNotEmpty)
-          ? res.medicines
-              .map((m) => {
-                    'label': m.name,
-                    'value': '${m.dosage} • ${m.instruction}',
-                    'status': 'Đã bóc tách',
-                  })
-              .toList()
-          : <Map<String, String>>[
-              {
-                'label': 'Chẩn đoán / Nội dung',
-                'value': res?.diagnosis?.isNotEmpty == true
-                    ? res!.diagnosis!
-                    : (res?.rawText.trim().isNotEmpty == true
-                        ? res!.rawText.trim().split('\n').first
-                        : 'Đã lưu ảnh chụp gốc'),
-                'status': 'Hoàn tất',
-              },
-            ];
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
 
-      await widget.documentsViewModel!.addDocument(
-        title: res?.diagnosis != null && res!.diagnosis!.isNotEmpty
-            ? 'Đơn thuốc: ${res.diagnosis}'
-            : 'Toa thuốc quét bằng AI OCR',
-        category: DocumentCategory.prescriptions,
-        filePath: _scannedImagePath!,
-        hospital: res?.hospital?.isNotEmpty == true ? res!.hospital : 'Cơ sở y tế',
-        findings: findings,
-      );
-    }
+    try {
+      final res = _scannedResult;
+      const uuid = Uuid();
+      bool savedAsMedicalEvent = false;
 
-    // Đồng bộ luôn sang Lịch uống thuốc & Dòng thời gian nếu bóc tách được danh sách thuốc thực tế
-    if (res != null &&
-        res.medicines.isNotEmpty &&
-        _scannedImagePath != null &&
-        sl.isRegistered<MedicalRecordRepository>()) {
-      try {
-        final now = DateTime.now();
-        final meds = res.medicines.asMap().entries.map((entry) {
-          return Medicine(
-            id: 'med_${now.millisecondsSinceEpoch}_${entry.key}',
-            name: entry.value.name,
-            dosage: entry.value.dosage,
-            frequency: entry.value.instruction,
+      // Nếu bóc tách được danh sách thuốc thực tế và có MedicalRecordRepository,
+      // lưu trực tiếp dưới dạng MedicalEvent (kèm attachments) để tránh lưu trùng 2 bản ghi ở Kho Tài Liệu.
+      if (res != null &&
+          res.medicines.isNotEmpty &&
+          _scannedImagePath != null &&
+          sl.isRegistered<MedicalRecordRepository>()) {
+        try {
+          final now = DateTime.now();
+          final meds = res.medicines.map((item) {
+            return Medicine(
+              id: uuid.v4(),
+              name: item.name,
+              dosage: item.dosage,
+              frequency: item.instruction,
+            );
+          }).toList();
+
+          final event = MedicalEvent(
+            id: uuid.v4(),
+            memberId: AppSessionNotifier.instance.activeMemberId,
+            title: res.diagnosis != null && res.diagnosis!.isNotEmpty
+                ? 'Đơn thuốc: ${res.diagnosis}'
+                : 'Đơn thuốc quét từ ảnh',
+            description: res.advice,
+            date: now,
+            type: MedicalEventType.generalCheckup,
+            facilityName: res.hospital,
+            doctorName: res.doctorName,
+            diagnosis: res.diagnosis,
+            prescription: Prescription(
+              id: uuid.v4(),
+              doctorName: res.doctorName ?? 'Bác sĩ kê đơn',
+              hospital: res.hospital,
+              issuedDate: now,
+              medicines: meds,
+              note: res.advice,
+            ),
+            attachments: [_scannedImagePath!],
+            createdAt: now,
+            updatedAt: now,
           );
-        }).toList();
+          await sl<MedicalRecordRepository>().saveMedicalEvent(event);
+          savedAsMedicalEvent = true;
+        } catch (_) {}
+      }
 
-        final event = MedicalEvent(
-          id: 'REC-OCR-${now.millisecondsSinceEpoch}',
-          title: res.diagnosis != null && res.diagnosis!.isNotEmpty
+      if (!savedAsMedicalEvent &&
+          widget.documentsViewModel != null &&
+          _scannedImagePath != null) {
+        final findings = (res != null && res.medicines.isNotEmpty)
+            ? res.medicines
+                .map((m) => {
+                      'label': m.name,
+                      'value': '${m.dosage} • ${m.instruction}',
+                      'status': 'Đã bóc tách',
+                    })
+                .toList()
+            : <Map<String, String>>[
+                {
+                  'label': 'Chẩn đoán / Nội dung',
+                  'value': res?.diagnosis?.isNotEmpty == true
+                      ? res!.diagnosis!
+                      : (res?.rawText.trim().isNotEmpty == true
+                          ? res!.rawText.trim().split('\n').first
+                          : 'Đã lưu ảnh chụp gốc'),
+                  'status': 'Hoàn tất',
+                },
+              ];
+
+        await widget.documentsViewModel!.addDocument(
+          title: res?.diagnosis != null && res!.diagnosis!.isNotEmpty
               ? 'Đơn thuốc: ${res.diagnosis}'
-              : 'Đơn thuốc quét từ ảnh',
-          description: res.advice,
-          date: now,
-          type: MedicalEventType.generalCheckup,
-          facilityName: res.hospital,
-          doctorName: res.doctorName,
-          diagnosis: res.diagnosis,
-          prescription: Prescription(
-            id: 'RX-OCR-${now.millisecondsSinceEpoch}',
-            doctorName: res.doctorName ?? 'Bác sĩ kê đơn',
-            hospital: res.hospital,
-            issuedDate: now,
-            medicines: meds,
-            note: res.advice,
-          ),
-          attachments: [_scannedImagePath!],
-          createdAt: now,
-          updatedAt: now,
+              : 'Toa thuốc quét bằng AI OCR',
+          category: DocumentCategory.prescriptions,
+          filePath: _scannedImagePath!,
+          hospital: res?.hospital?.isNotEmpty == true ? res!.hospital : 'Cơ sở y tế',
+          findings: findings,
         );
-        await sl<MedicalRecordRepository>().saveMedicalEvent(event);
-      } catch (_) {}
-    }
+      }
 
-    if (mounted) {
-      Navigator.pop(context);
-      widget.onScanComplete();
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onScanComplete();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
@@ -414,9 +441,18 @@ class _AiOcrScannerModalState extends State<AiOcrScannerModal> with SingleTicker
                       const SizedBox(width: 10),
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: _saveAndClose,
-                          icon: const Icon(Icons.archive_outlined),
-                          label: const Text('Lưu Vào Kho Tài Liệu'),
+                          onPressed: _isSaving ? null : _saveAndClose,
+                          icon: _isSaving
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.archive_outlined),
+                          label: Text(_isSaving ? 'Đang lưu...' : 'Lưu Vào Kho Tài Liệu'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF00C48C),
                             foregroundColor: Colors.white,

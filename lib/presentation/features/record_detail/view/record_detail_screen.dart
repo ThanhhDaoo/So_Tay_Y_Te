@@ -51,11 +51,14 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
         diagnosis: 'Viêm dạ dày & Trào ngược dạ dày thực quản (GERD Độ A)',
         bloodPressure: '120/78',
         heartRate: '72',
+        spo2: '98',
+        temperature: '36.8',
         prescription: Prescription(
           id: 'RX-2024-089',
           doctorName: 'BS. Trần Văn Hùng',
           hospital: 'Bệnh viện Đa khoa Quốc tế Vinmec Central Park',
           issuedDate: DateTime(2024, 4, 18),
+          durationDays: 14,
           medicines: const [
             Medicine(id: 'm1', name: 'Nexium Mups 40mg', dosage: '40mg • 1 viên/ngày', frequency: 'Trước ăn sáng 30p'),
             Medicine(id: 'm2', name: 'Amoxicillin 500mg', dosage: '500mg • 2 viên/ngày', frequency: 'Sau ăn no'),
@@ -548,12 +551,16 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _event.diagnosis ?? _event.title,
+                          (_event.diagnosis != null && _event.diagnosis!.trim().isNotEmpty)
+                              ? _event.diagnosis!.trim()
+                              : _event.title,
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.iceOliveDark),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          _event.description ?? 'Đau âm ỉ thượng vị, ợ hơi nhẹ sau ăn.',
+                          (_event.description != null && _event.description!.trim().isNotEmpty)
+                              ? _event.description!.trim()
+                              : 'Chưa có ghi chú triệu chứng / diễn tiến lâm sàng.',
                           style: const TextStyle(fontSize: 13, color: AppColors.iceTextSlate, height: 1.35),
                         ),
                       ],
@@ -561,19 +568,47 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 4. Recorded Vitals Bento
+                  // 4. Recorded Vitals Bento (never fabricate vital signs)
                   _buildSectionCard(
                     title: 'Chỉ Số Sinh Hiệu Đo Lúc Khám',
                     icon: Icons.monitor_heart_outlined,
                     child: Row(
                       children: [
-                        _buildVitalPill('Huyết áp', _event.bloodPressure ?? '120/78', 'mmHg', true),
+                        _buildVitalPill(
+                          'Huyết áp',
+                          (_event.bloodPressure != null && _event.bloodPressure!.trim().isNotEmpty)
+                              ? _event.bloodPressure!.trim()
+                              : '--',
+                          'mmHg',
+                          true,
+                        ),
                         const SizedBox(width: 8),
-                        _buildVitalPill('Nhịp tim', _event.heartRate ?? '72', 'bpm', true),
+                        _buildVitalPill(
+                          'Nhịp tim',
+                          (_event.heartRate != null && _event.heartRate!.trim().isNotEmpty)
+                              ? _event.heartRate!.trim()
+                              : '--',
+                          'bpm',
+                          true,
+                        ),
                         const SizedBox(width: 8),
-                        _buildVitalPill('SpO2', '98', '%', true),
+                        _buildVitalPill(
+                          'SpO2',
+                          (_event.spo2 != null && _event.spo2!.trim().isNotEmpty)
+                              ? _event.spo2!.trim()
+                              : '--',
+                          '%',
+                          true,
+                        ),
                         const SizedBox(width: 8),
-                        _buildVitalPill('Nhiệt độ', '36.8', '°C', true),
+                        _buildVitalPill(
+                          'Nhiệt độ',
+                          (_event.temperature != null && _event.temperature!.trim().isNotEmpty)
+                              ? _event.temperature!.trim()
+                              : '--',
+                          '°C',
+                          true,
+                        ),
                       ],
                     ),
                   ),
@@ -603,7 +638,9 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
 
                   // 6. Prescriptions Card
                   _buildSectionCard(
-                    title: 'Toa Thuốc Điều Trị Ngoại Trú (14 Ngày)',
+                    title: _event.prescription?.durationDays != null
+                        ? 'Toa Thuốc Điều Trị Ngoại Trú (${_event.prescription!.durationDays} Ngày)'
+                        : 'Toa Thuốc Điều Trị Ngoại Trú',
                     icon: Icons.medication_outlined,
                     child: medicines.isEmpty
                         ? const Text('Chưa có toa thuốc chỉ định cho đợt khám này.', style: TextStyle(color: AppColors.iceTextMuted, fontSize: 13))

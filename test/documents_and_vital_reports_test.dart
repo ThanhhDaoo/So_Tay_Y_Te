@@ -98,7 +98,7 @@ class MockMedicalRepoWithData implements MedicalRecordRepository {
   }
 
   @override
-  Future<List<MedicalEvent>> getMedicalTimeline({String? userId}) async => events;
+  Future<List<MedicalEvent>> getMedicalTimeline({String? userId, String? memberId}) async => events;
 
   @override
   Future<void> deleteMedicalEvent(String id) async {

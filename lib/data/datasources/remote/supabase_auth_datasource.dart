@@ -221,7 +221,10 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
             'date_of_birth': dateOfBirth,
             'gender': gender ?? 'Chưa rõ',
             'blood_type': bloodType ?? 'Chưa rõ',
-            'primary_phone': cleanContact,
+            if (cleanContact.contains('@'))
+              'email': cleanContact
+            else
+              'phone': cleanContact,
           });
         } catch (e) {
           debugPrint('[Supabase] Bỏ qua ghi bảng profiles (có thể chưa tạo bảng): $e');
@@ -380,17 +383,33 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
   Future<String?> lookupContactByPatientCode(String patientCode) async {
     final client = _client;
     if (client == null) return null;
+    final cleanCode = patientCode.trim().toUpperCase();
+
+    // Ưu tiên gọi RPC SECURITY DEFINER để hoạt động ngay cả khi chưa đăng nhập (vượt giới hạn RLS an toàn)
+    try {
+      final rpcResult = await client.rpc(
+        'lookup_login_by_patient_code',
+        params: {'p_code': cleanCode},
+      );
+      if (rpcResult is String && rpcResult.trim().isNotEmpty) {
+        return rpcResult.trim();
+      }
+    } catch (_) {}
 
     try {
       final profileRes = await client
           .from('profiles')
-          .select('primary_phone')
-          .ilike('patient_code', patientCode.trim())
+          .select('phone, email')
+          .ilike('patient_code', cleanCode)
           .maybeSingle();
 
-      final contact = profileRes?['primary_phone'] as String?;
-      if (contact != null && contact.trim().isNotEmpty) {
-        return contact.trim();
+      final phone = profileRes?['phone'] as String?;
+      if (phone != null && phone.trim().isNotEmpty) {
+        return phone.trim();
+      }
+      final email = profileRes?['email'] as String?;
+      if (email != null && email.trim().isNotEmpty) {
+        return email.trim();
       }
     } catch (_) {}
     return null;
@@ -628,7 +647,8 @@ class SupabaseAuthRemoteDataSourceImpl implements SupabaseAuthRemoteDataSource {
     final patientCode = _resolvePatientCode(user, profileRes);
 
     // Chuẩn hóa liên hệ gốc (nếu là email giả lập SĐT 849xxx@sotayyte.vn thì trả lại SĐT 09xxx)
-    String resolvedContact = (profileRes?['primary_phone'] as String?) ??
+    String resolvedContact = (profileRes?['phone'] as String?) ??
+        (profileRes?['email'] as String?) ??
         (meta['primary_contact'] as String?) ??
         user.email ??
         user.phone ??

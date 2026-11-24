@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/database/database_helper.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/user_session_manager.dart';
 import '../../../../core/widgets/safe_avatar_image.dart';
+import '../../../../data/datasources/local/app_preferences_datasource.dart';
 import '../../../../domain/entities/medical_event.dart';
 import '../../../../domain/repositories/auth_repository.dart';
 import '../../../../domain/repositories/medical_record_repository.dart';
@@ -163,7 +166,10 @@ class ProfileViewModel extends ChangeNotifier {
           final immunizationItems = <ImmunizationItem>[];
           if (sl.isRegistered<MedicalRecordRepository>()) {
             try {
-              final events = await sl<MedicalRecordRepository>().getMedicalTimeline();
+              final events = await sl<MedicalRecordRepository>().getMedicalTimeline(
+                userId: session.id,
+                memberId: 'primary',
+              );
               for (final e in events) {
                 final isVax = e.type == MedicalEventType.vaccination ||
                     (e.department?.toLowerCase().contains('tiêm chủng') ?? false) ||
@@ -216,20 +222,23 @@ class ProfileViewModel extends ChangeNotifier {
           if (sl.isRegistered<DatabaseHelper>()) {
             try {
               final db = await sl<DatabaseHelper>().database;
-              final rows = await db.query(
-                'family_members',
-                where: 'user_id = ? OR user_id IS NULL OR user_id = "" OR user_id LIKE "guest-%"',
-                whereArgs: [session.id],
-                orderBy: 'created_at ASC',
-              );
-              // Chỉ tự động gán các thành viên từ phiên khách/chưa gán sang tài khoản hiện tại (không lấy của tài khoản khác)
-              try {
+              final totalUsersCount = Sqflite.firstIntValue(
+                    await db.rawQuery('SELECT COUNT(*) FROM users'),
+                  ) ??
+                  0;
+              if (totalUsersCount <= 1) {
                 await db.update(
                   'family_members',
                   {'user_id': session.id},
-                  where: 'user_id IS NULL OR user_id = "" OR user_id LIKE "guest-%"',
+                  where: 'user_id IS NULL OR user_id = ""',
                 );
-              } catch (_) {}
+              }
+              final rows = await db.query(
+                'family_members',
+                where: 'user_id = ?',
+                whereArgs: [session.id],
+                orderBy: 'created_at ASC',
+              );
               for (final row in rows) {
                 final famId = row['id'] as String;
                 final famName = row['name'] as String;
@@ -342,13 +351,25 @@ class ProfileViewModel extends ChangeNotifier {
             ...dbFamilyChips,
           ];
 
-          final currentSelected = _state.selectedMemberId;
+          bool persistedEditLock = _state.isEditLocked;
+          if (sl.isRegistered<AppPreferencesDataSource>()) {
+            try {
+              persistedEditLock =
+                  await sl<AppPreferencesDataSource>().isProfileEditLocked();
+            } catch (_) {}
+          }
+
+          final currentSelected = AppSessionNotifier.instance.activeMemberId != 'primary' &&
+                  updatedProfiles.containsKey(AppSessionNotifier.instance.activeMemberId)
+              ? AppSessionNotifier.instance.activeMemberId
+              : _state.selectedMemberId;
           final nextSelected = updatedProfiles.containsKey(currentSelected) ? currentSelected : 'primary';
 
           _state = _state.copyWith(
             familyMembers: updatedMembers,
             profilesById: updatedProfiles,
             selectedMemberId: nextSelected,
+            isEditLocked: persistedEditLock,
           );
           notifyListeners();
         }
@@ -375,7 +396,7 @@ class ProfileViewModel extends ChangeNotifier {
         final session = await auth.getActiveSession();
         if (session != null) {
           final db = await sl<DatabaseHelper>().database;
-          final newId = 'fam_${DateTime.now().millisecondsSinceEpoch}';
+          final newId = 'fam_${const Uuid().v4().substring(0, 8)}';
           await db.insert('family_members', {
             'id': newId,
             'user_id': session.id,
@@ -461,6 +482,7 @@ class ProfileViewModel extends ChangeNotifier {
         await db.delete('family_members', where: 'id = ?', whereArgs: [memberId]);
         if (_state.selectedMemberId == memberId) {
           _state = _state.copyWith(selectedMemberId: 'primary');
+          AppSessionNotifier.instance.resetActiveMember();
         }
         await loadCurrentUserProfile();
       }
@@ -529,11 +551,20 @@ class ProfileViewModel extends ChangeNotifier {
     if (_state.selectedMemberId == memberId) return;
     if (!_state.profilesById.containsKey(memberId)) return;
     _state = _state.copyWith(selectedMemberId: memberId);
+    final selectedName = _state.profilesById[memberId]?.fullName;
+    AppSessionNotifier.instance.setActiveMember(
+      memberId,
+      memberName: selectedName,
+    );
     notifyListeners();
   }
 
   void toggleEditLock() {
-    _state = _state.copyWith(isEditLocked: !_state.isEditLocked);
+    final nextLocked = !_state.isEditLocked;
+    _state = _state.copyWith(isEditLocked: nextLocked);
+    if (sl.isRegistered<AppPreferencesDataSource>()) {
+      sl<AppPreferencesDataSource>().setProfileEditLocked(nextLocked).catchError((_) {});
+    }
     notifyListeners();
   }
 

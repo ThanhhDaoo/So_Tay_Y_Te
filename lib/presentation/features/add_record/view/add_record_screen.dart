@@ -2,13 +2,16 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/user_session_manager.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/input_validators.dart';
 import '../../../../domain/entities/medical_event.dart';
 import '../../../../domain/entities/medicine.dart';
 import '../../../../domain/entities/prescription.dart';
 import '../../../../domain/repositories/medical_record_repository.dart';
+import '../../../routes/app_routes.dart';
 import '../../prescriptions/view/widgets/prescription_ocr_result_modal.dart';
 
 class AddRecordScreen extends StatefulWidget {
@@ -34,7 +37,9 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
   late String _selectedSpecialty;
   final List<Medicine> _medicines = [];
   final List<String> _attachedFiles = [];
+  final Uuid _uuid = const Uuid();
   bool _isSaving = false;
+  bool _hasUnsavedChanges = false;
 
   final List<String> _specialties = [
     'Tiêu hóa',
@@ -74,6 +79,57 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
     if (edit?.attachments != null && edit!.attachments.isNotEmpty) {
       _attachedFiles.addAll(edit.attachments);
     }
+
+    for (final ctrl in [
+      _titleController,
+      _facilityController,
+      _doctorController,
+      _diagnosisController,
+      _symptomsController,
+      _bpController,
+      _hrController,
+    ]) {
+      ctrl.addListener(_markDirty);
+    }
+  }
+
+  void _markDirty() {
+    if (!_hasUnsavedChanges && mounted) {
+      setState(() => _hasUnsavedChanges = true);
+    }
+  }
+
+  Future<bool> _confirmDiscardIfNeeded() async {
+    if (!_hasUnsavedChanges || _isSaving) return true;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Hủy Thay Đổi Chưa Lưu?',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
+        ),
+        content: const Text(
+          'Thông tin đợt khám và toa thuốc bạn đang nhập sẽ bị mất nếu thoát ngay bây giờ.',
+          style: TextStyle(fontSize: 13.5, color: AppColors.iceTextSlate),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Tiếp tục nhập'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Thoát không lưu'),
+          ),
+        ],
+      ),
+    );
+    return discard ?? false;
   }
 
   @override
@@ -150,6 +206,7 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
   }
 
   Future<void> _captureAndSaveImage(ImageSource source) async {
+    AppRoutes.isExternalPickerActive = true;
     try {
       final picker = ImagePicker();
       final picked = await picker.pickImage(
@@ -159,12 +216,29 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
       );
       if (picked == null) return;
 
+      final pickedFile = File(picked.path);
+      final fileBytes = await pickedFile.length();
+      // Chặn file ảnh bất thường > 20MB để tránh lỗi tràn RAM (OOM) trên thiết bị cấu hình thấp
+      if (fileBytes > 20 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tệp ảnh vượt quá giới hạn 20MB. Vui lòng chọn ảnh nhẹ hơn.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
+
       final appDir = await getApplicationDocumentsDirectory();
-      final fileName = 'med_${DateTime.now().millisecondsSinceEpoch}_${picked.name}';
-      final permanentFile = await File(picked.path).copy('${appDir.path}/$fileName');
+      final safeName = picked.name.replaceAll(RegExp(r'[^a-zA-Z0-9._\-]'), '_');
+      final fileName = 'med_${DateTime.now().millisecondsSinceEpoch}_$safeName';
+      final permanentFile = await pickedFile.copy('${appDir.path}/$fileName');
 
       setState(() {
         _attachedFiles.add(permanentFile.path);
+        _hasUnsavedChanges = true;
       });
 
       if (mounted) {
@@ -185,21 +259,26 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           ),
         );
       }
+    } finally {
+      AppRoutes.isExternalPickerActive = false;
     }
   }
 
-  void _showAddMedicineDialog() {
-    final nameCtrl = TextEditingController();
-    final dosageCtrl = TextEditingController(text: '1 viên/lần');
-    final freqCtrl = TextEditingController(text: '2 lần/ngày sau ăn');
+  void _showAddMedicineDialog({int? editIndex}) {
+    final existing = (editIndex != null && editIndex >= 0 && editIndex < _medicines.length)
+        ? _medicines[editIndex]
+        : null;
+    final nameCtrl = TextEditingController(text: existing?.name ?? '');
+    final dosageCtrl = TextEditingController(text: existing?.dosage ?? '1 viên/lần');
+    final freqCtrl = TextEditingController(text: existing?.frequency ?? '2 lần/ngày sau ăn');
 
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Thêm Thuốc Vào Toa',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
+        title: Text(
+          existing != null ? 'Chỉnh Sửa Thuốc Trong Toa' : 'Thêm Thuốc Vào Toa',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -223,8 +302,8 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
             TextField(
               controller: freqCtrl,
               decoration: const InputDecoration(
-                labelText: 'Cách dùng / Thời điểm',
-                hintText: 'VD: Uống sau ăn',
+                labelText: 'Cách dùng / Thời điểm (Sáng, Trưa, Tối)',
+                hintText: 'VD: Sáng 1 viên, Tối 1 viên sau ăn',
               ),
             ),
           ],
@@ -243,19 +322,24 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
             onPressed: () {
               if (nameCtrl.text.trim().isNotEmpty) {
                 setState(() {
-                  _medicines.add(
-                    Medicine(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      name: nameCtrl.text.trim(),
-                      dosage: dosageCtrl.text.trim(),
-                      frequency: freqCtrl.text.trim(),
-                    ),
+                  final med = Medicine(
+                    id: existing?.id ?? _uuid.v4(),
+                    name: nameCtrl.text.trim(),
+                    dosage: dosageCtrl.text.trim().isNotEmpty ? dosageCtrl.text.trim() : 'Theo đơn',
+                    frequency: freqCtrl.text.trim().isNotEmpty ? freqCtrl.text.trim() : 'Theo chỉ dẫn bác sĩ',
+                    instructions: freqCtrl.text.trim(),
                   );
+                  if (existing != null && editIndex != null) {
+                    _medicines[editIndex] = med;
+                  } else {
+                    _medicines.add(med);
+                  }
+                  _hasUnsavedChanges = true;
                 });
                 Navigator.pop(ctx);
               }
             },
-            child: const Text('Thêm'),
+            child: Text(existing != null ? 'Lưu' : 'Thêm'),
           ),
         ],
       ),
@@ -263,6 +347,7 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
   }
 
   Future<void> _saveRecord() async {
+    if (_isSaving) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _isSaving = true);
@@ -273,16 +358,17 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           : null;
 
       final now = DateTime.now();
-      final recordId = widget.recordToEdit?.id ??
-          'rec_${now.millisecondsSinceEpoch}';
+      final recordId = widget.recordToEdit?.id ?? _uuid.v4();
 
       Prescription? prescription;
       if (_medicines.isNotEmpty) {
         prescription = Prescription(
-          id: widget.recordToEdit?.prescription?.id ?? 'rx_${now.millisecondsSinceEpoch}',
+          id: widget.recordToEdit?.prescription?.id ?? _uuid.v4(),
           doctorName: _doctorController.text.trim(),
           hospital: _facilityController.text.trim(),
           issuedDate: _selectedDate,
+          durationDays: widget.recordToEdit?.prescription?.durationDays ?? 14,
+          status: widget.recordToEdit?.prescription?.status ?? 'active',
           medicines: _medicines,
           note: _diagnosisController.text.trim(),
         );
@@ -297,6 +383,8 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
 
       final event = MedicalEvent(
         id: recordId,
+        userId: widget.recordToEdit?.userId,
+        memberId: widget.recordToEdit?.memberId ?? AppSessionNotifier.instance.activeMemberId,
         title: _titleController.text.trim().isNotEmpty
             ? _titleController.text.trim()
             : 'Đợt khám $_selectedSpecialty',
@@ -309,6 +397,8 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
         diagnosis: _diagnosisController.text.trim(),
         bloodPressure: _bpController.text.trim(),
         heartRate: _hrController.text.trim(),
+        spo2: widget.recordToEdit?.spo2,
+        temperature: widget.recordToEdit?.temperature,
         prescription: prescription,
         attachments: _attachedFiles,
         hospitalFee: widget.recordToEdit?.hospitalFee,
@@ -321,6 +411,7 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
       }
 
       if (!mounted) return;
+      _hasUnsavedChanges = false;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -366,23 +457,23 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
             _attachedFiles.add(result.imagePath!);
           }
 
-          final newMeds = result.medicines.asMap().entries.map((entry) {
-            final idx = entry.key;
-            final m = entry.value;
+          final newMeds = result.medicines.map((m) {
             return Medicine(
-              id: 'med_${DateTime.now().millisecondsSinceEpoch}_$idx',
+              id: _uuid.v4(),
               name: m.name,
               dosage: m.dosage,
               frequency: m.instruction,
+              instructions: m.instruction,
             );
           }).toList();
 
           _medicines.addAll(newMeds);
+          _hasUnsavedChanges = true;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Đã bóc tách ${result.medicines.length} loại thuốc và tự động điền thông tin đợt khám!'),
+            content: Text('Đã bóc tách ${result.medicines.length} loại thuốc. Chạm vào từng thuốc nếu cần sửa lại!'),
             backgroundColor: AppColors.iceOlive,
             behavior: SnackBarBehavior.floating,
           ),
@@ -396,37 +487,51 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final isEdit = widget.recordToEdit != null;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAF8F5),
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: EdgeInsets.only(
-                top: MediaQuery.paddingOf(context).top + 8,
-                bottom: 12,
-                left: 8,
-                right: 16,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(bottom: BorderSide(color: AppColors.iceCardBorder.withValues(alpha: 0.6))),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.iceTextNavy),
-                    onPressed: () => Navigator.pop(context),
-                  ),
+    return PopScope(
+      canPop: !_hasUnsavedChanges || _isSaving,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldPop = await _confirmDiscardIfNeeded();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFAF8F5),
+        body: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.paddingOf(context).top + 8,
+                  bottom: 12,
+                  left: 8,
+                  right: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border(bottom: BorderSide(color: AppColors.iceCardBorder.withValues(alpha: 0.6))),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.iceTextNavy),
+                      onPressed: () async {
+                        final shouldPop = await _confirmDiscardIfNeeded();
+                        if (shouldPop && context.mounted) {
+                          Navigator.pop(context);
+                        }
+                      },
+                    ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
@@ -511,14 +616,19 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                                   const SizedBox(height: 6),
                                   InkWell(
                                     onTap: () async {
+                                      final today = DateTime.now();
+                                      final safeInitial = _selectedDate.isAfter(today) ? today : _selectedDate;
                                       final picked = await showDatePicker(
                                         context: context,
-                                        initialDate: _selectedDate,
-                                        firstDate: DateTime(1970),
-                                        lastDate: DateTime(2035),
+                                        initialDate: safeInitial,
+                                        firstDate: DateTime(1920),
+                                        lastDate: today,
                                       );
                                       if (picked != null) {
-                                        setState(() => _selectedDate = picked);
+                                        setState(() {
+                                          _selectedDate = picked;
+                                          _hasUnsavedChanges = true;
+                                        });
                                       }
                                     },
                                     borderRadius: BorderRadius.circular(10),
@@ -654,7 +764,7 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                             label: const Text('Quét AI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.iceOlive)),
                           ),
                           TextButton.icon(
-                            onPressed: _showAddMedicineDialog,
+                            onPressed: () => _showAddMedicineDialog(),
                             icon: const Icon(Icons.add, size: 16, color: AppColors.iceOlive),
                             label: const Text('Thêm tay', style: TextStyle(fontSize: 12, color: AppColors.iceOlive)),
                           ),
@@ -664,7 +774,13 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                         if (_medicines.isEmpty)
                           const Text('Chưa có thuốc trong toa.', style: TextStyle(color: AppColors.iceTextMuted, fontSize: 13))
                         else
-                          ..._medicines.map((med) => Container(
+                          ..._medicines.asMap().entries.map((entry) {
+                            final idx = entry.key;
+                            final med = entry.value;
+                            return InkWell(
+                              onTap: () => _showAddMedicineDialog(editIndex: idx),
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
@@ -686,12 +802,23 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                                       ),
                                     ),
                                     IconButton(
+                                      tooltip: 'Sửa thuốc',
+                                      icon: const Icon(Icons.edit_outlined, size: 16, color: AppColors.iceOlive),
+                                      onPressed: () => _showAddMedicineDialog(editIndex: idx),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Xóa thuốc',
                                       icon: const Icon(Icons.close, size: 16, color: AppColors.iceTextMuted),
-                                      onPressed: () => setState(() => _medicines.remove(med)),
+                                      onPressed: () => setState(() {
+                                        _medicines.removeAt(idx);
+                                        _hasUnsavedChanges = true;
+                                      }),
                                     ),
                                   ],
                                 ),
-                              )),
+                              ),
+                            );
+                          }),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -782,8 +909,9 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildFormCard({
     required String title,

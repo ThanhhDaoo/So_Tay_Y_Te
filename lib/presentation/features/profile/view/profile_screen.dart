@@ -122,11 +122,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onSelectMember: _viewModel.selectMember,
                     onAddMemberTap: () => AddFamilyMemberSheet.show(
                       context,
-                      onAdd: (name, rel, blood) async {
+                      onAdd: (name, rel, blood, [dob]) async {
                         await _viewModel.addFamilyMember(
                           name: name,
                           relationship: rel,
                           bloodType: blood,
+                          dob: dob,
                         );
                         _showSnack('Đã thêm hồ sơ: $name ($rel). Chạm "Hồ sơ gốc" để quay lại tài khoản của bạn.');
                       },

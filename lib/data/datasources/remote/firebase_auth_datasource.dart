@@ -53,17 +53,27 @@ abstract class FirebaseAuthRemoteDataSource {
 }
 
 class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
-  /// Danh sách SĐT kiểm thử đã khai báo cố định trên Firebase Console (Authentication -> Phone -> Phone numbers for testing)
-  static const Map<String, String> firebaseConsoleTestPhones = {
+  static const bool _enableSandboxDefine =
+      bool.fromEnvironment('ENABLE_AUTH_SANDBOX', defaultValue: false);
+
+  /// Danh sách SĐT kiểm thử chỉ phục vụ môi trường kiểm thử tự động / Sandbox nội bộ
+  static const Map<String, String> _sandboxTestPhones = {
     '+84362625218': '132005',
     '+84971860620': '131205',
   };
 
   final Map<String, _SandboxOtpEntry> _sandboxOtpStore = {};
   final Random _random = Random.secure();
+  final bool? allowSandboxOverride;
+
+  FirebaseAuthRemoteDataSourceImpl({this.allowSandboxOverride});
 
   bool get _isFlutterTest =>
       !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+
+  bool get _isSandboxAllowed =>
+      allowSandboxOverride ??
+      (_isFlutterTest || (!kReleaseMode && _enableSandboxDefine));
 
   String _normalizePhoneNumber(String phone) {
     return InputValidators.normalizePhoneE164(phone);
@@ -71,12 +81,14 @@ class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
 
   @override
   bool isFirebaseConsoleTestPhone(String phoneNumber) {
+    if (!_isSandboxAllowed) return false;
     final normalized = _normalizePhoneNumber(phoneNumber);
-    return firebaseConsoleTestPhones.containsKey(normalized);
+    return _sandboxTestPhones.containsKey(normalized);
   }
 
   @override
   String? peekSandboxOtp(String verificationId) {
+    if (!_isSandboxAllowed) return null;
     final entry = _sandboxOtpStore[verificationId];
     if (entry == null || entry.isExpired) return null;
     // Không đẩy mã giả cho các SĐT đã gắn mã cố định trên Firebase Console
@@ -96,12 +108,18 @@ class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
       throw Exception('Số điện thoại không hợp lệ. Vui lòng kiểm tra lại.');
     }
 
+    if (!FirebaseConfig.isConfigured && !_isSandboxAllowed) {
+      throw Exception(
+        'Dịch vụ SMS OTP chưa được cấu hình máy chủ Production. Vui lòng đăng nhập bằng Email hoặc mật khẩu hồ sơ.',
+      );
+    }
+
     _sandboxOtpStore.removeWhere((_, entry) => entry.isExpired);
 
     final verificationId =
         'fb-ver-${DateTime.now().millisecondsSinceEpoch}-${_random.nextInt(999999)}';
 
-    final fixedFirebaseCode = firebaseConsoleTestPhones[normalized];
+    final fixedFirebaseCode = _isSandboxAllowed ? _sandboxTestPhones[normalized] : null;
     if (fixedFirebaseCode != null) {
       _sandboxOtpStore[verificationId] = _SandboxOtpEntry(
         code: fixedFirebaseCode,
@@ -128,9 +146,11 @@ class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
       expiresAt: DateTime.now().add(const Duration(minutes: 5)),
     );
 
-    debugPrint(
-      '[FirebaseAuth] Mã OTP gửi tới $normalized (verificationId: $verificationId): $generatedOtp',
-    );
+    if (_isSandboxAllowed) {
+      debugPrint(
+        '[FirebaseAuth] [SANDBOX] Mã OTP gửi tới $normalized (verificationId: $verificationId)',
+      );
+    }
     return verificationId;
   }
 
@@ -143,6 +163,12 @@ class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
     final normalized = _normalizePhoneNumber(phoneNumber);
     final cleanCode = smsCode.trim();
     final entry = _sandboxOtpStore[verificationId];
+
+    if (!FirebaseConfig.isConfigured && !_isSandboxAllowed) {
+      throw Exception(
+        'Dịch vụ xác thực SMS OTP chưa được kích hoạt trên bản Production.',
+      );
+    }
 
     if (entry != null && entry.isExpired) {
       _sandboxOtpStore.remove(verificationId);
@@ -157,11 +183,11 @@ class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
       );
     }
 
-    // 1. Nếu là SĐT đã cấu hình trên Firebase Console -> bắt buộc khớp đúng mã Firebase Console của số đó
-    final fixedFirebaseCode = firebaseConsoleTestPhones[normalized];
+    // 1. Nếu là SĐT kiểm thử trong môi trường Sandbox -> bắt buộc khớp đúng mã kiểm thử
+    final fixedFirebaseCode = _isSandboxAllowed ? _sandboxTestPhones[normalized] : null;
     if (fixedFirebaseCode != null) {
       final matchesFixed = cleanCode == fixedFirebaseCode ||
-          (_isFlutterTest && cleanCode == '123456');
+          (_isFlutterTest && _isSandboxAllowed && cleanCode == '123456');
       if (!matchesFixed) {
         throw Exception(
           'Mã xác thực OTP không chính xác. Vui lòng nhập đúng mã OTP của số điện thoại này.',
@@ -181,9 +207,9 @@ class FirebaseAuthRemoteDataSourceImpl implements FirebaseAuthRemoteDataSource {
       );
     }
 
-    // 2. Với các SĐT khác -> khớp mã OTP vừa gửi (hoặc 123456 trong môi trường unit test tự động)
+    // 2. Với các SĐT khác -> khớp mã OTP vừa gửi (chỉ chấp nhận 123456 khi chạy unit test tự động)
     final isGeneratedMatch = entry != null && entry.code == cleanCode;
-    final isUnitTestFallback = _isFlutterTest && cleanCode == '123456';
+    final isUnitTestFallback = _isFlutterTest && _isSandboxAllowed && cleanCode == '123456';
 
     if (!isGeneratedMatch && !isUnitTestFallback) {
       throw Exception('Mã xác thực OTP không chính xác. Vui lòng kiểm tra lại.');

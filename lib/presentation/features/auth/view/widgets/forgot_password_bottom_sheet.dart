@@ -175,9 +175,7 @@ class _ForgotPasswordBottomSheetState extends State<ForgotPasswordBottomSheet> {
 
     // Kiểm tra nhanh với mã sandbox nếu có để phản hồi ngay tại bước 2
     final expectedPreview = _challenge?.sandboxOtpPreview;
-    if (expectedPreview != null &&
-        code != expectedPreview &&
-        code != '123456') {
+    if (expectedPreview != null && code != expectedPreview) {
       setState(
         () => _errorMessage =
             'Mã xác minh danh tính không chính xác. Vui lòng kiểm tra lại.',

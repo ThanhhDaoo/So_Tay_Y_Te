@@ -11,7 +11,7 @@ abstract class DatabaseHelper {
 
 class AppDatabaseHelper implements DatabaseHelper {
   static const String _dbName = 'so_tay_y_te.db';
-  static const int _dbVersion = 2;
+  static const int _dbVersion = 3;
 
   Database? _db;
 
@@ -35,20 +35,37 @@ class AppDatabaseHelper implements DatabaseHelper {
       path,
       version: _dbVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
       onOpen: _onOpen,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    // 1. Bảng hồ sơ / đợt khám y tế
+    // 1. Bảng hồ sơ / đợt khám y tế (hỗ trợ đa thành viên & đồng bộ xóa mềm)
     await db.execute('''
       CREATE TABLE medical_events (
         id TEXT PRIMARY KEY,
+        user_id TEXT,
+        member_id TEXT NOT NULL DEFAULT 'primary',
         title TEXT NOT NULL,
         description TEXT,
         date TEXT NOT NULL,
         type TEXT NOT NULL,
-        attachments TEXT
+        facility_name TEXT,
+        doctor_name TEXT,
+        department TEXT,
+        diagnosis TEXT,
+        blood_pressure TEXT,
+        heart_rate TEXT,
+        spo2 TEXT,
+        temperature TEXT,
+        prescription_json TEXT,
+        attachments TEXT,
+        hospital_fee TEXT,
+        sync_status TEXT DEFAULT 'dirty',
+        created_at TEXT,
+        updated_at TEXT,
+        deleted_at TEXT
       )
     ''');
 
@@ -60,6 +77,8 @@ class AppDatabaseHelper implements DatabaseHelper {
         doctor_name TEXT NOT NULL,
         hospital TEXT,
         issued_date TEXT NOT NULL,
+        duration_days INTEGER,
+        status TEXT DEFAULT 'active',
         note TEXT,
         FOREIGN KEY (event_id) REFERENCES medical_events (id) ON DELETE CASCADE
       )
@@ -105,6 +124,31 @@ class AppDatabaseHelper implements DatabaseHelper {
 
     // 7. Bảng tài liệu y tế
     await _createMedicalDocumentsTable(db);
+
+    // 8. Bảng token chia sẻ QR Bác sĩ
+    await _createDoctorShareTokensTable(db);
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    await _createAuthTables(db);
+    await _createFamilyMembersTable(db);
+    await _createMedicalDocumentsTable(db);
+    await _createDoctorShareTokensTable(db);
+    await _ensureMedicalEventsSchema(db);
+  }
+
+  Future<void> _createDoctorShareTokensTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS doctor_share_tokens (
+        token TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        pin_code TEXT NOT NULL,
+        scopes TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        is_revoked INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<void> _createMedicalDocumentsTable(Database db) async {
@@ -112,6 +156,7 @@ class AppDatabaseHelper implements DatabaseHelper {
       CREATE TABLE IF NOT EXISTS medical_documents (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
+        member_id TEXT NOT NULL DEFAULT 'primary',
         title TEXT NOT NULL,
         category TEXT NOT NULL,
         file_path TEXT NOT NULL,
@@ -177,13 +222,12 @@ class AppDatabaseHelper implements DatabaseHelper {
 
   Future<void> _onOpen(Database db) async {
     await db.execute('PRAGMA foreign_keys = ON');
-    // Đảm bảo các bảng auth và medical_events luôn tồn tại kể cả khi mở DB cũ
     await _createAuthTables(db);
     await _createFamilyMembersTable(db);
     await _createMedicalDocumentsTable(db);
+    await _createDoctorShareTokensTable(db);
     await _ensureMedicalEventsSchema(db);
 
-    // Dọn dẹp tài khoản mẫu tự động seed từ phiên bản dev cũ (nếu có)
     await db.delete(
       'auth_identities',
       where: 'user_id = ?',
@@ -195,7 +239,6 @@ class AppDatabaseHelper implements DatabaseHelper {
       whereArgs: ['default-demo-user-01'],
     );
 
-    // Đồng bộ dữ liệu bảng quan hệ prescriptions & medicines từ medical_events (nếu có đơn thuốc)
     await _syncPrescriptionsFromMedicalEvents(db);
   }
 
@@ -203,7 +246,8 @@ class AppDatabaseHelper implements DatabaseHelper {
     try {
       final events = await db.query(
         'medical_events',
-        where: 'prescription_json IS NOT NULL AND prescription_json != ""',
+        where:
+            'prescription_json IS NOT NULL AND prescription_json != "" AND (deleted_at IS NULL OR deleted_at = "")',
       );
       for (final ev in events) {
         final evId = ev['id'] as String;
@@ -221,6 +265,8 @@ class AppDatabaseHelper implements DatabaseHelper {
               'doctor_name': decoded['doctor_name'] ?? decoded['doctorName'] ?? '',
               'hospital': decoded['hospital'] ?? '',
               'issued_date': decoded['issued_date'] ?? decoded['issuedDate'] ?? DateTime.now().toIso8601String(),
+              'duration_days': decoded['duration_days'],
+              'status': decoded['status'] ?? 'active',
               'note': decoded['note'] ?? '',
             },
             conflictAlgorithm: ConflictAlgorithm.replace,
@@ -253,6 +299,7 @@ class AppDatabaseHelper implements DatabaseHelper {
       CREATE TABLE IF NOT EXISTS medical_events (
         id TEXT PRIMARY KEY,
         user_id TEXT,
+        member_id TEXT NOT NULL DEFAULT 'primary',
         title TEXT NOT NULL,
         description TEXT,
         date TEXT NOT NULL,
@@ -263,11 +310,15 @@ class AppDatabaseHelper implements DatabaseHelper {
         diagnosis TEXT,
         blood_pressure TEXT,
         heart_rate TEXT,
+        spo2 TEXT,
+        temperature TEXT,
         prescription_json TEXT,
         attachments TEXT,
         hospital_fee TEXT,
+        sync_status TEXT DEFAULT 'dirty',
         created_at TEXT,
-        updated_at TEXT
+        updated_at TEXT,
+        deleted_at TEXT
       )
     ''');
 
@@ -277,16 +328,21 @@ class AppDatabaseHelper implements DatabaseHelper {
 
       final requiredColumns = {
         'user_id': 'TEXT',
+        'member_id': "TEXT NOT NULL DEFAULT 'primary'",
         'facility_name': 'TEXT',
         'doctor_name': 'TEXT',
         'department': 'TEXT',
         'diagnosis': 'TEXT',
         'blood_pressure': 'TEXT',
         'heart_rate': 'TEXT',
+        'spo2': 'TEXT',
+        'temperature': 'TEXT',
         'prescription_json': 'TEXT',
         'hospital_fee': 'TEXT',
+        'sync_status': "TEXT DEFAULT 'dirty'",
         'created_at': 'TEXT',
         'updated_at': 'TEXT',
+        'deleted_at': 'TEXT',
       };
 
       for (final entry in requiredColumns.entries) {
@@ -295,6 +351,28 @@ class AppDatabaseHelper implements DatabaseHelper {
             await db.execute('ALTER TABLE medical_events ADD COLUMN ${entry.key} ${entry.value}');
           } catch (_) {}
         }
+      }
+
+      final presInfo = await db.rawQuery('PRAGMA table_info(prescriptions)');
+      final existingPresCols = presInfo.map((row) => row['name'] as String).toSet();
+      final requiredPresCols = {
+        'duration_days': 'INTEGER',
+        'status': "TEXT DEFAULT 'active'",
+      };
+      for (final entry in requiredPresCols.entries) {
+        if (!existingPresCols.contains(entry.key)) {
+          try {
+            await db.execute('ALTER TABLE prescriptions ADD COLUMN ${entry.key} ${entry.value}');
+          } catch (_) {}
+        }
+      }
+
+      final docInfo = await db.rawQuery('PRAGMA table_info(medical_documents)');
+      final existingDocCols = docInfo.map((row) => row['name'] as String).toSet();
+      if (!existingDocCols.contains('member_id')) {
+        try {
+          await db.execute("ALTER TABLE medical_documents ADD COLUMN member_id TEXT NOT NULL DEFAULT 'primary'");
+        } catch (_) {}
       }
 
       final profileInfo = await db.rawQuery('PRAGMA table_info(user_profile)');

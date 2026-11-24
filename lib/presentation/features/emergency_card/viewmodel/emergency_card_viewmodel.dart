@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/database/database_helper.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/user_session_manager.dart';
 import '../../../../core/utils/input_validators.dart';
@@ -34,6 +35,79 @@ class EmergencyCardViewModel extends ChangeNotifier {
         final auth = sl<AuthRepository>();
         final session = await auth.getActiveSession();
         if (session != null) {
+          final activeMemberId = AppSessionNotifier.instance.activeMemberId;
+          if (activeMemberId != 'primary' && sl.isRegistered<DatabaseHelper>()) {
+            final db = await sl<DatabaseHelper>().database;
+            final famRows = await db.query(
+              'family_members',
+              where: 'id = ? AND user_id = ?',
+              whereArgs: [activeMemberId, session.id],
+              limit: 1,
+            );
+            if (famRows.isNotEmpty) {
+              final fam = famRows.first;
+              final famName = (fam['name'] as String?)?.trim() ?? 'Thành viên gia đình';
+              final famBlood = (fam['blood_type'] as String?)?.trim() ?? 'Chưa rõ';
+              final hasFamBlood = famBlood.isNotEmpty && famBlood != 'Chưa rõ';
+              final famGender = (fam['gender'] as String?)?.trim() ?? 'Chưa rõ';
+              final famDob = (fam['dob'] as String?)?.trim() ?? '';
+              final famHeight = (fam['height'] as String?)?.trim() ?? '';
+              final famWeight = (fam['weight'] as String?)?.trim() ?? '';
+              final famPhone = (fam['phone'] as String?)?.trim() ?? '';
+              final famAllergies = (fam['allergies'] as String?)?.trim() ?? '';
+              final famConditions = (fam['chronic_conditions'] as String?)?.trim() ?? '';
+
+              final fallbackIcePhone = !session.primaryContact.contains('@')
+                  ? session.primaryContact
+                  : '';
+              final resolvedPhone = famPhone.isNotEmpty ? famPhone : fallbackIcePhone;
+
+              _state = _state.copyWith(
+                primaryContact: EmergencyContactInfo(
+                  label: 'CHỦ HỒ SƠ / NGƯỜI GIÁM HỘ (ICE)',
+                  name: resolvedPhone.isNotEmpty ? session.fullName : 'Chưa thiết lập',
+                  phone: resolvedPhone,
+                ),
+                allergyWarning: (famAllergies.isNotEmpty && famAllergies != 'Không có')
+                    ? DrugAllergyWarning(
+                        severityBadge: 'CẢNH BÁO',
+                        title: 'Dị ứng: $famAllergies',
+                        description: 'Cần đặc biệt lưu ý trước khi chỉ định thuốc hoặc can thiệp y tế.',
+                        isSevere: true,
+                      )
+                    : const DrugAllergyWarning(
+                        severityBadge: 'AN TOÀN',
+                        title: 'Chưa ghi nhận dị ứng thuốc',
+                        description: 'Hồ sơ thành viên chưa có cảnh báo dị ứng.',
+                        isSevere: false,
+                      ),
+                chronicConditions: (famConditions.isNotEmpty && famConditions != 'Không có')
+                    ? famConditions
+                        .split(',')
+                        .map((s) => s.trim())
+                        .where((s) => s.isNotEmpty)
+                        .map((c) => ChronicConditionItem(
+                              title: c,
+                              badgeLabel: 'GHI NHẬN',
+                              note: 'Theo dõi thường quy',
+                              iconAsset: 'assets/icons/ic_condition_lungs.svg',
+                            ))
+                        .toList()
+                    : const [],
+                patient: _state.patient.copyWith(
+                  fullName: famName,
+                  demographics: famDob.isNotEmpty ? '$famGender • $famDob' : famGender,
+                  bloodType: hasFamBlood ? famBlood : '--',
+                  rhFactor: hasFamBlood ? InputValidators.resolveRhFactor(famBlood) : 'Chưa rõ',
+                  height: famHeight.isNotEmpty ? '$famHeight cm' : '-- cm',
+                  weight: famWeight.isNotEmpty ? '$famWeight kg' : '-- kg',
+                  avatarAsset: (fam['avatar_asset'] as String?) ?? _state.patient.avatarAsset,
+                ),
+              );
+              notifyListeners();
+              return;
+            }
+          }
           String demographics = session.gender ?? 'Chưa rõ';
           if (session.dateOfBirth != null && session.dateOfBirth!.isNotEmpty) {
             demographics += ' • ${session.dateOfBirth}';

@@ -19,7 +19,8 @@ class MockTestMedicalLocalDataSource implements MedicalLocalDataSource {
   final List<MedicalEventModel> items = [];
 
   @override
-  Future<List<MedicalEventModel>> getAllEvents({String? userId}) async => List.from(items);
+  Future<List<MedicalEventModel>> getAllEvents({String? userId, String? memberId}) async =>
+      List.from(items);
 
   @override
   Future<MedicalEventModel?> getEventById(String id) async {

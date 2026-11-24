@@ -34,6 +34,13 @@ class MedicalRecordRepositoryImpl implements MedicalRecordRepository {
     }
   }
 
+  String _resolveActiveMemberId(String? explicitMemberId) {
+    if (explicitMemberId != null && explicitMemberId.trim().isNotEmpty) {
+      return explicitMemberId.trim();
+    }
+    return AppSessionNotifier.instance.activeMemberId;
+  }
+
   Future<bool> _isAutoSyncAllowed() async {
     if (!sl.isRegistered<AppPreferencesDataSource>()) return true;
     try {
@@ -44,15 +51,33 @@ class MedicalRecordRepositoryImpl implements MedicalRecordRepository {
   }
 
   @override
-  Future<List<MedicalEvent>> getMedicalTimeline({String? userId}) async {
+  Future<List<MedicalEvent>> getMedicalTimeline({String? userId, String? memberId}) async {
     final effectiveUserId = userId ?? await _resolveActiveUserId();
-    final models = await localDataSource.getAllEvents(userId: effectiveUserId);
+    final effectiveMemberId = _resolveActiveMemberId(memberId);
+    final models = await localDataSource.getAllEvents(
+      userId: effectiveUserId,
+      memberId: effectiveMemberId,
+    );
     return models.map((m) => m.toEntity()).toList();
   }
 
   @override
   Future<MedicalEvent?> getMedicalEventById(String id) async {
+    final activeUserId = await _resolveActiveUserId();
+    if (localDataSource is MedicalLocalDataSourceImpl) {
+      final model = await (localDataSource as MedicalLocalDataSourceImpl)
+          .getEventById(id, activeUserId: activeUserId);
+      return model?.toEntity();
+    }
     final model = await localDataSource.getEventById(id);
+    if (model != null &&
+        activeUserId != null &&
+        activeUserId.isNotEmpty &&
+        model.userId != null &&
+        model.userId!.isNotEmpty &&
+        model.userId != activeUserId) {
+      return null;
+    }
     return model?.toEntity();
   }
 
@@ -61,10 +86,15 @@ class MedicalRecordRepositoryImpl implements MedicalRecordRepository {
     final resolvedUserId = (event.userId != null && event.userId!.isNotEmpty)
         ? event.userId
         : await _resolveActiveUserId();
+    final resolvedMemberId = event.memberId.isNotEmpty
+        ? event.memberId
+        : AppSessionNotifier.instance.activeMemberId;
+    final now = DateTime.now();
 
     final model = MedicalEventModel(
       id: event.id,
       userId: resolvedUserId,
+      memberId: resolvedMemberId,
       title: event.title,
       description: event.description,
       date: event.date,
@@ -75,11 +105,15 @@ class MedicalRecordRepositoryImpl implements MedicalRecordRepository {
       diagnosis: event.diagnosis,
       bloodPressure: event.bloodPressure,
       heartRate: event.heartRate,
+      spo2: event.spo2,
+      temperature: event.temperature,
       prescription: event.prescription,
       attachments: event.attachments,
       hospitalFee: event.hospitalFee,
-      createdAt: event.createdAt,
-      updatedAt: event.updatedAt,
+      syncStatus: 'dirty',
+      createdAt: event.createdAt ?? now,
+      updatedAt: event.updatedAt ?? now,
+      deletedAt: event.deletedAt,
     );
     await localDataSource.insertOrUpdateEvent(model);
     AppSessionNotifier.instance.notifyMedicalRecordsChanged();
@@ -97,8 +131,12 @@ class MedicalRecordRepositoryImpl implements MedicalRecordRepository {
     AppSessionNotifier.instance.notifyMedicalRecordsChanged();
 
     if (syncRepository != null && await _isAutoSyncAllowed()) {
-      syncRepository!.deleteRemoteEvent(id).catchError((e) {
-        debugPrint('[AutoCloudSync] Remote delete in background failed: $e');
+      syncRepository!.deleteRemoteEvent(id).then((_) async {
+        if (localDataSource is MedicalLocalDataSourceImpl) {
+          await (localDataSource as MedicalLocalDataSourceImpl).purgeSoftDeletedEvent(id);
+        }
+      }).catchError((e) {
+        debugPrint('[AutoCloudSync] Remote delete in background queued as tombstone: $e');
       });
     }
 
@@ -106,8 +144,9 @@ class MedicalRecordRepositoryImpl implements MedicalRecordRepository {
       if (sl.isRegistered<NotificationService>() && sl.isRegistered<DatabaseHelper>()) {
         final db = await sl<DatabaseHelper>().database;
         final count = Sqflite.firstIntValue(
-          await db.rawQuery('SELECT COUNT(*) FROM medicines'),
-        ) ?? 0;
+              await db.rawQuery('SELECT COUNT(*) FROM medicines'),
+            ) ??
+            0;
         if (count == 0) {
           final notif = sl<NotificationService>();
           await notif.cancelAllReminders();

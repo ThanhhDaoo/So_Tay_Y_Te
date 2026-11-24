@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import '../../presentation/routes/app_routes.dart';
 import '../theme/app_colors.dart';
 
 /// Helper quản lý và phân giải an toàn đường dẫn ảnh đại diện trên iOS & Android.
@@ -151,18 +152,25 @@ Future<void> pickAndSaveAvatar(
 
   if (source == null) return;
 
+  AppRoutes.isExternalPickerActive = true;
   try {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: source, imageQuality: 85);
+    final picked = await picker.pickImage(
+      source: source,
+      imageQuality: 85,
+      maxWidth: 1600,
+    );
     if (picked != null) {
       final appDir = await getApplicationDocumentsDirectory();
       SafeAvatarHelper.documentsDirPath = appDir.path;
-      final ext = picked.path.split('.').last;
+      final ext = picked.path.contains('.') ? picked.path.split('.').last : 'jpg';
       final fileName = 'avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
       final savedFile = await File(picked.path).copy('${appDir.path}/$fileName');
       await onAvatarSaved(savedFile.path);
     }
   } catch (e) {
     debugPrint('Error picking avatar: $e');
+  } finally {
+    AppRoutes.isExternalPickerActive = false;
   }
 }

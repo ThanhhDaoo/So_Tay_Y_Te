@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -38,13 +39,22 @@ class PdfReportServiceImpl implements PdfReportService {
     pw.Font fontItalic;
 
     try {
-      font = await PdfGoogleFonts.robotoRegular();
-      fontBold = await PdfGoogleFonts.robotoBold();
-      fontItalic = await PdfGoogleFonts.robotoItalic();
+      final regData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
+      final boldData = await rootBundle.load('assets/fonts/Roboto-Bold.ttf');
+      final italicData = await rootBundle.load('assets/fonts/Roboto-Italic.ttf');
+      font = pw.Font.ttf(regData);
+      fontBold = pw.Font.ttf(boldData);
+      fontItalic = pw.Font.ttf(italicData);
     } catch (_) {
-      font = pw.Font.helvetica();
-      fontBold = pw.Font.helveticaBold();
-      fontItalic = pw.Font.helveticaOblique();
+      try {
+        font = await PdfGoogleFonts.robotoRegular();
+        fontBold = await PdfGoogleFonts.robotoBold();
+        fontItalic = await PdfGoogleFonts.robotoItalic();
+      } catch (_) {
+        font = pw.Font.helvetica();
+        fontBold = pw.Font.helveticaBold();
+        fontItalic = pw.Font.helveticaOblique();
+      }
     }
 
     final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(record.date);
@@ -391,7 +401,10 @@ class PdfReportServiceImpl implements PdfReportService {
               pw.Text('BÁC SĨ KHÁM BỆNH', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 35),
               pw.Text(docName, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-              pw.Text('(Đã ký số điện tử)', style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600)),
+              pw.Text(
+                '(Ghi nhận theo hồ sơ bệnh nhân cung cấp)',
+                style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
+              ),
             ],
           ),
         ],

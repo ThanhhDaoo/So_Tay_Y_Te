@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -12,6 +13,12 @@ abstract class NotificationService {
     required String body,
     required int hour,
     required int minute,
+  });
+  Future<void> scheduleOneTimeMedicationReminder({
+    required int id,
+    required String title,
+    required String body,
+    required Duration delay,
   });
   Future<void> showInstantNotification({
     required int id,
@@ -34,7 +41,6 @@ class NotificationServiceImpl implements NotificationService {
     if (_initialized) return;
 
     try {
-      // 1. Cấu hình múi giờ Việt Nam
       tz.initializeTimeZones();
       try {
         tz.setLocalLocation(tz.getLocation('Asia/Ho_Chi_Minh'));
@@ -42,7 +48,6 @@ class NotificationServiceImpl implements NotificationService {
         tz.setLocalLocation(tz.getLocation('UTC'));
       }
 
-      // 2. Cài đặt cho iOS & Android
       const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
       const darwinSettings = DarwinInitializationSettings(
         requestAlertPermission: true,
@@ -86,8 +91,13 @@ class NotificationServiceImpl implements NotificationService {
       final androidImpl = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
       if (androidImpl != null) {
-        final result = await androidImpl.requestNotificationsPermission();
-        return result ?? false;
+        final notifGranted = await androidImpl.requestNotificationsPermission() ?? false;
+        try {
+          await androidImpl.requestExactAlarmsPermission();
+        } catch (_) {
+          // Thiết bị Android < 12 hoặc bị hạn chế bởi OEM: sẽ fallback sang inexactAllowWhileIdle khi đặt lịch
+        }
+        return notifGranted;
       }
 
       return true;
@@ -158,8 +168,58 @@ class NotificationServiceImpl implements NotificationService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,
       );
+    } on PlatformException {
+      // Fallback sang inexactAllowWhileIdle trên Android 12-14+ nếu người dùng chưa bật quyền Exact Alarm
+      try {
+        await _plugin.zonedSchedule(
+          id: id,
+          title: title,
+          body: body,
+          scheduledDate: scheduledDate,
+          notificationDetails: _buildMedicationNotificationDetails(),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time,
+        );
+      } catch (fallbackErr) {
+        debugPrint('NotificationServiceImpl inexact fallback error: $fallbackErr');
+      }
     } catch (e) {
       debugPrint('NotificationServiceImpl.scheduleDailyMedicationReminder error: $e');
+    }
+  }
+
+  @override
+  Future<void> scheduleOneTimeMedicationReminder({
+    required int id,
+    required String title,
+    required String body,
+    required Duration delay,
+  }) async {
+    await initialize();
+    final scheduledDate = tz.TZDateTime.now(tz.local).add(delay);
+
+    try {
+      await _plugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: scheduledDate,
+        notificationDetails: _buildMedicationNotificationDetails(),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+    } on PlatformException {
+      try {
+        await _plugin.zonedSchedule(
+          id: id,
+          title: title,
+          body: body,
+          scheduledDate: scheduledDate,
+          notificationDetails: _buildMedicationNotificationDetails(),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+      } catch (_) {}
+    } catch (e) {
+      debugPrint('NotificationServiceImpl.scheduleOneTimeMedicationReminder error: $e');
     }
   }
 

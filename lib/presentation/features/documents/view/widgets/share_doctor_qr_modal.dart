@@ -1,7 +1,12 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
+import '../../../../../core/config/supabase_config.dart';
+import '../../../../../core/database/database_helper.dart';
 import '../../../../../core/di/injection_container.dart';
+import '../../../../../core/security/password_hasher.dart';
 import '../../../../../core/services/user_session_manager.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/widgets/clinical_qr_code_widget.dart';
@@ -28,38 +33,115 @@ class _ShareDoctorQrModalState extends State<ShareDoctorQrModal> {
   bool _shareBlood = true;
   bool _shareXray = true;
   late final String _pinFormatted;
+  late final String _pinRaw;
   late final String _shareToken;
   String _patientCode = 'STYT-PATIENT';
+  String? _activeUserId;
 
   @override
   void initState() {
     super.initState();
-    final rng = Random();
+    final rng = Random.secure();
     final part1 = (100 + rng.nextInt(900)).toString();
     final part2 = (100 + rng.nextInt(900)).toString();
     _pinFormatted = '$part1 - $part2';
-    _shareToken = '${DateTime.now().millisecondsSinceEpoch.toRadixString(36).toUpperCase()}-$part1$part2';
-    _loadSessionCode();
+    _pinRaw = '$part1$part2';
+    _shareToken = const Uuid().v4();
+    _initAndPersistToken();
   }
 
-  Future<void> _loadSessionCode() async {
-    if (!sl.isRegistered<AuthRepository>()) return;
-    try {
-      final session = await sl<AuthRepository>().getActiveSession();
-      if (session != null && mounted) {
-        setState(() => _patientCode = session.patientCode);
-      }
-    } catch (_) {}
+  String get _scopesCsv => <String>[
+        if (_shareRx) 'RX',
+        if (_shareBlood) 'LAB',
+        if (_shareXray) 'IMG',
+      ].join(',');
+
+  Future<void> _initAndPersistToken() async {
+    if (sl.isRegistered<AuthRepository>()) {
+      try {
+        final session = await sl<AuthRepository>().getActiveSession();
+        if (session != null) {
+          _activeUserId = session.id;
+          if (mounted) {
+            setState(() => _patientCode = session.patientCode);
+          }
+        }
+      } catch (_) {}
+    }
+    await _persistOrUpdateToken(isRevoked: false);
+  }
+
+  Future<void> _persistOrUpdateToken({required bool isRevoked}) async {
+    final now = DateTime.now();
+    final expiresAt = now.add(const Duration(hours: 24)).toIso8601String();
+    final salt = PasswordHasher.generateSalt(16);
+    final pinHash = '${PasswordHasher.hashPassword(_pinRaw, salt)}::$salt';
+    final userId = _activeUserId ?? 'local_guest';
+    final scopes = _scopesCsv;
+
+    // 1. Lưu / cập nhật trong SQLite cục bộ (doctor_share_tokens)
+    if (sl.isRegistered<DatabaseHelper>()) {
+      try {
+        final db = await sl<DatabaseHelper>().database;
+        if (isRevoked) {
+          await db.update(
+            'doctor_share_tokens',
+            {'is_revoked': 1},
+            where: 'token = ?',
+            whereArgs: [_shareToken],
+          );
+        } else {
+          await db.insert(
+            'doctor_share_tokens',
+            {
+              'token': _shareToken,
+              'user_id': userId,
+              'pin_code': pinHash,
+              'scopes': scopes,
+              'expires_at': expiresAt,
+              'is_revoked': 0,
+              'created_at': now.toIso8601String(),
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+      } catch (_) {}
+    }
+
+    // 2. Đồng bộ token/thu hồi lên Supabase nếu đã đăng nhập Cloud
+    final client = SupabaseConfig.client;
+    final supaUid = client?.auth.currentUser?.id;
+    if (client != null && supaUid != null) {
+      try {
+        if (isRevoked) {
+          await client
+              .from('doctor_share_tokens')
+              .update({'is_revoked': true})
+              .eq('token', _shareToken)
+              .eq('user_id', supaUid);
+        } else {
+          await client.from('doctor_share_tokens').upsert({
+            'token': _shareToken,
+            'user_id': supaUid,
+            'pin_hash': pinHash,
+            'scopes': scopes.isEmpty ? <String>[] : scopes.split(','),
+            'expires_at': expiresAt,
+            'is_revoked': false,
+          });
+        }
+      } catch (_) {}
+    }
   }
 
   String get _qrPayload {
-    final scopes = <String>[
-      if (_shareRx) 'RX',
-      if (_shareBlood) 'LAB',
-      if (_shareXray) 'IMG',
-    ].join(',');
     final patientName = AppSessionNotifier.instance.fullName ?? 'BenhNhan';
-    return 'STYT://SHARE?code=$_patientCode&name=${Uri.encodeComponent(patientName)}&scopes=$scopes&pin=${_pinFormatted.replaceAll(" ", "")}&token=$_shareToken';
+    // Không nhúng PIN thô vào mã QR để đảm bảo xác thực 2 yếu tố (QR Token + PIN đọc trực tiếp cho Bác sĩ)
+    return 'STYT://SHARE?code=$_patientCode&name=${Uri.encodeComponent(patientName)}&scopes=$_scopesCsv&token=$_shareToken';
+  }
+
+  void _onScopeChanged(void Function() update) {
+    setState(update);
+    _persistOrUpdateToken(isRevoked: false);
   }
 
   @override
@@ -91,8 +173,8 @@ class _ShareDoctorQrModalState extends State<ShareDoctorQrModal> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: const [
+                const Row(
+                  children: [
                     Icon(Icons.qr_code_2, color: AppColors.iceOlive, size: 24),
                     SizedBox(width: 8),
                     Text(
@@ -226,7 +308,7 @@ class _ShareDoctorQrModalState extends State<ShareDoctorQrModal> {
                   value: _shareRx,
                   activeColor: AppColors.iceOlive,
                   contentPadding: EdgeInsets.zero,
-                  onChanged: (v) => setState(() => _shareRx = v ?? true),
+                  onChanged: (v) => _onScopeChanged(() => _shareRx = v ?? true),
                 ),
                 CheckboxListTile(
                   title: const Text('Kết quả xét nghiệm máu (CBC)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
@@ -234,7 +316,7 @@ class _ShareDoctorQrModalState extends State<ShareDoctorQrModal> {
                   value: _shareBlood,
                   activeColor: AppColors.iceOlive,
                   contentPadding: EdgeInsets.zero,
-                  onChanged: (v) => setState(() => _shareBlood = v ?? true),
+                  onChanged: (v) => _onScopeChanged(() => _shareBlood = v ?? true),
                 ),
                 CheckboxListTile(
                   title: const Text('Hình ảnh chẩn đoán (Nội soi & X-Quang)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
@@ -242,13 +324,15 @@ class _ShareDoctorQrModalState extends State<ShareDoctorQrModal> {
                   value: _shareXray,
                   activeColor: AppColors.iceOlive,
                   contentPadding: EdgeInsets.zero,
-                  onChanged: (v) => setState(() => _shareXray = v ?? true),
+                  onChanged: (v) => _onScopeChanged(() => _shareXray = v ?? true),
                 ),
                 const SizedBox(height: 20),
 
                 // Danger revoke button
                 OutlinedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
+                    await _persistOrUpdateToken(isRevoked: true);
+                    if (!context.mounted) return;
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(

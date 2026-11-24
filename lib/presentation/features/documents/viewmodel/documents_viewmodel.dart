@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/database/database_helper.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/user_session_manager.dart';
@@ -16,6 +17,7 @@ class DocumentsViewModel extends ChangeNotifier {
   final AuthRepository? authRepository;
   final bool _hasCustomInitialState;
   int _lastRecordsVersion = AppSessionNotifier.instance.medicalRecordsVersion;
+  String _lastMemberId = AppSessionNotifier.instance.activeMemberId;
 
   DocumentsViewModel({
     this.databaseHelper,
@@ -35,8 +37,10 @@ class DocumentsViewModel extends ChangeNotifier {
 
   void _onGlobalSessionChanged() {
     final currentVer = AppSessionNotifier.instance.medicalRecordsVersion;
-    if (currentVer != _lastRecordsVersion) {
+    final currentMember = AppSessionNotifier.instance.activeMemberId;
+    if (currentVer != _lastRecordsVersion || currentMember != _lastMemberId) {
       _lastRecordsVersion = currentVer;
+      _lastMemberId = currentMember;
       loadDocuments();
     }
   }
@@ -78,23 +82,61 @@ class DocumentsViewModel extends ChangeNotifier {
 
   Future<void> loadDocuments() async {
     final docs = <MedicalDocumentItem>[];
+    final seenPaths = <String>{};
 
     try {
       final activeUserId = await _resolveActiveUserId();
+      final activeMemberId = AppSessionNotifier.instance.activeMemberId;
 
-      // 1. Load from medical_documents table (isolated per active user)
+      // 1. Load from medical_documents table (strictly isolated per active user & member)
       final dbHelper = databaseHelper ??
           (sl.isRegistered<DatabaseHelper>() ? sl<DatabaseHelper>() : null);
       if (dbHelper != null) {
         final db = await dbHelper.database;
-        final rows = activeUserId != null
-            ? await db.query(
+        if (activeUserId != null) {
+          // One-time safe migration of legacy 'current_user' rows ONLY on single-user devices
+          try {
+            final userCountRes = await db.rawQuery('SELECT COUNT(*) as cnt FROM users');
+            final userCount = (userCountRes.first['cnt'] as int?) ?? 0;
+            if (userCount <= 1) {
+              await db.update(
                 'medical_documents',
-                where: 'user_id = ? OR user_id = ?',
-                whereArgs: [activeUserId, 'current_user'],
-                orderBy: 'created_at DESC',
-              )
-            : await db.query('medical_documents', orderBy: 'created_at DESC');
+                {'user_id': activeUserId},
+                where: 'user_id = ?',
+                whereArgs: ['current_user'],
+              );
+            }
+          } catch (_) {}
+        }
+
+        final String whereClause;
+        final List<Object?> whereArgs;
+        if (activeUserId != null) {
+          if (activeMemberId == 'primary' || activeMemberId.isEmpty) {
+            whereClause =
+                "user_id = ? AND deleted_at IS NULL AND (member_id IS NULL OR member_id = '' OR member_id = 'primary')";
+            whereArgs = [activeUserId];
+          } else {
+            whereClause = 'user_id = ? AND deleted_at IS NULL AND member_id = ?';
+            whereArgs = [activeUserId, activeMemberId];
+          }
+        } else {
+          if (activeMemberId == 'primary' || activeMemberId.isEmpty) {
+            whereClause =
+                "deleted_at IS NULL AND (member_id IS NULL OR member_id = '' OR member_id = 'primary')";
+            whereArgs = const [];
+          } else {
+            whereClause = 'deleted_at IS NULL AND member_id = ?';
+            whereArgs = [activeMemberId];
+          }
+        }
+
+        final rows = await db.query(
+          'medical_documents',
+          where: whereClause,
+          whereArgs: whereArgs,
+          orderBy: 'created_at DESC',
+        );
 
         for (final r in rows) {
           final catStr = r['category'] as String? ?? 'prescriptions';
@@ -129,6 +171,11 @@ class DocumentsViewModel extends ChangeNotifier {
             } catch (_) {}
           }
 
+          final resolvedPath = SafeAvatarHelper.resolveImagePath(r['file_path'] as String);
+          if (resolvedPath.isNotEmpty) {
+            seenPaths.add(resolvedPath);
+          }
+
           docs.add(
             MedicalDocumentItem(
               id: r['id'] as String,
@@ -136,24 +183,32 @@ class DocumentsViewModel extends ChangeNotifier {
               category: cat,
               date: r['date'] as String,
               hospital: r['hospital'] as String? ?? 'Cơ sở khám bệnh',
-              imagePath: SafeAvatarHelper.resolveImagePath(r['file_path'] as String),
+              imagePath: resolvedPath,
               keyFindings: findings,
             ),
           );
         }
       }
 
-      // 2. Load attachments from medical_events
+      // 2. Load attachments from medical_events (deduplicating against medical_documents)
       final repo = repository ??
           (sl.isRegistered<MedicalRecordRepository>()
               ? sl<MedicalRecordRepository>()
               : null);
       if (repo != null) {
-        final events = await repo.getMedicalTimeline(userId: activeUserId);
+        final events = await repo.getMedicalTimeline(
+          userId: activeUserId,
+          memberId: activeMemberId,
+        );
         for (final e in events) {
           if (e.attachments.isNotEmpty) {
             for (int i = 0; i < e.attachments.length; i++) {
               final att = SafeAvatarHelper.resolveImagePath(e.attachments[i]);
+              if (att.isNotEmpty && seenPaths.contains(att)) {
+                continue;
+              }
+              seenPaths.add(att);
+
               DocumentCategory cat = DocumentCategory.prescriptions;
               if (att.contains('blood')) {
                 cat = DocumentCategory.bloodTests;
@@ -224,8 +279,9 @@ class DocumentsViewModel extends ChangeNotifier {
     if (dbHelper != null) {
       final db = await dbHelper.database;
       final activeUserId = await _resolveActiveUserId();
+      final activeMemberId = AppSessionNotifier.instance.activeMemberId;
       final now = DateTime.now();
-      final id = 'doc_${now.millisecondsSinceEpoch}';
+      final id = const Uuid().v4();
       final dateStr = date ??
           '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
 
@@ -249,13 +305,15 @@ class DocumentsViewModel extends ChangeNotifier {
 
       await db.insert('medical_documents', {
         'id': id,
-        'user_id': activeUserId ?? 'current_user',
+        'user_id': activeUserId ?? 'local_guest',
+        'member_id': activeMemberId,
         'title': title,
         'category': catKey,
         'file_path': filePath,
         'hospital': hospital ?? 'Cơ sở khám bệnh',
         'date': dateStr,
         'summary': findings != null ? jsonEncode(findings) : '[]',
+        'sync_status': 'pending_upload',
         'created_at': now.toIso8601String(),
       });
 
@@ -277,10 +335,12 @@ class DocumentsViewModel extends ChangeNotifier {
         if (repo != null && attIdx != null) {
           final event = await repo.getMedicalEventById(eventId);
           if (event != null && attIdx >= 0 && attIdx < event.attachments.length) {
+            final removedPath = SafeAvatarHelper.resolveImagePath(event.attachments[attIdx]);
             final updatedAttachments = List<String>.from(event.attachments)..removeAt(attIdx);
             final updatedEvent = MedicalEvent(
               id: event.id,
               userId: event.userId,
+              memberId: event.memberId,
               title: event.title,
               description: event.description,
               date: event.date,
@@ -291,6 +351,8 @@ class DocumentsViewModel extends ChangeNotifier {
               diagnosis: event.diagnosis,
               bloodPressure: event.bloodPressure,
               heartRate: event.heartRate,
+              spo2: event.spo2,
+              temperature: event.temperature,
               prescription: event.prescription,
               attachments: updatedAttachments,
               hospitalFee: event.hospitalFee,
@@ -298,6 +360,7 @@ class DocumentsViewModel extends ChangeNotifier {
               updatedAt: DateTime.now(),
             );
             await repo.saveMedicalEvent(updatedEvent);
+            _deletePhysicalFileIfSafe(removedPath);
             await loadDocuments();
             return;
           }
@@ -309,8 +372,36 @@ class DocumentsViewModel extends ChangeNotifier {
         (sl.isRegistered<DatabaseHelper>() ? sl<DatabaseHelper>() : null);
     if (dbHelper != null) {
       final db = await dbHelper.database;
+      final existing = await db.query(
+        'medical_documents',
+        columns: ['file_path'],
+        where: 'id = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
       await db.delete('medical_documents', where: 'id = ?', whereArgs: [id]);
+      if (existing.isNotEmpty) {
+        final rawPath = existing.first['file_path'] as String?;
+        if (rawPath != null && rawPath.isNotEmpty) {
+          _deletePhysicalFileIfSafe(SafeAvatarHelper.resolveImagePath(rawPath));
+        }
+      }
       await loadDocuments();
     }
+  }
+
+  void _deletePhysicalFileIfSafe(String path) {
+    if (path.isEmpty ||
+        path.startsWith('assets/') ||
+        path.startsWith('http') ||
+        Platform.environment.containsKey('FLUTTER_TEST')) {
+      return;
+    }
+    try {
+      final file = File(path);
+      if (file.existsSync()) {
+        file.deleteSync();
+      }
+    } catch (_) {}
   }
 }

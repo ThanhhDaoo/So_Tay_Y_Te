@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/services/ocr_service.dart';
@@ -15,6 +16,7 @@ class PrescriptionsViewModel extends ChangeNotifier {
   final NotificationService _notificationService;
   final MedicalRecordRepository? _repository;
   final bool _hasCustomInitialState;
+  final Uuid _uuid = const Uuid();
   int _lastRecordsVersion = AppSessionNotifier.instance.medicalRecordsVersion;
   PrescriptionsState _state;
 
@@ -59,7 +61,8 @@ class PrescriptionsViewModel extends ChangeNotifier {
 
   String _todayDateKey() {
     final now = DateTime.now();
-    return '${now.year}-${now.month.toString().padLeft(2, "0")}-${now.day.toString().padLeft(2, "0")}';
+    final memberSuffix = AppSessionNotifier.instance.activeMemberId;
+    return '${now.year}-${now.month.toString().padLeft(2, "0")}-${now.day.toString().padLeft(2, "0")}_$memberSuffix';
   }
 
   Future<void> initNotifications() async {
@@ -72,6 +75,64 @@ class PrescriptionsViewModel extends ChangeNotifier {
     }
   }
 
+  /// Phân loại thuốc vào đúng khung giờ lâm sàng, tránh đẩy nhầm thuốc "uống tối 1 lần/ngày" sang Cữ Sáng.
+  static void classifyMedicineIntoSlots({
+    required Medicine medicine,
+    required List<MedicationItem> morningMeds,
+    required List<MedicationItem> noonMeds,
+    required List<MedicationItem> afternoonMeds,
+    required List<MedicationItem> nightMeds,
+  }) {
+    final freq = (medicine.instructions != null && medicine.instructions!.trim().isNotEmpty)
+        ? '${medicine.frequency} ${medicine.instructions}'.toLowerCase()
+        : medicine.frequency.toLowerCase();
+
+    final item = MedicationItem(
+      name: medicine.name,
+      instruction: '${medicine.dosage} • ${medicine.frequency}',
+      iconAsset: 'assets/icons/ic_rx_med_bottle.svg',
+    );
+
+    final hasMorning = freq.contains('sáng') || freq.contains('điểm tâm');
+    final hasNoon = freq.contains('trưa');
+    final hasAfternoon = freq.contains('chiều');
+    final hasNight = freq.contains('tối') ||
+        freq.contains('đêm') ||
+        freq.contains('trước khi ngủ') ||
+        freq.contains('trước khi đi ngủ') ||
+        freq.contains('đi ngủ');
+
+    // 1. Nếu đơn bác sĩ có ghi rõ buổi cụ thể -> chỉ đặt chuông đúng những buổi đó!
+    if (hasMorning || hasNoon || hasAfternoon || hasNight) {
+      if (hasMorning) morningMeds.add(item);
+      if (hasNoon) noonMeds.add(item);
+      if (hasAfternoon) afternoonMeds.add(item);
+      if (hasNight) nightMeds.add(item);
+      return;
+    }
+
+    // 2. Nếu chỉ ghi số lần/ngày mà không ghi buổi -> phân bổ chuẩn dược lâm sàng
+    if (freq.contains('4 lần') || freq.contains('chia 4')) {
+      morningMeds.add(item);
+      noonMeds.add(item);
+      afternoonMeds.add(item);
+      nightMeds.add(item);
+    } else if (freq.contains('3 lần') || freq.contains('chia 3')) {
+      morningMeds.add(item);
+      noonMeds.add(item);
+      nightMeds.add(item);
+    } else if (freq.contains('2 lần') || freq.contains('chia 2')) {
+      morningMeds.add(item);
+      nightMeds.add(item);
+    } else {
+      morningMeds.add(item);
+    }
+  }
+
+  static String formatDdMmYyyy(DateTime dt) {
+    return '${dt.day.toString().padLeft(2, "0")}/${dt.month.toString().padLeft(2, "0")}/${dt.year}';
+  }
+
   Future<void> loadFromRepository() async {
     try {
       final repo = _repository ??
@@ -80,46 +141,37 @@ class PrescriptionsViewModel extends ChangeNotifier {
               : null);
       if (repo != null) {
         final events = await repo.getMedicalTimeline();
-        final eventsWithPrescription = events.where(
-          (e) => e.prescription != null && e.prescription!.medicines.isNotEmpty,
-        ).toList();
+        final activePrescriptionEvents = events.where((e) {
+          final pres = e.prescription;
+          return pres != null &&
+              pres.medicines.isNotEmpty &&
+              !pres.isExpiredByDuration;
+        }).toList();
 
-        if (eventsWithPrescription.isEmpty) {
-          // Không có đơn thuốc nào: đảm bảo xóa toàn bộ lịch nhắc trên hệ điều hành
+        if (activePrescriptionEvents.isEmpty) {
           _state = PrescriptionsState.initial();
           notifyListeners();
           await _notificationService.cancelAllReminders();
           return;
         }
 
-        final latestEvent = eventsWithPrescription.first;
+        final latestEvent = activePrescriptionEvents.first;
         final pres = latestEvent.prescription!;
         final medicines = pres.medicines;
 
         final morningMeds = <MedicationItem>[];
         final noonMeds = <MedicationItem>[];
+        final afternoonMeds = <MedicationItem>[];
         final nightMeds = <MedicationItem>[];
 
         for (final m in medicines) {
-          final freq = m.frequency.toLowerCase();
-          final item = MedicationItem(
-            name: m.name,
-            instruction: '${m.dosage} • ${m.frequency}',
-            iconAsset: 'assets/icons/ic_rx_med_bottle.svg',
+          classifyMedicineIntoSlots(
+            medicine: m,
+            morningMeds: morningMeds,
+            noonMeds: noonMeds,
+            afternoonMeds: afternoonMeds,
+            nightMeds: nightMeds,
           );
-
-          if (freq.contains('sáng') || freq.contains('ngày') || freq.contains('lần')) {
-            morningMeds.add(item);
-          }
-          if (freq.contains('trưa') || freq.contains('2 lần') || freq.contains('3 lần')) {
-            noonMeds.add(item);
-          }
-          if (freq.contains('tối') || freq.contains('chiều') || freq.contains('2 lần') || freq.contains('3 lần')) {
-            nightMeds.add(item);
-          }
-          if (morningMeds.isEmpty && noonMeds.isEmpty && nightMeds.isEmpty) {
-            morningMeds.add(item);
-          }
         }
 
         final realSlots = <MedicationDoseSlot>[];
@@ -149,6 +201,19 @@ class PrescriptionsViewModel extends ChangeNotifier {
             ),
           );
         }
+        if (afternoonMeds.isNotEmpty) {
+          realSlots.add(
+            MedicationDoseSlot(
+              id: 'afternoon',
+              title: 'Cữ Chiều',
+              timeLabel: '17:30',
+              status: DoseSlotStatus.upcoming,
+              statusBadge: 'Chưa đến giờ',
+              slotIconAsset: 'assets/icons/ic_rx_sun_noon.svg',
+              medications: afternoonMeds,
+            ),
+          );
+        }
         if (nightMeds.isNotEmpty) {
           realSlots.add(
             MedicationDoseSlot(
@@ -163,14 +228,30 @@ class PrescriptionsViewModel extends ChangeNotifier {
           );
         }
 
+        final totalDays = (pres.durationDays != null && pres.durationDays! > 0)
+            ? pres.durationDays!
+            : 14;
+        final startDayOnly = DateTime(
+          pres.issuedDate.year,
+          pres.issuedDate.month,
+          pres.issuedDate.day,
+        );
+        final todayOnly = DateTime.now();
+        final elapsedDays = DateTime(todayOnly.year, todayOnly.month, todayOnly.day)
+                .difference(startDayOnly)
+                .inDays +
+            1;
+        final currentDay = elapsedDays.clamp(1, totalDays);
+        final endDateTime = startDayOnly.add(Duration(days: totalDays));
+
         final plan = ActiveTreatmentPlan(
           title: latestEvent.title,
           subtitle: pres.doctorName.isNotEmpty ? 'BS. ${pres.doctorName}' : (pres.hospital ?? 'Phác đồ điều trị'),
           statusLabel: 'Đang áp dụng',
-          currentDay: 1,
-          totalDays: 14,
-          startDate: '${pres.issuedDate.day}/${pres.issuedDate.month}/${pres.issuedDate.year}',
-          endDate: '${pres.issuedDate.add(const Duration(days: 14)).day}/${pres.issuedDate.month}/${pres.issuedDate.year}',
+          currentDay: currentDay,
+          totalDays: totalDays,
+          startDate: formatDdMmYyyy(startDayOnly),
+          endDate: formatDdMmYyyy(endDateTime),
           pharmacyName: pres.hospital ?? 'Cơ sở khám bệnh',
           totalCost: latestEvent.hospitalFee ?? 'Chưa cập nhật chi phí',
         );
@@ -220,17 +301,16 @@ class PrescriptionsViewModel extends ChangeNotifier {
       if (repo == null) return;
 
       final now = DateTime.now();
-      final eventId = 'REC-OCR-${now.millisecondsSinceEpoch}';
-      final rxId = 'RX-OCR-${now.millisecondsSinceEpoch}';
+      final eventId = _uuid.v4();
+      final rxId = _uuid.v4();
 
-      final mappedMeds = result.medicines.asMap().entries.map((entry) {
-        final idx = entry.key;
-        final m = entry.value;
+      final mappedMeds = result.medicines.map((m) {
         return Medicine(
-          id: 'med_${now.millisecondsSinceEpoch}_$idx',
+          id: _uuid.v4(),
           name: m.name,
           dosage: m.dosage,
           frequency: m.instruction,
+          instructions: m.instruction,
         );
       }).toList();
 
@@ -239,14 +319,19 @@ class PrescriptionsViewModel extends ChangeNotifier {
         doctorName: result.doctorName ?? 'Bác sĩ điều trị',
         hospital: result.hospital ?? 'Bệnh viện / Cơ sở y tế',
         issuedDate: now,
+        durationDays: 14,
+        status: 'active',
         medicines: mappedMeds,
+        note: result.advice,
       );
 
       final event = MedicalEvent(
         id: eventId,
+        memberId: AppSessionNotifier.instance.activeMemberId,
         title: result.diagnosis != null && result.diagnosis!.isNotEmpty
             ? 'Đợt khám: ${result.diagnosis}'
             : 'Đơn thuốc quét bằng AI OCR',
+        description: result.advice,
         date: now,
         type: MedicalEventType.generalCheckup,
         facilityName: result.hospital,
@@ -254,6 +339,8 @@ class PrescriptionsViewModel extends ChangeNotifier {
         diagnosis: result.diagnosis,
         prescription: pres,
         attachments: result.imagePath != null ? [result.imagePath!] : const [],
+        createdAt: now,
+        updatedAt: now,
       );
 
       await repo.saveMedicalEvent(event);
@@ -272,7 +359,6 @@ class PrescriptionsViewModel extends ChangeNotifier {
   }
 
   Future<void> scheduleAllReminders() async {
-    // Luôn dọn sạch toàn bộ lịch nhắc cũ trên thiết bị trước khi lên lịch mới
     await _notificationService.cancelAllReminders();
 
     if (_state.slots.isEmpty) {
@@ -323,10 +409,18 @@ class PrescriptionsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Đánh dấu một cữ thuốc đã uống.
+  /// Đánh dấu một cữ thuốc đã uống (hoặc hoàn tác nếu bấm lại vào cữ đã hoàn thành).
   void markDoseTaken(String slotId) {
+    bool wasUnmarked = false;
     final updated = _state.slots.map((slot) {
       if (slot.id != slotId) return slot;
+      if (slot.status == DoseSlotStatus.completed) {
+        wasUnmarked = true;
+        return slot.copyWith(
+          status: DoseSlotStatus.upcoming,
+          statusBadge: 'Chưa đến giờ',
+        );
+      }
       return slot.copyWith(
         status: DoseSlotStatus.completed,
         statusBadge: 'Đã uống vừa xong',
@@ -335,17 +429,19 @@ class PrescriptionsViewModel extends ChangeNotifier {
 
     final completed =
         updated.where((s) => s.status == DoseSlotStatus.completed).length;
-    final percent = updated.isNotEmpty
+    final dailyPercent = updated.isNotEmpty
         ? ((completed / updated.length) * 100).round().clamp(0, 100)
         : 0;
+    final percent = (!wasUnmarked && _state.adherencePercent > dailyPercent)
+        ? (_state.adherencePercent + 4).clamp(0, 100)
+        : dailyPercent;
 
     _state = _state.copyWith(
       slots: updated,
-      adherencePercent: percent > _state.adherencePercent
-          ? percent
-          : _state.adherencePercent,
-      lastActionMessage:
-          'Đã ghi nhận uống thuốc đúng giờ! Chỉ số tuân thủ tăng lên $percent%',
+      adherencePercent: percent,
+      lastActionMessage: wasUnmarked
+          ? 'Đã hoàn tác trạng thái cữ thuốc. Chỉ số tuân thủ hiện tại: $percent%'
+          : 'Đã ghi nhận uống thuốc đúng giờ! Chỉ số tuân thủ tăng lên $percent%',
     );
     notifyListeners();
 
@@ -360,7 +456,7 @@ class PrescriptionsViewModel extends ChangeNotifier {
     }
   }
 
-  /// Hoãn nhắc uống thuốc thêm 15 phút.
+  /// Hoãn nhắc uống thuốc thêm 15 phút (chỉ đổ chuông 1 lần, không lặp sang ngày hôm sau).
   void snoozeDose(String slotId) {
     _state = _state.copyWith(
       lastActionMessage: 'Sẽ nhắc lại cữ thuốc sau 15 phút nữa.',
@@ -368,17 +464,15 @@ class PrescriptionsViewModel extends ChangeNotifier {
     notifyListeners();
 
     final targetSlot = _state.slots.where((s) => s.id == slotId).firstOrNull;
-    final snoozedAt = DateTime.now().add(const Duration(minutes: 15));
     final medsSummary = targetSlot != null
         ? targetSlot.medications.map((m) => m.name).join(', ')
         : 'Đã đến giờ uống cữ thuốc đã hoãn.';
     _notificationService
-        .scheduleDailyMedicationReminder(
+        .scheduleOneTimeMedicationReminder(
           id: 88000 + (slotId.hashCode.abs() % 1000),
           title: '🔔 Nhắc lại cữ thuốc (${targetSlot?.title ?? "Sau 15 phút"})',
           body: medsSummary,
-          hour: snoozedAt.hour,
-          minute: snoozedAt.minute,
+          delay: const Duration(minutes: 15),
         )
         .catchError((_) {});
   }

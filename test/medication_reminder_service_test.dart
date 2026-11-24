@@ -23,6 +23,7 @@ class ScheduledReminder {
 
 class MockNotificationService implements NotificationService {
   final List<ScheduledReminder> scheduled = [];
+  final List<ScheduledReminder> oneTimeScheduled = [];
   final List<String> instantAlerts = [];
   bool permissionsRequested = false;
 
@@ -49,6 +50,23 @@ class MockNotificationService implements NotificationService {
       body: body,
       hour: hour,
       minute: minute,
+    ));
+  }
+
+  @override
+  Future<void> scheduleOneTimeMedicationReminder({
+    required int id,
+    required String title,
+    required String body,
+    required Duration delay,
+  }) async {
+    final target = DateTime.now().add(delay);
+    oneTimeScheduled.add(ScheduledReminder(
+      id: id,
+      title: title,
+      body: body,
+      hour: target.hour,
+      minute: target.minute,
     ));
   }
 

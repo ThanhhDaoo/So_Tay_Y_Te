@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
 
+enum _PinModalStep { verifyOld, enterNew, confirmNew }
+
 class ChangePinModal extends StatefulWidget {
   final VoidCallback onSuccess;
   final ValueChanged<String>? onPinCreated;
+  final Future<bool> Function(String currentPin)? onVerifyCurrentPin;
 
   const ChangePinModal({
     super.key,
     required this.onSuccess,
     this.onPinCreated,
+    this.onVerifyCurrentPin,
   });
 
   static void show(
     BuildContext context, {
     required VoidCallback onSuccess,
     ValueChanged<String>? onPinCreated,
+    Future<bool> Function(String currentPin)? onVerifyCurrentPin,
   }) {
     showModalBottomSheet<void>(
       context: context,
@@ -23,6 +28,7 @@ class ChangePinModal extends StatefulWidget {
       builder: (_) => ChangePinModal(
         onSuccess: onSuccess,
         onPinCreated: onPinCreated,
+        onVerifyCurrentPin: onVerifyCurrentPin,
       ),
     );
   }
@@ -33,20 +39,48 @@ class ChangePinModal extends StatefulWidget {
 
 class _ChangePinModalState extends State<ChangePinModal> {
   String _pin = '';
-  bool _isConfirmStep = false;
+  late _PinModalStep _step;
   String _firstPin = '';
+  String? _errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    _step = widget.onVerifyCurrentPin != null
+        ? _PinModalStep.verifyOld
+        : _PinModalStep.enterNew;
+  }
 
   void _onKeyPress(String key) {
     if (_pin.length < 6) {
-      setState(() => _pin += key);
+      setState(() {
+        _pin += key;
+        _errorText = null;
+      });
       if (_pin.length == 6) {
-        Future.delayed(const Duration(milliseconds: 200), () {
+        Future.delayed(const Duration(milliseconds: 180), () async {
           if (!mounted) return;
-          if (!_isConfirmStep) {
+          if (_step == _PinModalStep.verifyOld) {
+            final validOld = await widget.onVerifyCurrentPin!(_pin);
+            if (!mounted) return;
+            if (validOld) {
+              setState(() {
+                _pin = '';
+                _errorText = null;
+                _step = _PinModalStep.enterNew;
+              });
+            } else {
+              setState(() {
+                _pin = '';
+                _errorText = 'Mã PIN hiện tại không đúng. Vui lòng thử lại!';
+              });
+            }
+          } else if (_step == _PinModalStep.enterNew) {
             setState(() {
               _firstPin = _pin;
               _pin = '';
-              _isConfirmStep = true;
+              _errorText = null;
+              _step = _PinModalStep.confirmNew;
             });
           } else {
             if (_pin == _firstPin) {
@@ -55,17 +89,11 @@ class _ChangePinModalState extends State<ChangePinModal> {
               widget.onPinCreated?.call(confirmedPin);
               widget.onSuccess();
             } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Mã PIN không khớp. Vui lòng thử lại!'),
-                  backgroundColor: Colors.redAccent,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
               setState(() {
                 _pin = '';
                 _firstPin = '';
-                _isConfirmStep = false;
+                _step = _PinModalStep.enterNew;
+                _errorText = 'Mã PIN xác nhận không khớp. Vui lòng nhập lại!';
               });
             }
           }
@@ -76,13 +104,26 @@ class _ChangePinModalState extends State<ChangePinModal> {
 
   void _onDelete() {
     if (_pin.isNotEmpty) {
-      setState(() => _pin = _pin.substring(0, _pin.length - 1));
+      setState(() {
+        _pin = _pin.substring(0, _pin.length - 1);
+        _errorText = null;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
+
+    String title = 'Thiết Lập Mã PIN 6 Chữ Số';
+    String subtitle = 'Mã PIN bảo mật giúp mở khóa Sổ Tay Y Tế khi không dùng Face ID';
+    if (_step == _PinModalStep.verifyOld) {
+      title = 'Xác Minh Mã PIN Hiện Tại';
+      subtitle = 'Nhập mã PIN 6 chữ số đang sử dụng trước khi tạo mã PIN mới';
+    } else if (_step == _PinModalStep.confirmNew) {
+      title = 'Xác Nhận Mã PIN Mới';
+      subtitle = 'Nhập lại mã PIN 6 số vừa tạo để xác nhận';
+    }
 
     return Container(
       decoration: const BoxDecoration(
@@ -102,18 +143,16 @@ class _ChangePinModalState extends State<ChangePinModal> {
           const Icon(Icons.shield_outlined, size: 36, color: AppColors.secOlive),
           const SizedBox(height: 12),
           Text(
-            _isConfirmStep ? 'Xác Nhận Mã PIN Mới' : 'Thiết Lập Mã PIN 6 Chữ Số',
+            title,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
           ),
           const SizedBox(height: 6),
           Text(
-            _isConfirmStep
-                ? 'Nhập lại mã PIN 6 số vừa tạo để xác nhận'
-                : 'Mã PIN bảo mật giúp mở khóa Sổ Tay Y Tế khi không dùng Face ID',
+            subtitle,
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 12, color: AppColors.iceTextSlate),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
           // 6 PIN dots
           Row(
@@ -132,7 +171,15 @@ class _ChangePinModalState extends State<ChangePinModal> {
               );
             }),
           ),
-          const SizedBox(height: 32),
+          if (_errorText != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              _errorText!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.redAccent),
+            ),
+          ],
+          const SizedBox(height: 24),
 
           // Keypad
           for (var row in [

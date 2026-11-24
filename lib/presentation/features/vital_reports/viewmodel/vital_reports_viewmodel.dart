@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/services/pdf_report_service.dart';
+import '../../../../core/services/user_session_manager.dart';
 import '../../../../core/utils/input_validators.dart';
 import '../../../../domain/entities/medical_event.dart';
 import '../../../../domain/entities/user_profile.dart';
@@ -18,6 +19,7 @@ class VitalReportsViewModel extends ChangeNotifier {
   MedicalEvent? _latestEvent;
   UserProfile? _patientProfile;
   List<MedicalEvent> _cachedEvents = const [];
+  int _lastRecordsVersion = AppSessionNotifier.instance.medicalRecordsVersion;
 
   VitalReportsViewModel({
     this.repository,
@@ -26,6 +28,21 @@ class VitalReportsViewModel extends ChangeNotifier {
     VitalReportsState? initialState,
   })  : _state = initialState ?? const VitalReportsState() {
     loadClinicalData();
+    AppSessionNotifier.instance.addListener(_onSessionChanged);
+  }
+
+  void _onSessionChanged() {
+    final ver = AppSessionNotifier.instance.medicalRecordsVersion;
+    if (ver != _lastRecordsVersion) {
+      _lastRecordsVersion = ver;
+      loadClinicalData();
+    }
+  }
+
+  @override
+  void dispose() {
+    AppSessionNotifier.instance.removeListener(_onSessionChanged);
+    super.dispose();
   }
 
   VitalReportsState get state => _state;
@@ -344,20 +361,25 @@ class VitalReportsViewModel extends ChangeNotifier {
           patientProfile: _patientProfile,
         );
       } else {
-        await Future.delayed(const Duration(milliseconds: 600));
+        await Future.delayed(const Duration(milliseconds: 200));
       }
+
+      _state = _state.copyWith(
+        exportingAction: ExportActionType.none,
+        notificationMessage: 'Đã xuất file PDF hồ sơ y tế thành công (${_state.dossierCode}.pdf)!',
+      );
     } catch (e) {
       debugPrint('[VitalReportsViewModel] exportPdf error: $e');
+      _state = _state.copyWith(
+        exportingAction: ExportActionType.none,
+        notificationMessage: 'Không thể xuất file PDF: $e',
+      );
     }
-
-    _state = _state.copyWith(
-      exportingAction: ExportActionType.none,
-      notificationMessage: 'Đã xuất file PDF hồ sơ y tế thành công (${_state.dossierCode}.pdf)!',
-    );
     notifyListeners();
   }
 
   Future<void> printAirPrint() async {
+    if (_state.exportingAction != ExportActionType.none) return;
     _state = _state.copyWith(
       exportingAction: ExportActionType.print,
       notificationMessage: 'Đang kết nối tới máy in AirPrint y tế...',
@@ -376,20 +398,25 @@ class VitalReportsViewModel extends ChangeNotifier {
           patientProfile: _patientProfile,
         );
       } else {
-        await Future.delayed(const Duration(milliseconds: 600));
+        await Future.delayed(const Duration(milliseconds: 200));
       }
+
+      _state = _state.copyWith(
+        exportingAction: ExportActionType.none,
+        notificationMessage: 'Lệnh in AirPrint khổ A4 đã được gửi thành công.',
+      );
     } catch (e) {
       debugPrint('[VitalReportsViewModel] printAirPrint error: $e');
+      _state = _state.copyWith(
+        exportingAction: ExportActionType.none,
+        notificationMessage: 'Không thể kết nối máy in AirPrint: $e',
+      );
     }
-
-    _state = _state.copyWith(
-      exportingAction: ExportActionType.none,
-      notificationMessage: 'Lệnh in AirPrint khổ A4 đã được gửi thành công.',
-    );
     notifyListeners();
   }
 
   Future<void> sendDoctor() async {
+    if (_state.exportingAction != ExportActionType.none) return;
     _state = _state.copyWith(
       exportingAction: ExportActionType.sendDoctor,
       notificationMessage: 'Đang chuẩn bị hồ sơ lâm sàng gửi ${_state.doctorName}...',
@@ -408,16 +435,20 @@ class VitalReportsViewModel extends ChangeNotifier {
           patientProfile: _patientProfile,
         );
       } else {
-        await Future.delayed(const Duration(milliseconds: 600));
+        await Future.delayed(const Duration(milliseconds: 200));
       }
+
+      _state = _state.copyWith(
+        exportingAction: ExportActionType.none,
+        notificationMessage: 'Đã chuyển tiếp hồ sơ lâm sàng tới Bác sĩ điều trị!',
+      );
     } catch (e) {
       debugPrint('[VitalReportsViewModel] sendDoctor error: $e');
+      _state = _state.copyWith(
+        exportingAction: ExportActionType.none,
+        notificationMessage: 'Không thể chia sẻ hồ sơ tới Bác sĩ: $e',
+      );
     }
-
-    _state = _state.copyWith(
-      exportingAction: ExportActionType.none,
-      notificationMessage: 'Đã chuyển tiếp hồ sơ lâm sàng tới Bác sĩ điều trị!',
-    );
     notifyListeners();
   }
 

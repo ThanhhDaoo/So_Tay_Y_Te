@@ -215,27 +215,111 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                       ),
                       const SizedBox(height: 16),
                     ] else ...[
-                      for (final doc in state.documents.where((d) =>
-                          state.selectedCategory == DocumentCategory.all ||
-                          d.category == state.selectedCategory)) ...[
-                        _DynamicDocumentCard(
-                          doc: doc,
-                          onTap: () => DocumentViewerModal.show(
-                            context,
-                            title: doc.title,
-                            category: doc.category.label,
-                            date: doc.date,
-                            hospital: doc.hospital,
-                            imageAsset: doc.imagePath,
-                            keyFindings: doc.keyFindings,
-                          ),
-                          onDelete: () async {
-                            await _viewModel.deleteDocument(doc.id);
-                            _showSnack('Đã xóa tài liệu: ${doc.title}');
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                      Builder(
+                        builder: (context) {
+                          final filteredDocs = state.documents
+                              .where((d) =>
+                                  state.selectedCategory == DocumentCategory.all ||
+                                  d.category == state.selectedCategory)
+                              .toList();
+                          if (filteredDocs.isEmpty) {
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: const Color(0xFFE5DFD4)),
+                              ),
+                              child: Column(
+                                children: [
+                                  const Icon(
+                                    Icons.filter_alt_off_outlined,
+                                    size: 32,
+                                    color: AppColors.iceOlive,
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'Chưa có tài liệu thuộc danh mục "${state.selectedCategory.label}"',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.iceTextNavy,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextButton.icon(
+                                    onPressed: () =>
+                                        _viewModel.selectCategory(DocumentCategory.all),
+                                    icon: const Icon(Icons.clear_all, size: 18),
+                                    label: const Text('Xem tất cả tài liệu'),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: AppColors.iceOlive,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          return Column(
+                            children: [
+                              for (final doc in filteredDocs) ...[
+                                _DynamicDocumentCard(
+                                  doc: doc,
+                                  onTap: () => DocumentViewerModal.show(
+                                    context,
+                                    title: doc.title,
+                                    category: doc.category.label,
+                                    date: doc.date,
+                                    hospital: doc.hospital,
+                                    imageAsset: doc.imagePath,
+                                    keyFindings: doc.keyFindings,
+                                  ),
+                                  onDelete: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                        title: const Text(
+                                          'Xác nhận xóa tài liệu',
+                                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                                        ),
+                                        content: Text(
+                                          'Bạn có chắc chắn muốn xóa tài liệu "${doc.title}" khỏi kho lưu trữ không?',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(ctx, false),
+                                            child: const Text('Hủy'),
+                                          ),
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.redAccent,
+                                              foregroundColor: Colors.white,
+                                            ),
+                                            onPressed: () => Navigator.pop(ctx, true),
+                                            child: const Text('Xóa'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm == true) {
+                                      await _viewModel.deleteDocument(doc.id);
+                                      if (context.mounted) {
+                                        _showSnack('Đã xóa tài liệu: ${doc.title}');
+                                      }
+                                    }
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                              ],
+                            ],
+                          );
+                        },
+                      ),
                     ],
                     ShareDoctorQuickAction(
                       onCreateQr: () => ShareDoctorQrModal.show(context),

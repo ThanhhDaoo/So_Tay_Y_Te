@@ -249,6 +249,41 @@ class InputValidators {
     return null;
   }
 
+  /// Kiểm tra SpO2 (tùy chọn): 50 - 100 %
+  static String? validateSpo2(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final spo2 = int.tryParse(value.trim());
+    if (spo2 == null || spo2 < 50 || spo2 > 100) {
+      return 'SpO2 hợp lệ: 50 - 100%';
+    }
+    return null;
+  }
+
+  /// Kiểm tra Nhiệt độ cơ thể (tùy chọn): 32.0 - 44.0 °C
+  static String? validateTemperature(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final temp = double.tryParse(value.trim().replaceAll(',', '.'));
+    if (temp == null || temp < 32.0 || temp > 44.0) {
+      return 'Nhiệt độ hợp lệ: 32.0 - 44.0 °C';
+    }
+    return null;
+  }
+
+  /// Kiểm tra Liên hệ khẩn cấp ICE (tùy chọn, nhưng nếu nhập phải có kèm SĐT hợp lệ để quay số cấp cứu)
+  static String? validateEmergencyContact(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final clean = value.trim();
+    if (clean.contains('@')) {
+      return 'Vui lòng nhập số điện thoại (không nhập Email vào mục gọi khẩn cấp)';
+    }
+    final digits = clean.replaceAll(RegExp(r'\D'), '');
+    if (digits == '115') return null;
+    if (digits.length < 9 || digits.length > 12) {
+      return 'Vui lòng nhập kèm số điện thoại hợp lệ (VD: Mẹ - 0912345678)';
+    }
+    return null;
+  }
+
   /// Suy luận chính xác yếu tố Rh từ nhóm máu (O+, O-, AB-...)
   static String resolveRhFactor(String? bloodType) {
     if (bloodType == null) return 'Chưa rõ';

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../../../core/database/database_helper.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/security/backup_cipher.dart';
 import '../../../../core/security/biometric_service.dart';
 import '../../../../core/security/password_hasher.dart';
 import '../../../../core/services/notification_service.dart';
@@ -16,6 +18,7 @@ import '../../../../core/services/user_session_manager.dart';
 import '../../../../data/datasources/local/app_preferences_datasource.dart';
 import '../../../../domain/repositories/auth_repository.dart';
 import '../../../../domain/repositories/sync_repository.dart';
+import '../../../routes/app_routes.dart';
 import 'security_settings_state.dart';
 
 class SecuritySettingsViewModel extends ChangeNotifier {
@@ -143,16 +146,78 @@ class SecuritySettingsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<bool> hasConfiguredPin() async {
+    return await _preferencesDataSource.hasPin();
+  }
+
+  Future<int> getPinLockoutRemainingSeconds() async {
+    final until = await _preferencesDataSource.getPinLockoutUntil();
+    if (until == null) return 0;
+    final diff = until.difference(DateTime.now()).inSeconds;
+    if (diff <= 0) {
+      await _preferencesDataSource.setPinLockoutUntil(null);
+      return 0;
+    }
+    return diff;
+  }
+
+  Future<int> getPinFailedAttempts() async {
+    return await _preferencesDataSource.getPinFailedAttempts();
+  }
+
   Future<bool> verifyPin(String rawPin) async {
+    final remainingLock = await getPinLockoutRemainingSeconds();
+    if (remainingLock > 0) return false;
+
     final storedHash = await _preferencesDataSource.getPinHash();
     final storedSalt = await _preferencesDataSource.getPinSalt();
     if (storedHash == null || storedSalt == null) return false;
 
-    return PasswordHasher.verifyPassword(
+    final isMatch = PasswordHasher.verifyPassword(
       password: rawPin,
       salt: storedSalt,
       expectedHash: storedHash,
     );
+
+    if (isMatch) {
+      await _preferencesDataSource.setPinFailedAttempts(0);
+      await _preferencesDataSource.setPinLockoutUntil(null);
+      return true;
+    }
+
+    final attempts = (await _preferencesDataSource.getPinFailedAttempts()) + 1;
+    await _preferencesDataSource.setPinFailedAttempts(attempts);
+    if (attempts >= 5) {
+      final lockSeconds = attempts >= 10 ? 300 : 30;
+      await _preferencesDataSource.setPinLockoutUntil(
+        DateTime.now().add(Duration(seconds: lockSeconds)),
+      );
+    }
+    return false;
+  }
+
+  /// Phương thức mở khóa dự phòng bằng mật khẩu hồ sơ (tránh kẹt khóa vĩnh viễn khi quên PIN hoặc chưa đặt PIN).
+  Future<bool> unlockWithAccountPassword(String password) async {
+    if (password.isEmpty || !sl.isRegistered<AuthRepository>()) return false;
+    try {
+      final authRepo = sl<AuthRepository>();
+      final session = await authRepo.getActiveSession();
+      if (session == null) return false;
+
+      final identifier = session.primaryContact.isNotEmpty
+          ? session.primaryContact
+          : session.patientCode;
+      await authRepo.login(
+        identifier: identifier,
+        password: password,
+        rememberMe: true,
+      );
+      await _preferencesDataSource.setPinFailedAttempts(0);
+      await _preferencesDataSource.setPinLockoutUntil(null);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> setAutoLockTimeout(AutoLockTimeout timeout) async {
@@ -187,64 +252,144 @@ class SecuritySettingsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> exportBackup() async {
+  Future<String> _resolveActiveBackupPassphrase(String? customPassphrase) async {
+    if (customPassphrase != null && customPassphrase.trim().isNotEmpty) {
+      return customPassphrase.trim();
+    }
+    return await _preferencesDataSource.getOrCreateBackupMasterKey();
+  }
+
+  Future<void> exportBackup({String? passphrase, String? outputFilePath}) async {
     _state = _state.copyWith(
       currentOperation: SecurityOperation.exportingBackup,
-      feedbackMessage: 'Đang mã hóa và đóng gói tệp dự phòng (.sotayyte)...',
+      feedbackMessage: 'Đang mã hóa AES-256-GCM và đóng gói tệp dự phòng (.sotayyte)...',
     );
     notifyListeners();
 
     try {
+      String? activeUserId = await _preferencesDataSource.getSessionUserId();
+      if ((activeUserId == null || activeUserId.isEmpty) && sl.isRegistered<AuthRepository>()) {
+        try {
+          activeUserId = (await sl<AuthRepository>().getActiveSession())?.id;
+        } catch (_) {}
+      }
+
       final backupData = <String, dynamic>{
-        'version': 1,
+        'version': 2,
         'app': 'So_Tay_Y_Te',
+        'owner_user_id': activeUserId,
         'exported_at': DateTime.now().toIso8601String(),
       };
 
       if (_databaseHelper != null) {
         final db = await _databaseHelper.database;
+        List<Map<String, dynamic>> userEvents = const [];
         try {
-          backupData['medical_events'] = await db.query('medical_events');
+          userEvents = (activeUserId != null && activeUserId.isNotEmpty)
+              ? await db.query(
+                  'medical_events',
+                  where: 'user_id = ? AND (deleted_at IS NULL OR deleted_at = "")',
+                  whereArgs: [activeUserId],
+                )
+              : await db.query('medical_events');
+          backupData['medical_events'] = userEvents;
+        } catch (_) {
+          try {
+            userEvents = (activeUserId != null && activeUserId.isNotEmpty)
+                ? await db.query('medical_events', where: 'user_id = ?', whereArgs: [activeUserId])
+                : await db.query('medical_events');
+            backupData['medical_events'] = userEvents;
+          } catch (_) {}
+        }
+
+        final eventIds = userEvents.map((e) => e['id'] as String).toList();
+        List<Map<String, dynamic>> userPrescriptions = const [];
+        if (eventIds.isNotEmpty) {
+          final placeholders = List.filled(eventIds.length, '?').join(', ');
+          try {
+            userPrescriptions = await db.query(
+              'prescriptions',
+              where: 'event_id IN ($placeholders)',
+              whereArgs: eventIds,
+            );
+          } catch (_) {}
+        }
+        backupData['prescriptions'] = userPrescriptions;
+
+        final presIds = userPrescriptions.map((p) => p['id'] as String).toList();
+        if (presIds.isNotEmpty) {
+          final presPlaceholders = List.filled(presIds.length, '?').join(', ');
+          try {
+            backupData['medicines'] = await db.query(
+              'medicines',
+              where: 'prescription_id IN ($presPlaceholders)',
+              whereArgs: presIds,
+            );
+          } catch (_) {}
+        } else {
+          backupData['medicines'] = const [];
+        }
+
+        try {
+          backupData['medical_documents'] = (activeUserId != null && activeUserId.isNotEmpty)
+              ? await db.query('medical_documents', where: 'user_id = ?', whereArgs: [activeUserId])
+              : await db.query('medical_documents');
         } catch (_) {}
+
         try {
-          backupData['prescriptions'] = await db.query('prescriptions');
+          backupData['user_profile'] = (activeUserId != null && activeUserId.isNotEmpty)
+              ? await db.query('user_profile', where: 'id = ?', whereArgs: [activeUserId])
+              : await db.query('user_profile');
         } catch (_) {}
+
         try {
-          backupData['medicines'] = await db.query('medicines');
-        } catch (_) {}
-        try {
-          backupData['medical_documents'] = await db.query('medical_documents');
-        } catch (_) {}
-        try {
-          backupData['user_profile'] = await db.query('user_profile');
-        } catch (_) {}
-        try {
-          backupData['family_members'] = await db.query('family_members');
+          backupData['family_members'] = (activeUserId != null && activeUserId.isNotEmpty)
+              ? await db.query('family_members', where: 'user_id = ?', whereArgs: [activeUserId])
+              : await db.query('family_members');
         } catch (_) {}
       }
 
-      final jsonStr = jsonEncode(backupData);
-      final sizeKb = (utf8.encode(jsonStr).length / 1024).clamp(0.1, 999999);
+      final plainJson = jsonEncode(backupData);
+      final effectiveKey = await _resolveActiveBackupPassphrase(passphrase);
+      final encryptedPayload = BackupCipher.encryptJsonPayload(
+        plainJson,
+        passphrase: effectiveKey,
+      );
+
+      final sizeKb = (utf8.encode(encryptedPayload).length / 1024).clamp(0.1, 999999);
       final sizeLabel = sizeKb >= 1024
           ? '${(sizeKb / 1024).toStringAsFixed(1)} MB'
           : '${sizeKb.toStringAsFixed(1)} KB';
 
       final isTest = !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
-      if (!isTest) {
+      if (outputFilePath != null && outputFilePath.isNotEmpty) {
+        final outFile = File(outputFilePath);
+        if (isTest) {
+          outFile.writeAsStringSync(encryptedPayload, flush: true);
+        } else {
+          await outFile.writeAsString(encryptedPayload, flush: true);
+        }
+      } else if (!isTest) {
         final dir = await getTemporaryDirectory();
         final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
         final file = File(p.join(dir.path, 'sotayyte_backup_$timestamp.sotayyte'));
-        await file.writeAsString(jsonStr, flush: true);
+        await file.writeAsString(encryptedPayload, flush: true);
 
-        await SharePlus.instance.share(
-          ShareParams(
-            files: [XFile(file.path)],
-            subject: 'Sao lưu hồ sơ Sổ Tay Y Tế',
-            text: 'Tệp sao lưu mã hóa hồ sơ sức khỏe cá nhân (.sotayyte)',
-          ),
-        );
+        AppRoutes.isExternalPickerActive = true;
+        try {
+          await SharePlus.instance.share(
+            ShareParams(
+              files: [XFile(file.path)],
+              subject: 'Sao lưu hồ sơ Sổ Tay Y Tế',
+              text: 'Tệp sao lưu mã hóa AES-256-GCM hồ sơ sức khỏe cá nhân (.sotayyte)',
+            ),
+          );
+        } finally {
+          AppRoutes.isExternalPickerActive = false;
+        }
       } else {
-        await Future.delayed(const Duration(milliseconds: 300));
+        final testTempFile = File(p.join(Directory.systemTemp.path, 'sotayyte_unit_test_latest.sotayyte'));
+        testTempFile.writeAsStringSync(encryptedPayload, flush: true);
       }
 
       final nowFormatted = DateFormat('HH:mm dd/MM/yyyy').format(DateTime.now());
@@ -252,7 +397,7 @@ class SecuritySettingsViewModel extends ChangeNotifier {
         currentOperation: SecurityOperation.none,
         lastBackupTime: nowFormatted,
         lastBackupSize: sizeLabel,
-        feedbackMessage: 'Đã xuất tệp dự phòng sao lưu (.sotayyte) thành công!',
+        feedbackMessage: 'Đã xuất tệp dự phòng sao lưu mã hóa (.sotayyte) thành công!',
       );
       _preferencesDataSource
           .saveLastBackupMetadata(
@@ -270,7 +415,7 @@ class SecuritySettingsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> restoreBackup({String? filePath}) async {
+  Future<void> restoreBackup({String? filePath, String? passphrase}) async {
     _state = _state.copyWith(
       currentOperation: SecurityOperation.restoringBackup,
       feedbackMessage: 'Đang giải mã và kiểm tra tính toàn vẹn dữ liệu sao lưu...',
@@ -280,81 +425,131 @@ class SecuritySettingsViewModel extends ChangeNotifier {
     try {
       final isTest = !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
       File? targetFile;
-      if (filePath != null) {
+      if (filePath != null && filePath.isNotEmpty) {
         targetFile = File(filePath);
       } else if (!isTest) {
-        final dir = await getTemporaryDirectory();
-        final files = dir
-            .listSync()
-            .whereType<File>()
-            .where((f) => f.path.endsWith('.sotayyte'))
-            .toList();
-        if (files.isNotEmpty) {
-          files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
-          targetFile = files.first;
+        AppRoutes.isExternalPickerActive = true;
+        try {
+          final picked = await FilePicker.pickFiles(
+            type: FileType.any,
+            dialogTitle: 'Chọn tệp sao lưu Sổ Tay Y Tế (.sotayyte)',
+          );
+          final pickedPath = picked.firstOrNull?.path;
+          if (pickedPath != null && pickedPath.isNotEmpty) {
+            targetFile = File(pickedPath);
+          }
+        } catch (pickerErr) {
+          debugPrint('[SecuritySettings] FilePicker fallback: $pickerErr');
+        } finally {
+          AppRoutes.isExternalPickerActive = false;
+        }
+
+        // Dự phòng tìm trong thư mục tạm nếu trình chọn file không trả về trên môi trường giả lập
+        if (targetFile == null) {
+          final dir = await getTemporaryDirectory();
+          final files = dir
+              .listSync()
+              .whereType<File>()
+              .where((f) => f.path.endsWith('.sotayyte'))
+              .toList();
+          if (files.isNotEmpty) {
+            files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+            targetFile = files.first;
+          }
         }
       } else {
-        await Future.delayed(const Duration(milliseconds: 300));
+        final testTempFile = File(p.join(Directory.systemTemp.path, 'sotayyte_unit_test_latest.sotayyte'));
+        if (testTempFile.existsSync()) {
+          targetFile = testTempFile;
+        }
       }
 
       if (!isTest && (targetFile == null || !targetFile.existsSync())) {
         _state = _state.copyWith(
           currentOperation: SecurityOperation.none,
-          feedbackMessage: 'Không tìm thấy tệp sao lưu (.sotayyte) trên thiết bị.',
+          feedbackMessage: 'Đã hủy chọn tệp hoặc không tìm thấy tệp sao lưu (.sotayyte).',
         );
         notifyListeners();
         return;
       }
 
-      if (targetFile != null && targetFile.existsSync() && _databaseHelper != null) {
-        final content = await targetFile.readAsString();
-        final data = jsonDecode(content) as Map<String, dynamic>;
+      if (targetFile != null && targetFile.existsSync()) {
+        final content = isTest
+            ? targetFile.readAsStringSync()
+            : await targetFile.readAsString();
+        final effectiveKey = await _resolveActiveBackupPassphrase(passphrase);
+        final data = BackupCipher.decryptToMap(content, passphrase: effectiveKey);
 
         if (data['app'] != 'So_Tay_Y_Te') {
           throw const FormatException('Định dạng tệp sao lưu không hợp lệ.');
         }
 
-        final db = await _databaseHelper.database;
-        await db.transaction((txn) async {
-          if (data['medical_events'] is List) {
-            for (final row in data['medical_events'] as List) {
-              await txn.insert('medical_events', Map<String, dynamic>.from(row as Map),
-                  conflictAlgorithm: ConflictAlgorithm.replace);
-            }
+        if (_databaseHelper != null) {
+          String? activeUserId = await _preferencesDataSource.getSessionUserId();
+          if ((activeUserId == null || activeUserId.isEmpty) && sl.isRegistered<AuthRepository>()) {
+            try {
+              activeUserId = (await sl<AuthRepository>().getActiveSession())?.id;
+            } catch (_) {}
           }
-          if (data['prescriptions'] is List) {
-            for (final row in data['prescriptions'] as List) {
-              await txn.insert('prescriptions', Map<String, dynamic>.from(row as Map),
-                  conflictAlgorithm: ConflictAlgorithm.replace);
+
+          final db = await _databaseHelper.database;
+          await db.transaction((txn) async {
+            if (data['medical_events'] is List) {
+              for (final row in data['medical_events'] as List) {
+                final mapped = Map<String, dynamic>.from(row as Map);
+                if (activeUserId != null && activeUserId.isNotEmpty) {
+                  mapped['user_id'] = activeUserId;
+                }
+                await txn.insert('medical_events', mapped,
+                    conflictAlgorithm: ConflictAlgorithm.replace);
+              }
             }
-          }
-          if (data['medicines'] is List) {
-            for (final row in data['medicines'] as List) {
-              await txn.insert('medicines', Map<String, dynamic>.from(row as Map),
-                  conflictAlgorithm: ConflictAlgorithm.replace);
+            if (data['prescriptions'] is List) {
+              for (final row in data['prescriptions'] as List) {
+                await txn.insert('prescriptions', Map<String, dynamic>.from(row as Map),
+                    conflictAlgorithm: ConflictAlgorithm.replace);
+              }
             }
-          }
-          if (data['medical_documents'] is List) {
-            for (final row in data['medical_documents'] as List) {
-              await txn.insert('medical_documents', Map<String, dynamic>.from(row as Map),
-                  conflictAlgorithm: ConflictAlgorithm.replace);
+            if (data['medicines'] is List) {
+              for (final row in data['medicines'] as List) {
+                await txn.insert('medicines', Map<String, dynamic>.from(row as Map),
+                    conflictAlgorithm: ConflictAlgorithm.replace);
+              }
             }
-          }
-          if (data['user_profile'] is List) {
-            for (final row in data['user_profile'] as List) {
-              await txn.insert('user_profile', Map<String, dynamic>.from(row as Map),
-                  conflictAlgorithm: ConflictAlgorithm.replace);
+            if (data['medical_documents'] is List) {
+              for (final row in data['medical_documents'] as List) {
+                final mapped = Map<String, dynamic>.from(row as Map);
+                if (activeUserId != null && activeUserId.isNotEmpty) {
+                  mapped['user_id'] = activeUserId;
+                }
+                await txn.insert('medical_documents', mapped,
+                    conflictAlgorithm: ConflictAlgorithm.replace);
+              }
             }
-          }
-          if (data['family_members'] is List) {
-            for (final row in data['family_members'] as List) {
-              await txn.insert('family_members', Map<String, dynamic>.from(row as Map),
-                  conflictAlgorithm: ConflictAlgorithm.replace);
+            if (data['user_profile'] is List) {
+              for (final row in data['user_profile'] as List) {
+                final mapped = Map<String, dynamic>.from(row as Map);
+                if (activeUserId != null && activeUserId.isNotEmpty) {
+                  mapped['id'] = activeUserId;
+                }
+                await txn.insert('user_profile', mapped,
+                    conflictAlgorithm: ConflictAlgorithm.replace);
+              }
             }
-          }
-        });
-        AppSessionNotifier.instance.notifyMedicalRecordsChanged();
-        AppSessionNotifier.instance.notifyProfileChanged();
+            if (data['family_members'] is List) {
+              for (final row in data['family_members'] as List) {
+                final mapped = Map<String, dynamic>.from(row as Map);
+                if (activeUserId != null && activeUserId.isNotEmpty) {
+                  mapped['user_id'] = activeUserId;
+                }
+                await txn.insert('family_members', mapped,
+                    conflictAlgorithm: ConflictAlgorithm.replace);
+              }
+            }
+          });
+          AppSessionNotifier.instance.notifyMedicalRecordsChanged();
+          AppSessionNotifier.instance.notifyProfileChanged();
+        }
       }
 
       _state = _state.copyWith(
@@ -447,14 +642,16 @@ class SecuritySettingsViewModel extends ChangeNotifier {
     await _preferencesDataSource.clearPin();
     await _preferencesDataSource.setProStatus(false);
     await _preferencesDataSource.setBiometricLockEnabled(false);
+    await _preferencesDataSource.setProfileEditLocked(false);
     await _preferencesDataSource.saveBiometricUserId(null);
     await _preferencesDataSource.saveLastLoginIdentifier(null);
+    AppSessionNotifier.instance.resetActiveMember();
 
     _state = _state.copyWith(
       currentOperation: SecurityOperation.none,
       hasPinCode: false,
       isBiometricLockEnabled: false,
-      feedbackMessage: 'Đã xóa trắng toàn bộ dữ liệu cục bộ an toàn theo chuẩn DoD 5220.22-M!',
+      feedbackMessage: 'Đã xóa trắng toàn bộ dữ liệu cục bộ an toàn!',
     );
     notifyListeners();
   }

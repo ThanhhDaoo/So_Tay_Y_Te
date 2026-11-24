@@ -591,6 +591,7 @@ class _EditPersonalProfileSheetState extends State<EditPersonalProfileSheet> {
                   _buildLabel('Người thân liên hệ khẩn cấp (ICE)'),
                   TextFormField(
                     controller: _iceContactCtrl,
+                    validator: InputValidators.validateEmergencyContact,
                     decoration: _inputDeco(hint: 'VD: Bố - 0988 123 456'),
                     style: const TextStyle(fontSize: 13),
                   ),

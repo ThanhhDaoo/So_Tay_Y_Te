@@ -89,19 +89,24 @@ class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal>
     }
   }
 
-  void _showAddManualMedDialog() {
+  void _showAddOrEditMedDialog({int? editIndex}) {
     if (_result == null) return;
-    final nameCtrl = TextEditingController();
-    final dosageCtrl = TextEditingController(text: '1 viên/lần');
-    final instCtrl = TextEditingController(text: 'Ngày uống 2 lần sau ăn');
+    final existing = (editIndex != null &&
+            editIndex >= 0 &&
+            editIndex < _result!.medicines.length)
+        ? _result!.medicines[editIndex]
+        : null;
+    final nameCtrl = TextEditingController(text: existing?.name ?? '');
+    final dosageCtrl = TextEditingController(text: existing?.dosage ?? '1 viên/lần');
+    final instCtrl = TextEditingController(text: existing?.instruction ?? 'Ngày uống 2 lần sau ăn');
 
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Bổ Sung Thuốc Vào Đơn',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        title: Text(
+          existing != null ? 'Chỉnh Sửa Thuốc Bóc Tách' : 'Bổ Sung Thuốc Vào Đơn',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -123,6 +128,27 @@ class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal>
           ],
         ),
         actions: [
+          if (existing != null)
+            TextButton(
+              onPressed: () {
+                final updatedMeds = List<ParsedMedicineItem>.from(_result!.medicines)
+                  ..removeAt(editIndex!);
+                setState(() {
+                  _result = ParsedPrescriptionResult(
+                    rawText: _result!.rawText,
+                    prescriptionType: _result!.prescriptionType,
+                    doctorName: _result!.doctorName,
+                    hospital: _result!.hospital,
+                    diagnosis: _result!.diagnosis,
+                    advice: _result!.advice,
+                    medicines: updatedMeds,
+                    imagePath: _result!.imagePath,
+                  );
+                });
+                Navigator.pop(ctx);
+              },
+              child: const Text('Xóa', style: TextStyle(color: Colors.redAccent)),
+            ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Hủy'),
@@ -134,14 +160,17 @@ class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal>
             ),
             onPressed: () {
               if (nameCtrl.text.trim().isEmpty) return;
-              final updatedMeds = List<ParsedMedicineItem>.from(_result!.medicines)
-                ..add(
-                  ParsedMedicineItem(
-                    name: nameCtrl.text.trim(),
-                    dosage: dosageCtrl.text.trim(),
-                    instruction: instCtrl.text.trim(),
-                  ),
-                );
+              final newItem = ParsedMedicineItem(
+                name: nameCtrl.text.trim(),
+                dosage: dosageCtrl.text.trim(),
+                instruction: instCtrl.text.trim(),
+              );
+              final updatedMeds = List<ParsedMedicineItem>.from(_result!.medicines);
+              if (existing != null) {
+                updatedMeds[editIndex!] = newItem;
+              } else {
+                updatedMeds.add(newItem);
+              }
               setState(() {
                 _result = ParsedPrescriptionResult(
                   rawText: _result!.rawText,
@@ -156,7 +185,7 @@ class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal>
               });
               Navigator.pop(ctx);
             },
-            child: const Text('Thêm'),
+            child: Text(existing != null ? 'Cập nhật' : 'Thêm'),
           ),
         ],
       ),
@@ -352,7 +381,7 @@ class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal>
                                 ),
                                 const SizedBox(width: 8),
                                 InkWell(
-                                  onTap: _showAddManualMedDialog,
+                                  onTap: () => _showAddOrEditMedDialog(),
                                   child: const Padding(
                                     padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                                     child: Text(
@@ -387,38 +416,47 @@ class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal>
                               ..._result!.medicines.asMap().entries.map((entry) {
                                 final idx = entry.key;
                                 final m = entry.value;
-                                return Container(
-                                  margin: const EdgeInsets.only(bottom: 6),
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: AppColors.rxBorder.withValues(alpha: 0.7)),
-                                  ),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '${idx + 1}. ',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: AppColors.primary),
-                                      ),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '${m.name} (${m.dosage})',
-                                              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              m.instruction,
-                                              style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight),
-                                            ),
-                                          ],
+                                return InkWell(
+                                  borderRadius: BorderRadius.circular(8),
+                                  onTap: () => _showAddOrEditMedDialog(editIndex: idx),
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 6),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: AppColors.rxBorder.withValues(alpha: 0.7)),
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${idx + 1}. ',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: AppColors.primary),
                                         ),
-                                      ),
-                                    ],
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '${m.name} (${m.dosage})',
+                                                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                m.instruction,
+                                                style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const Icon(
+                                          Icons.edit_outlined,
+                                          size: 15,
+                                          color: AppColors.primary,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 );
                               }),

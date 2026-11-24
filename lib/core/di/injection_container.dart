@@ -25,6 +25,7 @@ import '../config/firebase_config.dart';
 import '../config/supabase_config.dart';
 import '../database/database_helper.dart';
 import '../security/biometric_service.dart';
+import '../security/secure_storage_helper.dart';
 import '../services/notification_service.dart';
 import '../services/ocr_service.dart';
 import '../services/pdf_report_service.dart';
@@ -99,9 +100,17 @@ class InjectionContainer {
     }
 
     // 2. DataSources
+    if (!sl.isRegistered<SecureStorageHelper>()) {
+      sl.registerLazySingleton<SecureStorageHelper>(
+        () => SecureStorageHelperImpl(),
+      );
+    }
+
     if (!sl.isRegistered<AppPreferencesDataSource>()) {
       sl.registerLazySingleton<AppPreferencesDataSource>(
-        () => AppPreferencesDataSourceImpl(),
+        () => AppPreferencesDataSourceImpl(
+          secureStorage: sl<SecureStorageHelper>(),
+        ),
       );
     }
 

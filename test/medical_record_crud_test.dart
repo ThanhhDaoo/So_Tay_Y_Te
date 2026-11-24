@@ -11,7 +11,7 @@ class MockMedicalLocalDataSource implements MedicalLocalDataSource {
   final Map<String, MedicalEventModel> storage = {};
 
   @override
-  Future<List<MedicalEventModel>> getAllEvents({String? userId}) async {
+  Future<List<MedicalEventModel>> getAllEvents({String? userId, String? memberId}) async {
     final list = storage.values.toList();
     list.sort((a, b) => b.date.compareTo(a.date));
     return list;

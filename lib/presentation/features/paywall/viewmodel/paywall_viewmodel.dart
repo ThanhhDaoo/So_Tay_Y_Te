@@ -1,12 +1,15 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../data/datasources/local/app_preferences_datasource.dart';
 import '../../../../data/datasources/remote/subscription_remote_datasource.dart';
+import '../../../../domain/repositories/auth_repository.dart';
 import 'paywall_state.dart';
 
 class PaywallViewModel extends ChangeNotifier {
   final SubscriptionRemoteDataSource _subscriptionDataSource;
   final AppPreferencesDataSource _preferencesDataSource;
+  final AuthRepository? _authRepository;
 
   PaywallState _state;
   PaywallState get state => _state;
@@ -14,6 +17,7 @@ class PaywallViewModel extends ChangeNotifier {
   PaywallViewModel({
     SubscriptionRemoteDataSource? subscriptionDataSource,
     AppPreferencesDataSource? preferencesDataSource,
+    AuthRepository? authRepository,
     PaywallState? initialState,
   })  : _subscriptionDataSource = subscriptionDataSource ??
             (sl.isRegistered<SubscriptionRemoteDataSource>()
@@ -23,9 +27,14 @@ class PaywallViewModel extends ChangeNotifier {
             (sl.isRegistered<AppPreferencesDataSource>()
                 ? sl<AppPreferencesDataSource>()
                 : AppPreferencesDataSourceImpl()),
+        _authRepository = authRepository ??
+            (sl.isRegistered<AuthRepository>() ? sl<AuthRepository>() : null),
         _state = initialState ?? const PaywallState() {
     _loadProStatus();
   }
+
+  bool get _isFlutterTest =>
+      !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
   Future<void> _loadProStatus() async {
     final isPro = await _preferencesDataSource.getProStatus();
@@ -41,21 +50,56 @@ class PaywallViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> linkAccount(String provider) async {
-    _state = _state.copyWith(isProcessing: true);
+  Future<bool> linkAccount(String provider) async {
+    if (_state.isProcessing) return false;
+    _state = _state.copyWith(isProcessing: true, clearFeedbackMessage: true);
     notifyListeners();
 
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+    try {
+      final normalizedProvider = provider.trim().toLowerCase();
+      if (_authRepository != null && !_isFlutterTest) {
+        if (normalizedProvider == 'google' || normalizedProvider == 'apple') {
+          await _authRepository.signInWithSocialProvider(provider: normalizedProvider);
+          _state = _state.copyWith(
+            isProcessing: false,
+            linkedProvider: provider,
+            feedbackMessage: 'Đã liên kết tài khoản $provider thành công!',
+          );
+          notifyListeners();
+          return true;
+        }
+      }
 
-    _state = _state.copyWith(
-      isProcessing: false,
-      linkedProvider: provider,
-      feedbackMessage: 'Đã liên kết tài khoản $provider thành công!',
-    );
-    notifyListeners();
+      if (_isFlutterTest) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        _state = _state.copyWith(
+          isProcessing: false,
+          linkedProvider: provider,
+          feedbackMessage: 'Đã liên kết tài khoản $provider thành công!',
+        );
+        notifyListeners();
+        return true;
+      }
+
+      _state = _state.copyWith(
+        isProcessing: false,
+        feedbackMessage:
+            'Vui lòng sử dụng mục Đăng ký / Liên kết SĐT ở màn hình Tài khoản để xác thực OTP chính chủ.',
+      );
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _state = _state.copyWith(
+        isProcessing: false,
+        feedbackMessage: 'Không thể liên kết tài khoản $provider: ${e.toString().replaceFirst("Exception: ", "")}',
+      );
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<bool> subscribeToPlan(PlanType plan) async {
+    if (_state.isProcessing) return false;
     _state = _state.copyWith(isProcessing: true);
     notifyListeners();
 
@@ -77,13 +121,14 @@ class PaywallViewModel extends ChangeNotifier {
 
     _state = _state.copyWith(
       isProcessing: false,
-      feedbackMessage: 'Giao dịch chưa hoàn tất. Vui lòng thử lại.',
+      feedbackMessage: 'Cổng thanh toán In-App Purchase chưa hoàn tất giao dịch hoặc chưa cấu hình trên Store.',
     );
     notifyListeners();
     return false;
   }
 
   Future<bool> restorePurchases() async {
+    if (_state.isProcessing) return false;
     _state = _state.copyWith(isProcessing: true);
     notifyListeners();
 

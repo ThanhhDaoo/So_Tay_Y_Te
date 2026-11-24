@@ -128,7 +128,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
                       records.isNotEmpty ? records.first.year : DateTime.now().year,
                     ),
                     const SizedBox(height: 12),
-                    _buildChronologicalSpine(records),
+                    _buildChronologicalSpine(
+                      records,
+                      hasUnfilteredRecords: state.records.isNotEmpty,
+                    ),
                   ],
                 ),
               ),
@@ -222,8 +225,72 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
   }
 
-  Widget _buildChronologicalSpine(List<TimelineRecordItem> records) {
+  Widget _buildChronologicalSpine(
+    List<TimelineRecordItem> records, {
+    bool hasUnfilteredRecords = false,
+  }) {
     if (records.isEmpty) {
+      if (hasUnfilteredRecords) {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.iceCardBorder),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.iceOlive.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.search_off_rounded,
+                  size: 32,
+                  color: AppColors.iceOlive,
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Không tìm thấy bệnh án phù hợp',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.iceTextNavy,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Không có đợt khám nào khớp với từ khóa hoặc bộ lọc hiện tại. Hãy thử từ khóa khác hoặc xóa bộ lọc.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: AppColors.iceTextSlate, height: 1.4),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.iceOlive,
+                  side: const BorderSide(color: AppColors.iceOlive),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                label: const Text(
+                  'Xóa bộ lọc tìm kiếm',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                onPressed: () {
+                  _viewModel.searchController.clear();
+                  _viewModel.updateSearchQuery('');
+                  _viewModel.selectFilter('all');
+                },
+              ),
+            ],
+          ),
+        );
+      }
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),

@@ -39,11 +39,15 @@ class _RecoveryOtpRecord {
 }
 
 class AuthRepositoryImpl implements AuthRepository {
+  static const bool _enableSandboxDefine =
+      bool.fromEnvironment('ENABLE_AUTH_SANDBOX', defaultValue: false);
+
   final AuthRemoteDataSource remoteDataSource;
   final AppPreferencesDataSource localDataSource;
   final AuthLocalDataSource authLocalDataSource;
   final SupabaseAuthRemoteDataSource? supabaseAuthRemoteDataSource;
   final FirebaseAuthRemoteDataSource? firebaseAuthRemoteDataSource;
+  final bool? allowSandboxOverride;
   final Uuid _uuid = const Uuid();
   final Random _secureRandom = Random.secure();
   final Map<String, _RecoveryOtpRecord> _recoveryOtpStore = {};
@@ -54,17 +58,23 @@ class AuthRepositoryImpl implements AuthRepository {
     required this.authLocalDataSource,
     this.supabaseAuthRemoteDataSource,
     this.firebaseAuthRemoteDataSource,
+    this.allowSandboxOverride,
   });
 
   bool get _isFlutterTest =>
       !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+
+  bool get _isSandboxAllowed =>
+      allowSandboxOverride ??
+      (_isFlutterTest || (!kReleaseMode && _enableSandboxDefine));
 
   Future<void> _pushSimulatedSmsNotification({
     required String contact,
     required String otpCode,
     required String purpose,
   }) async {
-    if (_isFlutterTest) return;
+    // Chỉ cho phép bắn thông báo OTP mô phỏng khi bật rõ ràng cờ Sandbox nội bộ (không bao giờ chạy ở Production)
+    if (_isFlutterTest || !_isSandboxAllowed) return;
     if (!sl.isRegistered<NotificationService>()) return;
 
     try {
@@ -836,16 +846,32 @@ class AuthRepositoryImpl implements AuthRepository {
 
     // Tạo thử thách OTP 6 số xác minh danh tính chủ hồ sơ
     _recoveryOtpStore.removeWhere((_, rec) => rec.isExpired);
+
+    final isEmailContact = localUser.primaryContact.contains('@');
+    if (isEmailContact &&
+        SupabaseConfig.isConfigured &&
+        supabaseAuthRemoteDataSource != null &&
+        !_isSandboxAllowed) {
+      await supabaseAuthRemoteDataSource!
+          .resetPassword(localUser.primaryContact.toLowerCase());
+      return PasswordRecoveryChallenge(
+        verificationId: 'supabase-email-link',
+        maskedContact: InputValidators.maskContact(localUser.primaryContact),
+        targetContact: localUser.primaryContact.toLowerCase(),
+        isEmailLinkSent: true,
+      );
+    }
+
+    if (!isEmailContact && !FirebaseConfig.isConfigured && !_isSandboxAllowed) {
+      throw Exception(
+        'Kênh khôi phục mật khẩu qua SMS chưa được cấu hình trên máy chủ Production. Vui lòng liên hệ quản trị hoặc dùng Email đã liên kết.',
+      );
+    }
+
     final verificationId =
         'rec-ver-${DateTime.now().millisecondsSinceEpoch}-${_secureRandom.nextInt(999999)}';
 
-    final normalizedTargetE164 = localUser.primaryContact.contains('@')
-        ? ''
-        : InputValidators.normalizePhoneE164(localUser.primaryContact);
-    final fixedFirebaseOtp = FirebaseAuthRemoteDataSourceImpl
-        .firebaseConsoleTestPhones[normalizedTargetE164];
-    final otpCode = fixedFirebaseOtp ??
-        (_secureRandom.nextInt(900000) + 100000).toString();
+    final otpCode = (_secureRandom.nextInt(900000) + 100000).toString();
 
     _recoveryOtpStore[verificationId] = _RecoveryOtpRecord(
       code: otpCode,
@@ -866,7 +892,7 @@ class AuthRepositoryImpl implements AuthRepository {
       } catch (_) {}
     }
 
-    if (fixedFirebaseOtp == null) {
+    if (_isSandboxAllowed) {
       await _pushSimulatedSmsNotification(
         contact: masked,
         otpCode: otpCode,
@@ -879,7 +905,7 @@ class AuthRepositoryImpl implements AuthRepository {
       maskedContact: masked,
       targetContact: localUser.primaryContact,
       isEmailLinkSent: false,
-      sandboxOtpPreview: null,
+      sandboxOtpPreview: _isSandboxAllowed ? otpCode : null,
     );
   }
 
@@ -910,7 +936,7 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     final isMatch = record.code == cleanOtp ||
-        (!FirebaseConfig.isConfigured && cleanOtp == '123456');
+        (_isFlutterTest && _isSandboxAllowed && cleanOtp == '123456');
     if (!isMatch) {
       throw Exception('Mã xác minh danh tính không chính xác.');
     }
@@ -933,7 +959,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   String? peekSandboxOtp(String verificationId) {
-    if (FirebaseConfig.isConfigured) return null;
+    if (!_isSandboxAllowed || FirebaseConfig.isConfigured) return null;
     if (verificationId.startsWith('rec-ver-')) {
       final rec = _recoveryOtpStore[verificationId];
       if (rec != null && !rec.isExpired) return rec.code;
@@ -1035,11 +1061,10 @@ class AuthRepositoryImpl implements AuthRepository {
         smsCode: cleanCode,
       );
     } else {
-      final isTestPhone =
-          (normalized == '+84362625218' && cleanCode == '132005') ||
-              (normalized == '+84971860620' && cleanCode == '131205') ||
-              cleanCode == '123456';
-      if (!isTestPhone) {
+      if (!_isSandboxAllowed) {
+        throw Exception('Dịch vụ xác thực SMS OTP chưa được cấu hình.');
+      }
+      if (cleanCode != '123456') {
         throw Exception('Mã xác thực OTP không chính xác.');
       }
       final patientCode =
@@ -1138,11 +1163,10 @@ class AuthRepositoryImpl implements AuthRepository {
       return;
     }
 
-    final isTestPhone =
-        (normalized == '+84362625218' && cleanCode == '132005') ||
-            (normalized == '+84971860620' && cleanCode == '131205') ||
-            cleanCode == '123456';
-    if (!isTestPhone) {
+    if (!_isSandboxAllowed) {
+      throw Exception('Dịch vụ xác thực SMS OTP chưa được cấu hình.');
+    }
+    if (cleanCode != '123456') {
       throw Exception('Mã xác thực OTP không chính xác.');
     }
   }
@@ -1394,7 +1418,7 @@ class AuthRepositoryImpl implements AuthRepository {
             'id': userId,
             'patient_code': patientCode,
             'full_name': resolvedName,
-            'primary_phone': cleanEmail,
+            'email': cleanEmail,
           });
         }
       } catch (e) {

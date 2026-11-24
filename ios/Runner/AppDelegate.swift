@@ -2,6 +2,7 @@ import AuthenticationServices
 import Flutter
 import ImageIO
 import UIKit
+import UserNotifications
 import Vision
 
 final class NativeVisionOcrHandler: NSObject {
@@ -339,6 +340,9 @@ final class NativeWebAuthHandler: NSObject, ASWebAuthenticationPresentationConte
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    if #available(iOS 10.0, *) {
+      UNUserNotificationCenter.current().delegate = self
+    }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 

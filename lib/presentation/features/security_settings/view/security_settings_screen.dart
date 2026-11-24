@@ -122,6 +122,9 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   onChangePin: () {
                     ChangePinModal.show(
                       context,
+                      onVerifyCurrentPin: state.hasPinCode
+                          ? (oldPin) => _viewModel.verifyPin(oldPin)
+                          : null,
                       onPinCreated: (pin) => _viewModel.saveNewPin(pin),
                       onSuccess: () {
                         ScaffoldMessenger.of(context).hideCurrentSnackBar();

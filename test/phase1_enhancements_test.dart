@@ -44,7 +44,8 @@ class MockMedicalRepo implements MedicalRecordRepository {
   }
 
   @override
-  Future<List<MedicalEvent>> getMedicalTimeline({String? userId}) async => _events.values.toList();
+  Future<List<MedicalEvent>> getMedicalTimeline({String? userId, String? memberId}) async =>
+      _events.values.toList();
 
   @override
   Future<void> deleteMedicalEvent(String id) async {
