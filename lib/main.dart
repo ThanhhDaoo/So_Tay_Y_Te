@@ -1,9 +1,12 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/constants/app_constants.dart';
 import 'core/di/injection_container.dart';
+import 'core/services/user_session_manager.dart';
+import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'data/datasources/local/app_preferences_datasource.dart';
 import 'presentation/routes/app_routes.dart';
@@ -28,11 +31,22 @@ class SoTayYTeApp extends StatefulWidget {
 
 class _SoTayYTeAppState extends State<SoTayYTeApp> with WidgetsBindingObserver {
   DateTime? _lastBackgroundedTime;
+  bool _isMultitaskObscured = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _initPrivacyPreference();
+  }
+
+  Future<void> _initPrivacyPreference() async {
+    try {
+      if (sl.isRegistered<AppPreferencesDataSource>()) {
+        final enabled = await sl<AppPreferencesDataSource>().isPrivacyScreenEnabled();
+        AppSessionNotifier.instance.setPrivacyScreenEnabled(enabled);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -45,12 +59,24 @@ class _SoTayYTeAppState extends State<SoTayYTeApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) return;
 
+    final privacyEnabled = AppSessionNotifier.instance.privacyScreenEnabled;
+
+    // Ẩn nội dung nhạy cảm trên trình chuyển đổi đa nhiệm (App Switcher)
+    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+      if (privacyEnabled && !_isMultitaskObscured && !AppRoutes.isAppLockShowing) {
+        setState(() => _isMultitaskObscured = true);
+      }
+    }
+
     // Chỉ ghi nhận thời điểm khóa khi app thực sự vào background (paused).
-    // Tuyệt đối KHÔNG bắt `inactive` vì hệ thống iOS hiển thị Face ID dialog,
+    // Tuyệt đối KHÔNG bắt `inactive` để khóa vì hệ thống iOS hiển thị Face ID dialog,
     // camera/gallery permission sheets, notification banner đều phát sinh `inactive`.
     if (state == AppLifecycleState.paused) {
       _lastBackgroundedTime = DateTime.now();
     } else if (state == AppLifecycleState.resumed) {
+      if (_isMultitaskObscured) {
+        setState(() => _isMultitaskObscured = false);
+      }
       _checkAutoLock();
     }
   }
@@ -112,6 +138,53 @@ class _SoTayYTeAppState extends State<SoTayYTeApp> with WidgetsBindingObserver {
         AppRoutes.onGenerateRoute(RouteSettings(name: initialRoute)),
       ],
       onGenerateRoute: AppRoutes.onGenerateRoute,
+      builder: (context, child) {
+        return Stack(
+          children: [
+            ?child,
+            if (_isMultitaskObscured)
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                  child: Container(
+                    color: AppColors.secBackground.withValues(alpha: 0.92),
+                    alignment: Alignment.center,
+                    child: const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.shield_outlined,
+                          size: 52,
+                          color: AppColors.iceOlive,
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          'Sổ Tay Y Tế',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.iceTextNavy,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Nội dung y tế đang được che bảo vệ',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.iceTextSlate,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

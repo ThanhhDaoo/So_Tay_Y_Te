@@ -45,13 +45,17 @@ class IceEmergencyBanner extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
-                      'CHẾ ĐỘ CẤP CỨU',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.55,
-                        color: AppColors.iceAccentCream,
+                    const Flexible(
+                      child: Text(
+                        'CHẾ ĐỘ CẤP CỨU',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.55,
+                          color: AppColors.iceAccentCream,
+                        ),
                       ),
                     ),
                   ],

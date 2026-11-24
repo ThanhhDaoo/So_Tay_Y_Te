@@ -8,8 +8,15 @@ import '../../../../../core/widgets/safe_avatar_image.dart';
 /// Thanh tiêu đề kính mờ cố định phía trên của màn hình Thẻ Cấp Cứu ICE.
 class IceHeader extends StatelessWidget {
   final VoidCallback? onProfileTap;
+  final bool readOnlyLockMode;
+  final VoidCallback? onBackToLock;
 
-  const IceHeader({super.key, this.onProfileTap});
+  const IceHeader({
+    super.key,
+    this.onProfileTap,
+    this.readOnlyLockMode = false,
+    this.onBackToLock,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -37,85 +44,132 @@ class IceHeader extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Image.asset(
-                    'assets/images/img_sotayyte_logo.png',
-                    width: 32,
-                    height: 32,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(width: 8),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'SỔ TAY Y TẾ',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.55,
-                          color: AppColors.iceOlive,
-                          height: 1.2,
-                        ),
-                      ),
-                      Text(
-                        'Cấp Cứu ICE',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.iceTextNavy,
-                          height: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              InkWell(
-                onTap: onProfileTap,
-                borderRadius: BorderRadius.circular(999),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.iceMetricBox,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: AppColors.iceCardBorder.withValues(alpha: 0.6),
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      'assets/images/img_sotayyte_logo.png',
+                      width: 32,
+                      height: 32,
+                      fit: BoxFit.contain,
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ListenableBuilder(
-                        listenable: AppSessionNotifier.instance,
-                        builder: (context, _) => ClipOval(
-                          child: buildSafeAvatarImage(
-                            imageSource: AppSessionNotifier.instance.avatarUrl ?? '',
-                            fallbackAsset: 'assets/images/img_profile_avatar.png',
-                            width: 32,
-                            height: 32,
-                            fit: BoxFit.cover,
+                    const SizedBox(width: 8),
+                    const Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'SỔ TAY Y TẾ',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.55,
+                              color: AppColors.iceOlive,
+                              height: 1.2,
+                            ),
                           ),
-                        ),
+                          Text(
+                            'Cấp Cứu ICE',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.iceTextNavy,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 6),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: SvgPicture.asset(
-                          'assets/icons/ic_chevron_down.svg',
-                          width: 9,
-                          height: 5.55,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
+              if (readOnlyLockMode)
+                InkWell(
+                  onTap: onBackToLock ?? () => Navigator.of(context).maybePop(),
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.lock_outline_rounded,
+                          size: 15,
+                          color: AppColors.error,
+                        ),
+                        SizedBox(width: 5),
+                        Text(
+                          'Quay lại khóa',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.error,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                InkWell(
+                  onTap: onProfileTap,
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.iceMetricBox,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: AppColors.iceCardBorder.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListenableBuilder(
+                          listenable: AppSessionNotifier.instance,
+                          builder: (context, _) => ClipOval(
+                            child: buildSafeAvatarImage(
+                              imageSource: AppSessionNotifier.instance.avatarUrl ?? '',
+                              fallbackAsset: 'assets/images/img_profile_avatar.png',
+                              width: 32,
+                              height: 32,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: SvgPicture.asset(
+                            'assets/icons/ic_chevron_down.svg',
+                            width: 9,
+                            height: 5.55,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

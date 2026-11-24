@@ -10,7 +10,10 @@ import '../../../../core/database/database_helper.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/security/biometric_service.dart';
 import '../../../../core/security/password_hasher.dart';
+import '../../../../core/services/notification_service.dart';
+import '../../../../core/services/user_session_manager.dart';
 import '../../../../data/datasources/local/app_preferences_datasource.dart';
+import '../../../../domain/repositories/auth_repository.dart';
 import '../../../../domain/repositories/sync_repository.dart';
 import 'security_settings_state.dart';
 
@@ -148,6 +151,7 @@ class SecuritySettingsViewModel extends ChangeNotifier {
 
   Future<void> togglePrivacyScreen(bool value) async {
     await _preferencesDataSource.setPrivacyScreenEnabled(value);
+    AppSessionNotifier.instance.setPrivacyScreenEnabled(value);
     _state = _state.copyWith(
       isPrivacyScreenInMultitaskEnabled: value,
       feedbackMessage: value
@@ -321,18 +325,73 @@ class SecuritySettingsViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      if (_databaseHelper != null) {
-        final db = await _databaseHelper.database;
-        await db.delete('medicines');
-        await db.delete('prescriptions');
-        await db.delete('medical_events');
-        await db.delete('auth_identities');
-        await db.delete('users');
+      final dbHelper = _databaseHelper ??
+          (sl.isRegistered<DatabaseHelper>() ? sl<DatabaseHelper>() : null);
+      if (dbHelper != null) {
+        final db = await dbHelper.database;
+        await db.transaction((txn) async {
+          await txn.delete('medicines');
+          await txn.delete('prescriptions');
+          await txn.delete('medical_events');
+          await txn.delete('medical_documents');
+          await txn.delete('family_members');
+          await txn.delete('user_profile');
+          await txn.delete('auth_identities');
+          await txn.delete('users');
+        });
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[SecuritySettings] wipeAllLocalData DB error: $e');
+    }
+
+    // Dọn dẹp các tệp ảnh y tế và avatar lưu cục bộ trong Documents
+    final isTest = !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+    if (!isTest) {
+      try {
+        final docsDir = await getApplicationDocumentsDirectory();
+        if (docsDir.existsSync()) {
+          for (final entity in docsDir.listSync()) {
+            if (entity is File) {
+              final name = p.basename(entity.path).toLowerCase();
+              final isAppMedia = name.startsWith('avatar_') ||
+                  name.startsWith('med_') ||
+                  name.startsWith('ocr_') ||
+                  name.startsWith('doc_') ||
+                  name.endsWith('.jpg') ||
+                  name.endsWith('.jpeg') ||
+                  name.endsWith('.png');
+              if (isAppMedia) {
+                await entity.delete();
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('[SecuritySettings] wipeAllLocalData media cleanup error: $e');
+      }
+    }
+
+    // Hủy toàn bộ chuông nhắc uống thuốc trên hệ điều hành
+    if (sl.isRegistered<NotificationService>()) {
+      try {
+        await sl<NotificationService>().cancelAllReminders();
+      } catch (e) {
+        debugPrint('[SecuritySettings] cancelAllReminders error: $e');
+      }
+    }
+
+    // Đăng xuất khỏi phiên đám mây (nếu có)
+    if (sl.isRegistered<AuthRepository>()) {
+      try {
+        await sl<AuthRepository>().logout();
+      } catch (e) {
+        debugPrint('[SecuritySettings] logout error: $e');
+      }
+    }
 
     await _preferencesDataSource.clearSession();
     await _preferencesDataSource.clearPin();
+    await _preferencesDataSource.setProStatus(false);
     await _preferencesDataSource.setBiometricLockEnabled(false);
     await _preferencesDataSource.saveBiometricUserId(null);
     await _preferencesDataSource.saveLastLoginIdentifier(null);

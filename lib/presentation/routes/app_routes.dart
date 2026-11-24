@@ -4,6 +4,7 @@ import '../features/add_record/view/add_record_screen.dart';
 import '../features/auth/view/login_screen.dart';
 import '../features/auth/view/register_screen.dart';
 import '../features/documents/view/documents_screen.dart';
+import '../features/emergency_card/view/emergency_card_screen.dart';
 import '../features/main_shell/view/main_shell_screen.dart';
 import '../features/paywall/view/paywall_screen.dart';
 import '../features/record_detail/view/record_detail_screen.dart';
@@ -69,6 +70,15 @@ class AppRoutes {
           builder: (_) => const MainShellScreen(initialIndex: 1),
         );
       case emergencyCard:
+        final isLockedReadOnly = settings.arguments == true;
+        if (isLockedReadOnly) {
+          return MaterialPageRoute(
+            builder: (_) => const EmergencyCardScreen(
+              showBottomNav: false,
+              readOnlyLockMode: true,
+            ),
+          );
+        }
         return MaterialPageRoute(
           builder: (_) => const MainShellScreen(initialIndex: 2),
         );

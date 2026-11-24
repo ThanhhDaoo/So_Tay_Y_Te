@@ -209,7 +209,10 @@ class _AppLockScreenState extends State<AppLockScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                 child: TextButton.icon(
                   onPressed: () {
-                    Navigator.of(context).pushNamed(AppRoutes.emergencyCard);
+                    Navigator.of(context).pushNamed(
+                      AppRoutes.emergencyCard,
+                      arguments: true,
+                    );
                   },
                   icon: const Icon(Icons.emergency_rounded, color: AppColors.error, size: 20),
                   label: const Text(

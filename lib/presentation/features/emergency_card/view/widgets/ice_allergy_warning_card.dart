@@ -61,14 +61,18 @@ class IceAllergyWarningCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(
-                      isSevere ? 'CẢNH BÁO NGUY HIỂM' : 'THÔNG TIN DỊ ỨNG',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: isSevere
-                            ? AppColors.textWarmBrown
-                            : AppColors.iceOlive,
+                    Flexible(
+                      child: Text(
+                        isSevere ? 'CẢNH BÁO NGUY HIỂM' : 'THÔNG TIN DỊ ỨNG',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: isSevere
+                              ? AppColors.textWarmBrown
+                              : AppColors.iceOlive,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),

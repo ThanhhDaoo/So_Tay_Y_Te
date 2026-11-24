@@ -166,7 +166,15 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 // 5. Danger Zone: Vùng Thao Tác Nguy Hiểm
                 DangerZoneWipeCard(
                   state: state,
-                  onWipeData: _viewModel.wipeAllLocalData,
+                  onWipeData: () async {
+                    await _viewModel.wipeAllLocalData();
+                    if (context.mounted && sl.isRegistered<AuthRepository>()) {
+                      Navigator.of(context).pushNamedAndRemoveUntil(
+                        AppRoutes.login,
+                        (route) => false,
+                      );
+                    }
+                  },
                 ),
                 const SizedBox(height: 24),
 

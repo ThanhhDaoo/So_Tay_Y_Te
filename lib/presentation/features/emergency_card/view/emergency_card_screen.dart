@@ -16,8 +16,13 @@ import 'widgets/ice_qr_module_card.dart';
 /// Màn hình Thẻ Cấp Cứu Khẩn Cấp (ICE) theo kiến trúc MVVM.
 class EmergencyCardScreen extends StatefulWidget {
   final bool showBottomNav;
+  final bool readOnlyLockMode;
 
-  const EmergencyCardScreen({super.key, this.showBottomNav = true});
+  const EmergencyCardScreen({
+    super.key,
+    this.showBottomNav = true,
+    this.readOnlyLockMode = false,
+  });
 
   @override
   State<EmergencyCardScreen> createState() => _EmergencyCardScreenState();
@@ -102,11 +107,13 @@ class _EmergencyCardScreenState extends State<EmergencyCardScreen> {
                   IceQrModuleCard(
                     onExpandQr: () => showFullScreenEmergencyQrDialog(context),
                   ),
-                  const SizedBox(height: 16),
-                  IceLockScreenWidgetCard(
-                    isEnabled: state.isLockScreenWidgetEnabled,
-                    onToggle: _viewModel.toggleLockScreenWidget,
-                  ),
+                  if (!widget.readOnlyLockMode) ...[
+                    const SizedBox(height: 16),
+                    IceLockScreenWidgetCard(
+                      isEnabled: state.isLockScreenWidgetEnabled,
+                      onToggle: _viewModel.toggleLockScreenWidget,
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -130,13 +137,16 @@ class _EmergencyCardScreenState extends State<EmergencyCardScreen> {
                   ),
                 ],
               ),
-              const Positioned(
+              Positioned(
                 top: 0,
                 left: 0,
                 right: 0,
-                child: IceHeader(),
+                child: IceHeader(
+                  readOnlyLockMode: widget.readOnlyLockMode,
+                  onBackToLock: () => Navigator.of(context).maybePop(),
+                ),
               ),
-              if (widget.showBottomNav)
+              if (widget.showBottomNav && !widget.readOnlyLockMode)
                 Positioned(
                   bottom: 0,
                   left: 0,

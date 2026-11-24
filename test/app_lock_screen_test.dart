@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:so_tay_y_te/core/security/biometric_service.dart';
 import 'package:so_tay_y_te/data/datasources/local/app_preferences_datasource.dart';
+import 'package:so_tay_y_te/presentation/features/emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import 'package:so_tay_y_te/presentation/features/security_settings/view/app_lock_screen.dart';
 import 'package:so_tay_y_te/presentation/features/security_settings/viewmodel/security_settings_viewmodel.dart';
 import 'package:so_tay_y_te/presentation/routes/app_routes.dart';
@@ -129,6 +130,35 @@ void main() {
 
       expect(unlocked, isFalse);
       expect(find.text('Mã PIN không chính xác. Vui lòng thử lại!'), findsOneWidget);
+    });
+
+    testWidgets('Emergency ICE shortcut from AppLock opens read-only ICE card without bottom nav bypass', (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          onGenerateRoute: AppRoutes.onGenerateRoute,
+          home: AppLockScreen(
+            onUnlocked: () {},
+            viewModel: viewModel,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Mở Thẻ Cấp Cứu Khẩn Cấp (ICE)'));
+      await tester.pumpAndSettle();
+
+      // Verify read-only ICE mode: shows back-to-lock button and NO bottom navigation bar
+      expect(find.text('Quay lại khóa'), findsOneWidget);
+      expect(find.byType(IceBottomNavBar), findsNothing);
+
+      // Returning goes back to AppLockScreen, not MainShell
+      await tester.tap(find.text('Quay lại khóa'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hồ sơ sức khỏe đang được khóa bảo vệ'), findsOneWidget);
     });
   });
 }
