@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import '../../presentation/routes/app_routes.dart';
 
 class ParsedMedicineItem {
   final String name;
@@ -16,6 +18,18 @@ class ParsedMedicineItem {
     required this.instruction,
   });
 
+  ParsedMedicineItem copyWith({
+    String? name,
+    String? dosage,
+    String? instruction,
+  }) {
+    return ParsedMedicineItem(
+      name: name ?? this.name,
+      dosage: dosage ?? this.dosage,
+      instruction: instruction ?? this.instruction,
+    );
+  }
+
   Map<String, dynamic> toMap() => {
         'name': name,
         'dosage': dosage,
@@ -25,17 +39,21 @@ class ParsedMedicineItem {
 
 class ParsedPrescriptionResult {
   final String rawText;
+  final String? prescriptionType;
   final String? doctorName;
   final String? hospital;
   final String? diagnosis;
+  final String? advice;
   final List<ParsedMedicineItem> medicines;
   final String? imagePath;
 
   const ParsedPrescriptionResult({
     required this.rawText,
+    this.prescriptionType,
     this.doctorName,
     this.hospital,
     this.diagnosis,
+    this.advice,
     required this.medicines,
     this.imagePath,
   });
@@ -49,6 +67,8 @@ abstract class OcrService {
 }
 
 class OcrServiceImpl implements OcrService {
+  static const MethodChannel _nativeOcrChannel = MethodChannel('com.sotayyte/native_ocr');
+
   final ImagePicker _picker;
   TextRecognizer? _textRecognizer;
 
@@ -64,11 +84,12 @@ class OcrServiceImpl implements OcrService {
 
   @override
   Future<String?> pickImage({required ImageSource source}) async {
+    AppRoutes.isExternalPickerActive = true;
     try {
       final pickedFile = await _picker.pickImage(
         source: source,
-        imageQuality: 90,
-        maxWidth: 1920,
+        imageQuality: 88,
+        maxWidth: 2048,
       );
       if (pickedFile == null) return null;
 
@@ -91,196 +112,443 @@ class OcrServiceImpl implements OcrService {
     } catch (e) {
       debugPrint('OcrServiceImpl.pickImage error: $e');
       return null;
+    } finally {
+      AppRoutes.isExternalPickerActive = false;
     }
   }
 
   @override
   Future<ParsedPrescriptionResult?> processPrescriptionImage(String imagePath) async {
     try {
+      // Trên iOS: dùng trực tiếp Apple Vision Framework (VNRecognizeTextRequest hỗ trợ tiếng Việt vi-VN native),
+      // tránh hoàn toàn lỗi crash native của MLKit C++/ObjC trên Swift Package Manager.
+      if (!kIsWeb && Platform.isIOS) {
+        final recognized = await _nativeOcrChannel.invokeMethod<String>(
+          'recognizeText',
+          {'imagePath': imagePath},
+        );
+        return parseText(recognized ?? '', imagePath: imagePath);
+      }
+
       final inputImage = InputImage.fromFile(File(imagePath));
       final recognizedText = await _recognizer.processImage(inputImage);
       return parseText(recognizedText.text, imagePath: imagePath);
     } catch (e) {
       debugPrint('OcrServiceImpl.processPrescriptionImage error: $e');
-      return null;
+      return ParsedPrescriptionResult(
+        rawText: '',
+        medicines: const [],
+        imagePath: imagePath,
+      );
     }
   }
 
   @override
   ParsedPrescriptionResult parseText(String text, {String? imagePath}) {
+    if (text.trim().isEmpty) {
+      return ParsedPrescriptionResult(
+        rawText: '',
+        medicines: const [],
+        imagePath: imagePath,
+      );
+    }
+
+    String? prescriptionType;
     String? hospital;
+    bool hospitalIsAdminParent = false;
     String? doctor;
     String? diagnosis;
+    String? advice;
     final medicines = <ParsedMedicineItem>[];
 
-    final lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+    final lines = text
+        .split('\n')
+        .map((l) => l.replaceAll(RegExp(r'\s{2,}'), '   ').trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
 
+    // Bước phụ: Quét tìm tên bác sĩ ở khối chữ ký cuối đơn ("Bác sĩ khám bệnh" / "Người kê đơn")
+    for (int k = 0; k < lines.length; k++) {
+      final low = lines[k].toLowerCase();
+      if (low == 'bác sĩ khám bệnh' ||
+          low == 'bác sĩ điều trị' ||
+          low == 'bác sỹ khám bệnh' ||
+          low == 'người kê đơn' ||
+          low.startsWith('bác sĩ khám bệnh ') ||
+          low.startsWith('bác sĩ kê đơn')) {
+        for (int m = k + 1; m <= k + 3 && m < lines.length; m++) {
+          final cand = lines[m].trim();
+          final candLow = cand.toLowerCase();
+          if (candLow.contains('ký') ||
+              candLow.contains('ghi rõ') ||
+              candLow.contains('họ tên') ||
+              candLow.contains('đóng dấu') ||
+              candLow.contains('tái khám') ||
+              candLow.contains('lời dặn') ||
+              cand.length < 4) {
+            continue;
+          }
+          doctor = _cleanDoctorPrefix(cand);
+          break;
+        }
+      }
+    }
+
+    bool reachedFooter = false;
     int i = 0;
     while (i < lines.length) {
       final line = lines[i];
       final lower = line.toLowerCase();
 
-      // 1. Nhận diện Bệnh viện / Phòng khám
-      if (hospital == null &&
+      // 0. Nhận diện loại đơn thuốc (ĐƠN THUỐC BHYT, ĐƠN THUỐC NGOẠI TRÚ, PHIẾU TƯ VẤN...)
+      if (prescriptionType == null &&
+          (lower.contains('đơn thuốc') ||
+              lower.contains('toa thuốc') ||
+              lower.contains('phiếu tư vấn thuốc') ||
+              lower.contains('đơn tư vấn'))) {
+        final cleanedHeader = line.replaceAll(':', '').trim();
+        if (cleanedHeader.length <= 45) {
+          prescriptionType = cleanedHeader;
+        }
+      }
+
+      // 1. Nhận diện Cơ sở y tế / Bệnh viện / Phòng khám / Nhà thuốc
+      final isDirectFacility = !lower.startsWith('địa chỉ') &&
+          !lower.startsWith('nơi đk') &&
           (lower.contains('bệnh viện') ||
               lower.contains('phòng khám') ||
               lower.contains('trung tâm y tế') ||
-              lower.contains('sở y tế') ||
+              lower.contains('trạm y tế') ||
+              lower.contains('nhà thuốc') ||
               lower.startsWith('bv ') ||
+              lower.startsWith('bvđk') ||
               lower.startsWith('pk ') ||
+              lower.startsWith('pkđk') ||
+              lower.startsWith('ttyt') ||
+              lower.contains('vinmec') ||
+              lower.contains('bạch mai') ||
+              lower.contains('chợ rẫy') ||
+              lower.contains('tâm anh') ||
+              lower.contains('medlatec') ||
+              lower.contains('hoàn mỹ') ||
+              lower.contains('long châu') ||
+              lower.contains('pharmacity') ||
+              lower.contains('an khang') ||
               lower.contains('hospital') ||
-              lower.contains('clinic'))) {
-        hospital = line;
+              lower.contains('clinic'));
+
+      final isAdminHealthDept = lower.startsWith('sở y tế') || lower.startsWith('bộ y tế');
+
+      if (isDirectFacility && (hospital == null || hospitalIsAdminParent)) {
+        // Nếu có nhiều cột trên dòng đầu (VD: "BỆNH VIỆN ĐẠI HỌC Y DƯỢC   Mã số: 123"), chỉ lấy cột đầu
+        hospital = line.split('   ').first.trim();
+        hospitalIsAdminParent = false;
+        i++;
+        continue;
+      } else if (isAdminHealthDept && hospital == null) {
+        hospital = line.split('   ').first.trim();
+        hospitalIsAdminParent = true;
         i++;
         continue;
       }
 
-      // 2. Nhận diện Bác sĩ
-      if (doctor == null &&
-          (lower.contains('bác sĩ') ||
-              lower.contains('bác sỹ') ||
-              lower.contains('bs.') ||
-              lower.contains('dr.') ||
-              lower.contains('bs ') ||
-              lower.contains('ths.bs') ||
-              lower.contains('ts.bs') ||
-              lower.contains('bs.ck'))) {
-        doctor = line.replaceAll(RegExp(r'^(bác sĩ điều trị|bác sĩ|bác sỹ|bs\.|dr\.|bs|ths\.bs|ts\.bs|bs\.ck\w*)[:\s]*', caseSensitive: false), '').trim();
-        i++;
-        continue;
+      // 2. Nhận diện Bác sĩ kê đơn trực tiếp trên dòng (VD: "Bác sĩ: BS. CKII Lê Hoàng Tuấn")
+      if (_isInlineDoctorLine(lower)) {
+        final extractedDoc = _cleanDoctorPrefix(line);
+        if (extractedDoc.isNotEmpty && extractedDoc.length >= 3) {
+          doctor = extractedDoc;
+          i++;
+          continue;
+        }
       }
 
-      // 3. Nhận diện Chẩn đoán
+      // 3. Nhận diện Chẩn đoán bệnh
       if (diagnosis == null &&
           (lower.contains('chẩn đoán') ||
-              lower.contains('kết luận') ||
-              lower.contains('bệnh chính') ||
-              lower.contains('diagnosis'))) {
-        diagnosis = line.replaceAll(RegExp(r'^(chẩn đoán xác định|chẩn đoán sơ bộ|chẩn đoán|kết luận|bệnh chính|diagnosis)[:\s]*', caseSensitive: false), '').trim();
+              lower.startsWith('kết luận:') ||
+              lower.startsWith('bệnh chính') ||
+              lower.startsWith('diagnosis'))) {
+        String extractedDiag = line
+            .replaceAll(
+              RegExp(
+                r'^.*?(chẩn đoán xác định|chẩn đoán sơ bộ|chẩn đoán bệnh|chẩn đoán|kết luận|bệnh chính|diagnosis)[:\s\-]*',
+                caseSensitive: false,
+              ),
+              '',
+            )
+            .trim();
+        // Nếu dòng "Chẩn đoán:" đứng riêng và nội dung nằm ở dòng kế tiếp
+        if (extractedDiag.isEmpty && i + 1 < lines.length && !_LooksLikeMedicineHelper.hasBullet(lines[i + 1])) {
+          extractedDiag = lines[i + 1].trim();
+          i++;
+        }
+        if (extractedDiag.isNotEmpty) {
+          diagnosis = extractedDiag;
+        }
         i++;
         continue;
       }
 
-      // 4. Bỏ qua các dòng tiêu đề hành chính không phải thuốc
-      final isHeaderOrAdmin = lower.contains('cộng hòa xã hội') ||
-          lower.contains('độc lập - tự do') ||
-          lower.contains('đơn thuốc') ||
-          lower.contains('toa thuốc') ||
-          lower.contains('phiếu khám') ||
-          lower.contains('họ và tên') ||
-          lower.contains('họ tên') ||
-          lower.contains('năm sinh') ||
-          lower.contains('tuổi:') ||
-          lower.contains('địa chỉ:') ||
-          lower.contains('số thẻ bhyt') ||
-          lower.contains('lời dặn') ||
-          lower.contains('tái khám') ||
-          lower.contains('chữ ký');
+      // 4. Kiểm tra vùng chân trang (Lời dặn, Hẹn tái khám, Ngày ký, Cộng khoản) -> dừng quét thuốc
+      if (_isFooterBoundary(lower)) {
+        if (advice == null && (lower.startsWith('lời dặn') || lower.startsWith('dặn dò') || lower.startsWith('ghi chú'))) {
+          final cleanAdv = line.replaceFirst(RegExp(r'^(lời dặn của bác sĩ|lời dặn|dặn dò|ghi chú)[:\s]*', caseSensitive: false), '').trim();
+          if (cleanAdv.isNotEmpty) {
+            advice = cleanAdv;
+          } else if (i + 1 < lines.length) {
+            advice = lines[i + 1].trim();
+          }
+        }
+        reachedFooter = true;
+      }
 
-      if (isHeaderOrAdmin) {
+      if (reachedFooter) {
         i++;
         continue;
       }
 
-      // 5. Nhận diện thuốc:
-      // Bắt đầu bằng 1., 2), 3/ hoặc dấu -, *, • hoặc chứa hàm lượng (500mg, 40mg...)
-      final hasBullet = RegExp(r'^(\d+[\.\)\/]|[\-\*\•])\s+').hasMatch(line);
-      final hasDosageUnit = RegExp(r'\b(\d+\s*(mg|g|ml|mcg|iu|viên|gói|ống))\b', caseSensitive: false).hasMatch(line);
+      // 5. Nếu dòng hiện tại CHỈ là dòng số lượng (VD: "SL: 14 Viên", "10 Gói", "x 20 viên") -> gộp vào thuốc ngay trước đó!
+      if (medicines.isNotEmpty && _LooksLikeMedicineHelper.isPureQuantityLine(line)) {
+        final prev = medicines.last;
+        final qtyClean = line.replaceFirst(RegExp(r'^(sl|số lượng|x)[:\s]*', caseSensitive: false), '').trim();
+        final mergedDosage = prev.dosage == 'Theo đơn' || prev.dosage == '1 viên'
+            ? qtyClean
+            : (prev.dosage.toLowerCase().contains(qtyClean.toLowerCase()) ? prev.dosage : '${prev.dosage} • SL: $qtyClean');
+        medicines[medicines.length - 1] = prev.copyWith(dosage: mergedDosage);
+        i++;
+        continue;
+      }
 
-      if (hasBullet || hasDosageUnit) {
-        // Tách bỏ bullet đầu dòng
-        String rawMed = line.replaceFirst(RegExp(r'^(\d+[\.\)\/]|[\-\*\•])\s*'), '').trim();
+      // 6. Nếu dòng hiện tại là dòng hướng dẫn uống thuốc bổ sung cho thuốc ngay trước đó
+      if (medicines.isNotEmpty &&
+          !_LooksLikeMedicineHelper.hasBullet(line) &&
+          _LooksLikeMedicineHelper.isInstructionLine(lower)) {
+        final prev = medicines.last;
+        final mergedInst = prev.instruction == 'Theo chỉ dẫn bác sĩ' || prev.instruction == 'Uống sau bữa ăn'
+            ? line
+            : '${prev.instruction} · $line';
+        medicines[medicines.length - 1] = prev.copyWith(instruction: mergedInst);
+        i++;
+        continue;
+      }
+
+      // 7. Bỏ qua các dòng hành chính / thông tin bệnh nhân / chỉ số sinh tồn
+      if (_isAdminOrPatientLine(lower)) {
+        i++;
+        continue;
+      }
+
+      // 8. Nhận diện dòng Tên Thuốc
+      final hasBullet = _LooksLikeMedicineHelper.hasBullet(line);
+      final hasPharmaSignature = _LooksLikeMedicineHelper.hasPharmaceuticalSignature(line);
+
+      if (hasBullet || hasPharmaSignature) {
+        String rawMed = line
+            .replaceFirst(RegExp(r'^(?:\(\d+\)|\d+[\.\)\/\-]|[\-\*\•\+])\s*'), '')
+            .replaceFirst(RegExp(r'^0?\d+\s+(?=[A-ZÀ-Ỹ])'), '')
+            .trim();
+
+        // Tránh nhận nhầm dòng toàn số hoặc quá ngắn
+        if (rawMed.length < 3 || !RegExp(r'[a-zA-ZÀ-ỹ]').hasMatch(rawMed)) {
+          i++;
+          continue;
+        }
 
         String name = rawMed;
-        String dosage = '1 viên';
-        String instruction = 'Uống sau bữa ăn';
+        String dosage = 'Theo đơn';
+        String instruction = 'Theo chỉ dẫn bác sĩ';
 
-        // Nếu dòng hiện tại có chứa ':' hoặc ' - ' tách trực tiếp
-        if (rawMed.contains(':')) {
-          final parts = rawMed.split(':');
-          name = parts[0].trim();
-          instruction = parts.sublist(1).join(':').trim();
-        } else if (rawMed.contains(' - ') && !rawMed.toLowerCase().contains('bệnh viện')) {
-          final parts = rawMed.split(' - ');
-          name = parts[0].trim();
-          instruction = parts.sublist(1).join(' - ').trim();
+        // Nếu cột phải được ghép bằng "   " chứa số lượng (VD: "Augmentin 1g   14 Viên" hoặc "Nexium 40mg   SL: 14 viên")
+        if (rawMed.contains('   ')) {
+          final cols = rawMed.split('   ').map((c) => c.trim()).where((c) => c.isNotEmpty).toList();
+          if (cols.length >= 2) {
+            final lastCol = cols.last;
+            if (_LooksLikeMedicineHelper.isPureQuantityLine(lastCol)) {
+              final qtyClean = lastCol.replaceFirst(RegExp(r'^(sl|số lượng|x)[:\s]*', caseSensitive: false), '').trim();
+              dosage = qtyClean;
+              name = cols.sublist(0, cols.length - 1).join(' ');
+            } else if (_LooksLikeMedicineHelper.isInstructionLine(lastCol.toLowerCase())) {
+              instruction = lastCol;
+              name = cols.sublist(0, cols.length - 1).join(' ');
+            }
+          }
         }
 
-        // Bóc tách hàm lượng nếu có trong tên thuốc (VD: 500mg, 40mg, 1g)
-        final dosageMatch = RegExp(r'(\d+\s*(mg|g|ml|mcg|iu))\b', caseSensitive: false).firstMatch(name);
-        if (dosageMatch != null) {
-          dosage = dosageMatch.group(0)!;
+        // Tách theo dấu ':' hoặc ' - ' nếu chứa hướng dẫn sử dụng trên cùng 1 dòng
+        if (name.contains(':')) {
+          final parts = name.split(':');
+          final left = parts[0].trim();
+          final right = parts.sublist(1).join(':').trim();
+          if (left.length >= 2 && right.isNotEmpty) {
+            name = left;
+            instruction = right;
+          }
+        } else if (name.contains(' - ') && !name.toLowerCase().contains('bệnh viện')) {
+          final parts = name.split(' - ');
+          final left = parts[0].trim();
+          final right = parts.sublist(1).join(' - ').trim();
+          if (left.length >= 2 && right.isNotEmpty) {
+            name = left;
+            instruction = right;
+          }
         }
 
-        // Tách số lượng nếu có ở cuối (VD: "x 14 viên", "SL: 20 viên", "(14 viên)")
-        final qtyMatch = RegExp(r'(\(?(sl|số lượng|x)?\s*\d+\s*(viên|gói|ống|chai|hộp)\)?)', caseSensitive: false).firstMatch(name);
-        if (qtyMatch != null && !name.toLowerCase().startsWith('uống')) {
-          final qtyStr = qtyMatch.group(0)!;
-          if (dosage == '1 viên') {
+        // Bóc tách hàm lượng trong tên thuốc (VD: 500mg, 40mg, 1g, 200mg/5ml, 0.5mg)
+        final strengthMatch = RegExp(
+          r'(\d+(?:[.,]\d+)?\s*(?:mg|mcg|g|ml|iu|ui|%)(?:\s*\/\s*\d+(?:[.,]\d+)?\s*(?:mg|mcg|g|ml))?)\b',
+          caseSensitive: false,
+        ).firstMatch(name);
+        if (strengthMatch != null) {
+          final strengthStr = strengthMatch.group(0)!.trim();
+          dosage = dosage == 'Theo đơn' ? strengthStr : '$strengthStr • SL: $dosage';
+        }
+
+        // Tách số lượng nếu nằm cuối dòng tên thuốc (VD: "SL: 20 viên", "x 14 viên")
+        final inlineQtyMatch = RegExp(
+          r'(?:\(?(?:sl|số lượng|x)\s*:?\s*\d+\s*(?:viên|vỉ|gói|ống|lọ|chai|tuýp|hộp)\)?)',
+          caseSensitive: false,
+        ).firstMatch(name);
+        if (inlineQtyMatch != null && !name.toLowerCase().startsWith('uống')) {
+          final qtyStr = inlineQtyMatch.group(0)!.trim();
+          if (dosage == 'Theo đơn') {
             dosage = qtyStr;
+          } else if (!dosage.toLowerCase().contains(qtyStr.toLowerCase())) {
+            dosage = '$dosage ($qtyStr)';
           }
           name = name.replaceAll(qtyStr, '').trim();
         }
 
-        // Kiểm tra dòng TIẾP THEO (i+1): nếu là dòng hướng dẫn uống thuốc
-        if (i + 1 < lines.length) {
-          final nextLine = lines[i + 1];
+        // Nhìn trước dòng tiếp theo (i+1): nếu là dòng số lượng hoặc hướng dẫn uống thì gom luôn
+        while (i + 1 < lines.length) {
+          final nextLine = lines[i + 1].trim();
           final nextLower = nextLine.toLowerCase();
-          final nextIsBullet = RegExp(r'^(\d+[\.\)\/]|[\-\*\•])\s+').hasMatch(nextLine);
-          final nextIsInstruction = !nextIsBullet && (
-            nextLower.startsWith('uống') ||
-            nextLower.startsWith('ngày') ||
-            nextLower.startsWith('sáng') ||
-            nextLower.startsWith('trưa') ||
-            nextLower.startsWith('chiều') ||
-            nextLower.startsWith('tối') ||
-            nextLower.startsWith('mỗi lần') ||
-            nextLower.startsWith('ngậm') ||
-            nextLower.startsWith('thoa') ||
-            nextLower.startsWith('nhỏ') ||
-            nextLower.startsWith('tiêm') ||
-            nextLower.contains('viên/ngày') ||
-            nextLower.contains('lần/ngày') ||
-            nextLower.contains('trước ăn') ||
-            nextLower.contains('sau ăn') ||
-            nextLower.contains('khi sốt') ||
-            nextLower.contains('sl:') ||
-            nextLower.contains('số lượng:')
-          );
-
-          if (nextIsInstruction) {
-            instruction = instruction == 'Uống sau bữa ăn' ? nextLine : '$instruction · $nextLine';
-            i++; // Bỏ qua dòng hướng dẫn này để không bị parse thành thuốc mới!
+          if (_isFooterBoundary(nextLower) || _LooksLikeMedicineHelper.hasBullet(nextLine)) {
+            break;
           }
+          if (_LooksLikeMedicineHelper.isPureQuantityLine(nextLine)) {
+            final qtyClean = nextLine.replaceFirst(RegExp(r'^(sl|số lượng|x)[:\s]*', caseSensitive: false), '').trim();
+            dosage = dosage == 'Theo đơn' ? qtyClean : '$dosage • SL: $qtyClean';
+            i++;
+            continue;
+          }
+          if (_LooksLikeMedicineHelper.isInstructionLine(nextLower)) {
+            instruction = instruction == 'Theo chỉ dẫn bác sĩ' ? nextLine : '$instruction · $nextLine';
+            i++;
+            continue;
+          }
+          break;
         }
 
-        medicines.add(ParsedMedicineItem(
-          name: name,
-          dosage: dosage,
-          instruction: instruction,
-        ));
+        medicines.add(
+          ParsedMedicineItem(
+            name: name,
+            dosage: dosage,
+            instruction: instruction,
+          ),
+        );
       }
 
       i++;
     }
 
-    // Nếu không tách được thuốc nào qua regex cứng, thử heuristic dự phòng
-    if (medicines.isEmpty && text.trim().isNotEmpty) {
-      medicines.add(const ParsedMedicineItem(
-        name: 'Đơn thuốc quét bằng AI',
-        dosage: 'Theo chỉ dẫn',
-        instruction: 'Tuân thủ đúng liều lượng bác sĩ kê đơn',
-      ));
-    }
-
     return ParsedPrescriptionResult(
       rawText: text,
-      hospital: hospital ?? 'Bệnh viện / Phòng khám',
-      doctorName: doctor ?? 'Bác sĩ điều trị',
-      diagnosis: diagnosis ?? 'Theo dõi điều trị ngoại trú',
+      prescriptionType: prescriptionType,
+      hospital: hospital,
+      doctorName: doctor,
+      diagnosis: diagnosis ?? prescriptionType,
+      advice: advice,
       medicines: medicines,
       imagePath: imagePath,
     );
+  }
+
+  String _cleanDoctorPrefix(String raw) {
+    return raw
+        .split('   ')
+        .first
+        .replaceAll(
+          RegExp(
+            r'^(?:bác sĩ điều trị|bác sĩ khám bệnh|bác sĩ kê đơn|người kê đơn|bác sĩ|bác sỹ|pgs\.?\s*ts\.?\s*bs\.?|gs\.?\s*ts\.?\s*bs\.?|pgs\.?\s*ts\.?|gs\.?\s*ts\.?|ths\.?\s*bs\.?|ts\.?\s*bs\.?|bs\.?\s*ck(?:i|ii|1|2)|bs\.?|dr\.?)[:\s\-]*',
+            caseSensitive: false,
+          ),
+          '',
+        )
+        .trim();
+  }
+
+  bool _isInlineDoctorLine(String lower) {
+    if (lower == 'bác sĩ khám bệnh' ||
+        lower == 'bác sĩ điều trị' ||
+        lower == 'bác sỹ khám bệnh' ||
+        lower == 'người kê đơn') {
+      return false;
+    }
+    return lower.startsWith('bác sĩ') ||
+        lower.startsWith('bác sỹ') ||
+        lower.startsWith('bs.') ||
+        lower.startsWith('bs:') ||
+        lower.startsWith('bs ') ||
+        lower.startsWith('ths.bs') ||
+        lower.startsWith('ts.bs') ||
+        lower.startsWith('pgs.ts') ||
+        lower.startsWith('gs.ts') ||
+        lower.startsWith('bs.ck') ||
+        lower.startsWith('bsck') ||
+        lower.startsWith('dr.');
+  }
+
+  bool _isFooterBoundary(String lower) {
+    return lower.startsWith('lời dặn') ||
+        lower.startsWith('dặn dò') ||
+        lower.startsWith('hẹn tái khám') ||
+        lower.startsWith('tái khám') ||
+        lower.startsWith('cộng khoản') ||
+        lower.startsWith('tổng cộng:') ||
+        lower.startsWith('tổng số khoản') ||
+        lower == 'bác sĩ khám bệnh' ||
+        lower == 'bác sĩ điều trị' ||
+        lower == 'người kê đơn' ||
+        lower == 'người nhận thuốc' ||
+        RegExp(r'^ngày\s+\d{1,2}\s+tháng\s+\d{1,2}\s+năm\s+\d{4}').hasMatch(lower);
+  }
+
+  bool _isAdminOrPatientLine(String lower) {
+    return lower.contains('cộng hòa xã hội') ||
+        lower.contains('độc lập - tự do') ||
+        lower.contains('đơn thuốc') ||
+        lower.contains('toa thuốc') ||
+        lower.contains('phiếu khám') ||
+        lower.contains('phiếu tư vấn') ||
+        lower.startsWith('họ và tên') ||
+        lower.startsWith('họ tên') ||
+        lower.startsWith('tên bệnh nhân') ||
+        lower.startsWith('khách hàng:') ||
+        lower.startsWith('năm sinh') ||
+        lower.startsWith('ngày sinh') ||
+        lower.startsWith('tuổi:') ||
+        lower.startsWith('giới tính') ||
+        lower.startsWith('địa chỉ') ||
+        lower.startsWith('điện thoại') ||
+        lower.startsWith('sđt') ||
+        lower.startsWith('số thẻ bhyt') ||
+        lower.startsWith('mã thẻ') ||
+        lower.startsWith('mã bn') ||
+        lower.startsWith('mã y tế') ||
+        lower.startsWith('đối tượng') ||
+        lower.startsWith('cân nặng') ||
+        lower.startsWith('chiều cao') ||
+        lower.startsWith('huyết áp') ||
+        lower.startsWith('mạch:') ||
+        lower.startsWith('nhiệt độ') ||
+        lower.startsWith('nhịp thở') ||
+        lower.startsWith('khoa ') ||
+        lower.startsWith('phòng khám số') ||
+        lower.startsWith('stt ') ||
+        lower == 'thuốc điều trị:' ||
+        lower == 'chỉ định dùng thuốc:' ||
+        lower.contains('ký và ghi rõ') ||
+        lower.contains('chữ ký');
   }
 
   @override
@@ -292,5 +560,74 @@ class OcrServiceImpl implements OcrService {
     } finally {
       _textRecognizer = null;
     }
+  }
+}
+
+class _LooksLikeMedicineHelper {
+  static bool hasBullet(String line) {
+    return RegExp(r'^(?:\(\d+\)|0?\d+[\.\)\/]|[\-\*\•])\s*').hasMatch(line) ||
+        RegExp(r'^0?\d+\s+[A-ZÀ-Ỹ][a-zA-ZÀ-ỹ]{2,}').hasMatch(line);
+  }
+
+  static bool isPureQuantityLine(String line) {
+    final trimmed = line.trim();
+    return RegExp(
+      r'^(?:sl|số lượng|x)?\s*:?\s*\d+\s*(?:viên|vỉ|gói|ống|lọ|chai|tuýp|hộp|miếng|nhát|ml)\.?$',
+      caseSensitive: false,
+    ).hasMatch(trimmed);
+  }
+
+  static bool isInstructionLine(String lower) {
+    return lower.startsWith('uống') ||
+        lower.startsWith('ngày uống') ||
+        lower.startsWith('ngày dùng') ||
+        lower.startsWith('ngày ') ||
+        lower.startsWith('sáng ') ||
+        lower.startsWith('sáng:') ||
+        lower.startsWith('trưa ') ||
+        lower.startsWith('trưa:') ||
+        lower.startsWith('chiều ') ||
+        lower.startsWith('chiều:') ||
+        lower.startsWith('tối ') ||
+        lower.startsWith('tối:') ||
+        lower.startsWith('mỗi lần') ||
+        lower.startsWith('chia ') ||
+        lower.startsWith('ngậm') ||
+        lower.startsWith('thoa') ||
+        lower.startsWith('bôi ') ||
+        lower.startsWith('nhỏ ') ||
+        lower.startsWith('xịt ') ||
+        lower.startsWith('tiêm ') ||
+        lower.startsWith('pha ') ||
+        lower.startsWith('cách dùng') ||
+        lower.startsWith('liều dùng') ||
+        lower.contains('viên/ngày') ||
+        lower.contains('viên / ngày') ||
+        lower.contains('lần/ngày') ||
+        lower.contains('lần / ngày') ||
+        lower.contains('mỗi lần') ||
+        lower.contains('trước ăn') ||
+        lower.contains('sau ăn') ||
+        lower.contains('trước khi ăn') ||
+        lower.contains('sau khi ăn') ||
+        lower.contains('trước khi đi ngủ') ||
+        lower.contains('khi sốt') ||
+        lower.contains('khi đau');
+  }
+
+  static bool hasPharmaceuticalSignature(String line) {
+    if (isPureQuantityLine(line) || isInstructionLine(line.toLowerCase())) {
+      return false;
+    }
+    final hasStrengthOrForm = RegExp(
+      r'\b\d+(?:[.,]\d+)?\s*(?:mg|mcg|g|ml|iu|ui|%)\b|\b(?:viên nén|viên nang|viên sủi|hỗn dịch|dung dịch|siro)\b',
+      caseSensitive: false,
+    ).hasMatch(line);
+    if (hasStrengthOrForm) return true;
+
+    return RegExp(
+      r'\b(?:paracetamol|panadol|efferalgan|hapacol|augmentin|amoxicillin|cefuroxim|cefixim|cefpodoxim|azithromycin|klacid|clarithromycin|nexium|esomeprazol|omeprazol|pantoprazol|rabeprazol|gaviscon|phosphalugel|smecta|berberin|enterogermina|oresol|alpha\s*choay|alphachymotrypsin|loratadin|desloratadin|cetirizin|fexofenadin|montelukast|salbutamol|acetylcystein|ambroxol|bromhexin|prednisolon|methylprednisolon|ibuprofen|meloxicam|celecoxib|diclofenac|amlodipin|losartan|valsartan|telmisartan|perindopril|bisoprolol|atorvastatin|rosuvastatin|metformin|gliclazid|vitamin)\b',
+      caseSensitive: false,
+    ).hasMatch(line);
   }
 }

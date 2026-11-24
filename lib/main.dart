@@ -63,21 +63,25 @@ class _SoTayYTeAppState extends State<SoTayYTeApp> with WidgetsBindingObserver {
 
     // Ẩn nội dung nhạy cảm trên trình chuyển đổi đa nhiệm (App Switcher)
     if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
-      if (privacyEnabled && !_isMultitaskObscured && !AppRoutes.isAppLockShowing) {
+      if (privacyEnabled &&
+          !_isMultitaskObscured &&
+          !AppRoutes.isAppLockShowing &&
+          !AppRoutes.isExternalPickerActive) {
         setState(() => _isMultitaskObscured = true);
       }
     }
 
     // Chỉ ghi nhận thời điểm khóa khi app thực sự vào background (paused).
-    // Tuyệt đối KHÔNG bắt `inactive` để khóa vì hệ thống iOS hiển thị Face ID dialog,
-    // camera/gallery permission sheets, notification banner đều phát sinh `inactive`.
-    if (state == AppLifecycleState.paused) {
+    // Tuyệt đối KHÔNG bắt `inactive` hoặc khi đang mở Camera/Gallery hệ thống (`isExternalPickerActive`).
+    if (state == AppLifecycleState.paused && !AppRoutes.isExternalPickerActive) {
       _lastBackgroundedTime = DateTime.now();
     } else if (state == AppLifecycleState.resumed) {
       if (_isMultitaskObscured) {
         setState(() => _isMultitaskObscured = false);
       }
-      _checkAutoLock();
+      if (!AppRoutes.isExternalPickerActive) {
+        _checkAutoLock();
+      }
     }
   }
 

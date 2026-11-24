@@ -72,6 +72,10 @@
 	<string>Sổ Tay Y Tế cần quyền truy cập Camera để chụp và quét thông minh đơn thuốc, kết quả xét nghiệm.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Sổ Tay Y Tế cần quyền truy cập Thư viện ảnh để quét hình ảnh đơn thuốc đã lưu.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Sổ Tay Y Tế cần quyền lưu hình ảnh đơn thuốc và tài liệu y tế vào thiết bị.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Sổ Tay Y Tế không thu âm, quyền này chỉ phục vụ trình chụp ảnh hệ thống khi cần.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

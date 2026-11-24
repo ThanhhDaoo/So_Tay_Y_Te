@@ -141,6 +141,51 @@ Chẩn đoán: Tăng huyết áp độ 2, Rối loạn lipid máu
       expect(result.medicines[2].instruction, contains('sau ăn trưa'));
     });
 
+    test('parseText accurately parses real BHYT hospital table & pharmacy prescriptions', () {
+      const realBhytPrescription = '''
+SỞ Y TẾ TP. HỒ CHÍ MINH   Mã số: 019283
+BỆNH VIỆN ĐẠI HỌC Y DƯỢC
+ĐƠN THUỐC BHYT
+Họ và tên: NGUYỄN VĂN AN   Tuổi: 45   Giới tính: Nam
+Cân nặng: 62 kg   Số thẻ BHYT: DN4797912345678
+Chẩn đoán: J02 - Viêm họng cấp; K21 - Trào ngược dạ dày thực quản
+Thuốc điều trị:
+1/ Augmentin 1g   14 Viên
+Ngày uống 2 lần, mỗi lần 1 viên sau ăn
+2/ Alpha Choay 5mg
+SL: 20 Viên
+Ngày ngậm dưới lưỡi 4 viên chia 2 lần
+3/ Gaviscon Dual Action 10ml   15 Gói
+Uống 1 gói sau ăn trưa, tối và khi đau
+Cộng khoản: 03 khoản
+Lời dặn: Kiêng đồ chua cay, tái khám sau 7 ngày.
+Ngày 24 tháng 11 năm 2026
+Bác sĩ khám bệnh
+(Ký, ghi rõ họ tên)
+ThS.BS Trần Minh Hoàng
+      ''';
+
+      final result = ocrService.parseText(realBhytPrescription);
+
+      expect(result.hospital, equals('BỆNH VIỆN ĐẠI HỌC Y DƯỢC'));
+      expect(result.prescriptionType, equals('ĐƠN THUỐC BHYT'));
+      expect(result.diagnosis, contains('Viêm họng cấp'));
+      expect(result.doctorName, equals('Trần Minh Hoàng'));
+      expect(result.advice, contains('Kiêng đồ chua cay'));
+      expect(result.medicines.length, equals(3));
+
+      expect(result.medicines[0].name, equals('Augmentin 1g'));
+      expect(result.medicines[0].dosage, contains('14 Viên'));
+      expect(result.medicines[0].instruction, contains('Ngày uống 2 lần'));
+
+      expect(result.medicines[1].name, equals('Alpha Choay 5mg'));
+      expect(result.medicines[1].dosage, contains('20 Viên'));
+      expect(result.medicines[1].instruction, contains('ngậm dưới lưỡi'));
+
+      expect(result.medicines[2].name, equals('Gaviscon Dual Action 10ml'));
+      expect(result.medicines[2].dosage, contains('15 Gói'));
+    });
+
     testWidgets('PrescriptionOcrResultModal triggers scanning and displays parsed medicines',
         (tester) async {
       tester.view.physicalSize = const Size(1170, 2532);

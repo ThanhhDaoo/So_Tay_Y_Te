@@ -32,6 +32,9 @@ class AppRoutes {
   /// Cờ kiểm soát màn hình khóa đang hiển thị, tránh mở lặp khi nhận lifecycle events
   static bool isAppLockShowing = false;
 
+  /// Cờ đánh dấu đang mở Camera / Thư viện ảnh hệ thống để không khóa nhầm ứng dụng
+  static bool isExternalPickerActive = false;
+
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final routeName = settings.name ?? '';
     // Chặn các URI callback của Supabase OAuth (?code=..., ?error=..., #access_token=...) không bị đẩy thành màn hình lỗi
