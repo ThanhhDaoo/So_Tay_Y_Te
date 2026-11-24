@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 class ParsedMedicineItem {
   final String name;
@@ -67,7 +69,24 @@ class OcrServiceImpl implements OcrService {
         imageQuality: 90,
         maxWidth: 1920,
       );
-      return pickedFile?.path;
+      if (pickedFile == null) return null;
+
+      // Sao chép ảnh từ thư mục cache tạm (tmp/) sang Documents bền vững để tránh bị HĐH tự dọn rác
+      try {
+        final docsDir = await getApplicationDocumentsDirectory();
+        final ext = p.extension(pickedFile.path).isNotEmpty
+            ? p.extension(pickedFile.path)
+            : '.jpg';
+        final permanentPath = p.join(
+          docsDir.path,
+          'ocr_${DateTime.now().millisecondsSinceEpoch}$ext',
+        );
+        final savedFile = await File(pickedFile.path).copy(permanentPath);
+        return savedFile.path;
+      } catch (copyErr) {
+        debugPrint('OcrServiceImpl.pickImage permanent copy fallback: $copyErr');
+        return pickedFile.path;
+      }
     } catch (e) {
       debugPrint('OcrServiceImpl.pickImage error: $e');
       return null;

@@ -150,43 +150,41 @@ class EmergencyCardViewModel extends ChangeNotifier {
   /// Kích hoạt gọi người thân khẩn cấp (ICE).
   Future<void> callPrimaryContact() async {
     final c = _state.primaryContact;
+    final cleanPhone = c.phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (cleanPhone.isEmpty) {
+      _state = _state.copyWith(
+        lastActionMessage: 'Chưa thiết lập số điện thoại người thân khẩn cấp (ICE). Vui lòng cập nhật tại tab Hồ sơ.',
+      );
+      notifyListeners();
+      return;
+    }
+
     _state = _state.copyWith(
-      lastActionMessage: 'Đang kết nối cuộc gọi tới ${c.name} (${c.phone})...',
+      lastActionMessage: 'Đang kết nối cuộc gọi tới ${c.name} ($cleanPhone)...',
     );
     notifyListeners();
 
-    if (c.phone.isNotEmpty) {
-      final cleanPhone = c.phone.replaceAll(RegExp(r'[^0-9+]'), '');
-      if (cleanPhone.isNotEmpty) {
-        final uri = Uri.parse('tel:$cleanPhone');
-        try {
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri);
-          }
-        } catch (_) {}
-      }
-    }
+    await _dialNumber(cleanPhone);
   }
 
   /// Kích hoạt gọi bác sĩ điều trị.
   Future<void> callDoctor() async {
     final c = _state.doctorContact;
+    final cleanPhone = c.phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (cleanPhone.isEmpty) {
+      _state = _state.copyWith(
+        lastActionMessage: 'Chưa có số điện thoại bác sĩ điều trị trong hồ sơ.',
+      );
+      notifyListeners();
+      return;
+    }
+
     _state = _state.copyWith(
-      lastActionMessage: 'Đang kết nối cuộc gọi tới ${c.name} (${c.phone})...',
+      lastActionMessage: 'Đang kết nối cuộc gọi tới ${c.name} ($cleanPhone)...',
     );
     notifyListeners();
 
-    if (c.phone.isNotEmpty) {
-      final cleanPhone = c.phone.replaceAll(RegExp(r'[^0-9+]'), '');
-      if (cleanPhone.isNotEmpty) {
-        final uri = Uri.parse('tel:$cleanPhone');
-        try {
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri);
-          }
-        } catch (_) {}
-      }
-    }
+    await _dialNumber(cleanPhone);
   }
 
   /// Kích hoạt gọi tổng đài cấp cứu 115.
@@ -196,12 +194,22 @@ class EmergencyCardViewModel extends ChangeNotifier {
     );
     notifyListeners();
 
-    final uri = Uri.parse('tel:115');
+    await _dialNumber('115');
+  }
+
+  Future<void> _dialNumber(String cleanPhone) async {
+    final uri = Uri(scheme: 'tel', path: cleanPhone);
     try {
-      if (await canLaunchUrl(uri)) {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && await canLaunchUrl(uri)) {
         await launchUrl(uri);
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[EmergencyCard] _dialNumber($cleanPhone) error: $e');
+    }
   }
 
   void clearActionMessage() {
