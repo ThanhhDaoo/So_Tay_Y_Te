@@ -276,7 +276,7 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           'rec_${now.millisecondsSinceEpoch}';
 
       Prescription? prescription;
-      if (_medicines.isNotEmpty || _doctorController.text.trim().isNotEmpty) {
+      if (_medicines.isNotEmpty) {
         prescription = Prescription(
           id: widget.recordToEdit?.prescription?.id ?? 'rx_${now.millisecondsSinceEpoch}',
           doctorName: _doctorController.text.trim(),

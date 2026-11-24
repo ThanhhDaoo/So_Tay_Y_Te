@@ -21,9 +21,24 @@ class MedicalLocalDataSourceImpl implements MedicalLocalDataSource {
     final db = await _db;
     List<Map<String, dynamic>> results;
     if (userId != null && userId.isNotEmpty) {
+      // Chỉ tự động gán các bản ghi cũ chưa có user_id cho chủ hồ sơ đầu tiên trên máy (tránh lộ sang tài khoản thứ 2)
+      try {
+        final realUsersCount = Sqflite.firstIntValue(
+              await db.rawQuery('SELECT COUNT(*) FROM users WHERE is_guest = 0'),
+            ) ??
+            0;
+        if (realUsersCount <= 1) {
+          await db.update(
+            'medical_events',
+            {'user_id': userId},
+            where: 'user_id IS NULL OR user_id = "" OR user_id LIKE "guest-%"',
+          );
+        }
+      } catch (_) {}
+
       results = await db.query(
         'medical_events',
-        where: 'user_id = ? OR user_id IS NULL',
+        where: 'user_id = ?',
         whereArgs: [userId],
         orderBy: 'date DESC',
       );
@@ -60,7 +75,7 @@ class MedicalLocalDataSourceImpl implements MedicalLocalDataSource {
       );
 
       // Đồng bộ quan hệ prescriptions & medicines để CSDL luôn chuẩn hóa và nhất quán
-      if (event.prescription != null) {
+      if (event.prescription != null && event.prescription!.medicines.isNotEmpty) {
         final pres = event.prescription!;
         await txn.insert(
           'prescriptions',
@@ -95,6 +110,19 @@ class MedicalLocalDataSourceImpl implements MedicalLocalDataSource {
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
         }
+      } else {
+        // Khi đợt khám không còn thuốc (hoặc người dùng đã xóa hết thuốc khi chỉnh sửa), dọn sạch dữ liệu mồ côi
+        final oldPres = await txn.query(
+          'prescriptions',
+          columns: ['id'],
+          where: 'event_id = ?',
+          whereArgs: [event.id],
+        );
+        for (final p in oldPres) {
+          final presId = p['id'] as String;
+          await txn.delete('medicines', where: 'prescription_id = ?', whereArgs: [presId]);
+        }
+        await txn.delete('prescriptions', where: 'event_id = ?', whereArgs: [event.id]);
       }
     });
   }

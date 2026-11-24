@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/config/firebase_config.dart';
 import '../../core/config/supabase_config.dart';
+import '../../core/database/database_helper.dart';
 import '../../core/di/injection_container.dart';
 import '../../core/security/password_hasher.dart';
 import '../../core/services/notification_service.dart';
@@ -407,9 +408,37 @@ class AuthRepositoryImpl implements AuthRepository {
       ),
     );
 
-    // Dọn tài khoản Guest tạm sau khi nâng cấp thành công
+    // Chuyển toàn bộ dữ liệu y tế của phiên Guest sang tài khoản chính thức trước khi dọn Guest tạm
     if (previousGuest != null && previousGuest.id != created.id) {
-      await authLocalDataSource.deleteUserById(previousGuest.id);
+      final guestId = previousGuest.id;
+      if (sl.isRegistered<DatabaseHelper>()) {
+        try {
+          final db = await sl<DatabaseHelper>().database;
+          await db.transaction((txn) async {
+            await txn.update(
+              'medical_events',
+              {'user_id': created.id},
+              where: 'user_id = ? OR user_id IS NULL',
+              whereArgs: [guestId],
+            );
+            await txn.update(
+              'family_members',
+              {'user_id': created.id},
+              where: 'user_id = ?',
+              whereArgs: [guestId],
+            );
+            await txn.update(
+              'medical_documents',
+              {'user_id': created.id},
+              where: 'user_id = ? OR user_id = "current_user"',
+              whereArgs: [guestId],
+            );
+          });
+        } catch (e) {
+          debugPrint('[AuthRepository] Guest data migration error: $e');
+        }
+      }
+      await authLocalDataSource.deleteUserById(guestId);
     }
 
     await _persistAuthenticatedSession(

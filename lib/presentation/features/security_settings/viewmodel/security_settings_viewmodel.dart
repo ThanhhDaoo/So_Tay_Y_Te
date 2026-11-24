@@ -52,6 +52,7 @@ class SecuritySettingsViewModel extends ChangeNotifier {
     final hasPin = await _preferencesDataSource.hasPin();
     final timeoutInt = await _preferencesDataSource.getAutoLockTimeout();
     final privacyEnabled = await _preferencesDataSource.isPrivacyScreenEnabled();
+    final autoSyncEnabled = await _preferencesDataSource.isAutoCloudSyncEnabled();
 
     DateTime? lastSync;
     final syncRepo = _syncRepository ?? (sl.isRegistered<SyncRepository>() ? sl<SyncRepository>() : null);
@@ -66,6 +67,7 @@ class SecuritySettingsViewModel extends ChangeNotifier {
       hasPinCode: hasPin,
       autoLockTimeout: timeoutInt == 1 ? AutoLockTimeout.oneMinute : AutoLockTimeout.immediate,
       isPrivacyScreenInMultitaskEnabled: privacyEnabled,
+      isAutoCloudSyncEnabled: autoSyncEnabled,
       lastCloudSyncTime: lastSync,
     );
     notifyListeners();
@@ -447,6 +449,7 @@ class SecuritySettingsViewModel extends ChangeNotifier {
           : 'Đã tắt tự động đồng bộ đám mây (Duy trì chế độ thuần Offline).',
     );
     notifyListeners();
+    await _preferencesDataSource.setAutoCloudSyncEnabled(value);
   }
 
   void clearFeedbackMessage() {

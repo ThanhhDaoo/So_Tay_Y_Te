@@ -57,6 +57,11 @@ class MockTestMedicalSyncRemoteDataSource implements MedicalSyncRemoteDataSource
     fetchCalled = true;
     return List.from(cloudStorage);
   }
+
+  @override
+  Future<void> deleteEvent(String id) async {
+    cloudStorage.removeWhere((item) => item.id == id);
+  }
 }
 
 void main() {

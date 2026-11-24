@@ -17,8 +17,8 @@ abstract class AppPreferencesDataSource {
   Future<String?> getBiometricUserId();
   Future<void> saveLastLoginIdentifier(String? identifier);
   Future<String?> getLastLoginIdentifier();
-  Future<void> setProStatus(bool isPro);
-  Future<bool> getProStatus();
+  Future<void> setProStatus(bool isPro, {String? userId});
+  Future<bool> getProStatus({String? userId});
   Future<void> setBiometricLockEnabled(bool enabled);
   Future<bool> isBiometricLockEnabled();
   Future<void> savePin({required String pinHash, required String salt});
@@ -30,6 +30,13 @@ abstract class AppPreferencesDataSource {
   Future<int> getAutoLockTimeout();
   Future<void> setPrivacyScreenEnabled(bool enabled);
   Future<bool> isPrivacyScreenEnabled();
+  Future<void> setAutoCloudSyncEnabled(bool enabled);
+  Future<bool> isAutoCloudSyncEnabled();
+  Future<void> saveLastBackupMetadata({required String timeLabel, required String sizeLabel});
+  Future<String?> getLastBackupTime();
+  Future<String?> getLastBackupSize();
+  Future<List<String>> getTakenDoseSlotsForDate(String dateKey);
+  Future<void> saveTakenDoseSlotsForDate(String dateKey, List<String> slotIds);
 }
 
 class AppPreferencesDataSourceImpl implements AppPreferencesDataSource {
@@ -46,6 +53,9 @@ class AppPreferencesDataSourceImpl implements AppPreferencesDataSource {
   static const String _keyPinSalt = 'security_pin_salt';
   static const String _keyAutoLockTimeout = 'security_auto_lock_timeout';
   static const String _keyPrivacyScreen = 'security_privacy_screen';
+  static const String _keyAutoCloudSync = 'security_auto_cloud_sync';
+  static const String _keyLastBackupTime = 'security_last_backup_time';
+  static const String _keyLastBackupSize = 'security_last_backup_size';
 
   Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
 
@@ -136,14 +146,23 @@ class AppPreferencesDataSourceImpl implements AppPreferencesDataSource {
   }
 
   @override
-  Future<void> setProStatus(bool isPro) async {
+  Future<void> setProStatus(bool isPro, {String? userId}) async {
     final prefs = await _prefs;
-    await prefs.setBool(_keyIsPro, isPro);
+    final effectiveUser = userId ?? prefs.getString(_keyUserId);
+    if (effectiveUser != null && effectiveUser.isNotEmpty) {
+      await prefs.setBool('${_keyIsPro}_$effectiveUser', isPro);
+    } else {
+      await prefs.setBool(_keyIsPro, isPro);
+    }
   }
 
   @override
-  Future<bool> getProStatus() async {
+  Future<bool> getProStatus({String? userId}) async {
     final prefs = await _prefs;
+    final effectiveUser = userId ?? prefs.getString(_keyUserId);
+    if (effectiveUser != null && effectiveUser.isNotEmpty) {
+      return prefs.getBool('${_keyIsPro}_$effectiveUser') ?? false;
+    }
     return prefs.getBool(_keyIsPro) ?? false;
   }
 
@@ -213,5 +232,53 @@ class AppPreferencesDataSourceImpl implements AppPreferencesDataSource {
   Future<bool> isPrivacyScreenEnabled() async {
     final prefs = await _prefs;
     return prefs.getBool(_keyPrivacyScreen) ?? true;
+  }
+
+  @override
+  Future<void> setAutoCloudSyncEnabled(bool enabled) async {
+    final prefs = await _prefs;
+    await prefs.setBool(_keyAutoCloudSync, enabled);
+  }
+
+  @override
+  Future<bool> isAutoCloudSyncEnabled() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_keyAutoCloudSync) ?? true;
+  }
+
+  @override
+  Future<void> saveLastBackupMetadata({
+    required String timeLabel,
+    required String sizeLabel,
+  }) async {
+    final prefs = await _prefs;
+    await prefs.setString(_keyLastBackupTime, timeLabel);
+    await prefs.setString(_keyLastBackupSize, sizeLabel);
+  }
+
+  @override
+  Future<String?> getLastBackupTime() async {
+    final prefs = await _prefs;
+    return prefs.getString(_keyLastBackupTime);
+  }
+
+  @override
+  Future<String?> getLastBackupSize() async {
+    final prefs = await _prefs;
+    return prefs.getString(_keyLastBackupSize);
+  }
+
+  @override
+  Future<List<String>> getTakenDoseSlotsForDate(String dateKey) async {
+    final prefs = await _prefs;
+    final uid = prefs.getString(_keyUserId) ?? 'default';
+    return prefs.getStringList('rx_taken_${uid}_$dateKey') ?? const [];
+  }
+
+  @override
+  Future<void> saveTakenDoseSlotsForDate(String dateKey, List<String> slotIds) async {
+    final prefs = await _prefs;
+    final uid = prefs.getString(_keyUserId) ?? 'default';
+    await prefs.setStringList('rx_taken_${uid}_$dateKey', slotIds);
   }
 }

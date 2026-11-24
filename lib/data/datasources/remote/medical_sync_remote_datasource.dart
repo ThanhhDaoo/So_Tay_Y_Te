@@ -7,6 +7,7 @@ import '../../models/medical_event_model.dart';
 abstract class MedicalSyncRemoteDataSource {
   Future<void> uploadEvents(List<MedicalEventModel> events);
   Future<List<MedicalEventModel>> fetchLatestEvents();
+  Future<void> deleteEvent(String id);
 }
 
 class MedicalSyncRemoteDataSourceImpl implements MedicalSyncRemoteDataSource {
@@ -56,6 +57,10 @@ class MedicalSyncRemoteDataSourceImpl implements MedicalSyncRemoteDataSource {
 
     try {
       final currentUserId = c.auth.currentUser?.id;
+      // Không truy vấn toàn cục nếu chưa đăng nhập Supabase thật (trừ môi trường truyền mock client kiểm thử)
+      if (currentUserId == null && client == null) {
+        return [];
+      }
       dynamic query = c.from('medical_events').select();
       if (currentUserId != null) {
         query = query.eq('user_id', currentUserId);
@@ -68,6 +73,28 @@ class MedicalSyncRemoteDataSourceImpl implements MedicalSyncRemoteDataSource {
     } catch (e) {
       debugPrint('[MedicalSyncRemoteDataSource] fetchLatestEvents failed: $e');
       return [];
+    }
+  }
+
+  @override
+  Future<void> deleteEvent(String id) async {
+    final c = _client;
+    if (c == null || id.isEmpty) return;
+
+    if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST') && client == null) {
+      return;
+    }
+
+    try {
+      final currentUserId = c.auth.currentUser?.id;
+      dynamic query = c.from('medical_events').delete().eq('id', id);
+      if (currentUserId != null) {
+        query = query.eq('user_id', currentUserId);
+      }
+      await query;
+      debugPrint('[MedicalSyncRemoteDataSource] Deleted event $id from Supabase Cloud.');
+    } catch (e) {
+      debugPrint('[MedicalSyncRemoteDataSource] deleteEvent failed: $e');
     }
   }
 }

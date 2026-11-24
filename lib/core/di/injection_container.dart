@@ -75,6 +75,11 @@ class InjectionContainer {
       sl.registerSingleton<DatabaseHelper>(dbHelper);
     }
 
+    if (!sl.isRegistered<SharedPreferences>()) {
+      final prefs = await SharedPreferences.getInstance();
+      sl.registerSingleton<SharedPreferences>(prefs);
+    }
+
     // Tự động dọn dẹp các thông báo uống thuốc cũ trên hệ thống nếu không còn thuốc nào trong CSDL
     try {
       final dbHelper = sl<DatabaseHelper>();

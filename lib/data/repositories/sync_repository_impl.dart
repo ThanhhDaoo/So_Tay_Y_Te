@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/di/injection_container.dart';
 import '../../domain/repositories/sync_repository.dart';
+import '../datasources/local/app_preferences_datasource.dart';
 import '../datasources/local/medical_local_datasource.dart';
 import '../datasources/remote/medical_sync_remote_datasource.dart';
 
@@ -22,7 +23,10 @@ class SyncRepositoryImpl implements SyncRepository {
 
   @override
   Future<void> syncLocalToCloud() async {
-    final events = await localDataSource.getAllEvents();
+    final activeUserId = sl.isRegistered<AppPreferencesDataSource>()
+        ? await sl<AppPreferencesDataSource>().getSessionUserId()
+        : null;
+    final events = await localDataSource.getAllEvents(userId: activeUserId);
     if (events.isNotEmpty) {
       await remoteDataSource.uploadEvents(events);
     }
@@ -44,6 +48,11 @@ class SyncRepositoryImpl implements SyncRepository {
   Future<void> syncBothWays() async {
     await syncLocalToCloud();
     await syncCloudToLocal();
+  }
+
+  @override
+  Future<void> deleteRemoteEvent(String id) async {
+    await remoteDataSource.deleteEvent(id);
   }
 
   @override

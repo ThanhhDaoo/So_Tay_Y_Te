@@ -178,12 +178,12 @@ class ProfileViewModel extends ChangeNotifier {
                 whereArgs: [session.id],
                 orderBy: 'created_at ASC',
               );
+              // Chỉ tự động gán các thành viên từ phiên khách/chưa gán sang tài khoản hiện tại (không lấy của tài khoản khác)
               try {
                 await db.update(
                   'family_members',
                   {'user_id': session.id},
-                  where: 'user_id != ? OR user_id IS NULL',
-                  whereArgs: [session.id],
+                  where: 'user_id IS NULL OR user_id = "" OR user_id LIKE "guest-%"',
                 );
               } catch (_) {}
               for (final row in rows) {
