@@ -206,15 +206,15 @@ class InputValidators {
     final clean = value.trim();
     final parts = clean.split('/');
     if (parts.length != 2) {
-      return 'Nhập theo dạng Tâm thu/Tâm trương (VD: 120/80)';
+      return 'Nhập đủ 2 chỉ số có dấu "/" (VD: 120/80)';
     }
     final sys = int.tryParse(parts[0].trim());
     final dia = int.tryParse(parts[1].trim());
     if (sys == null || dia == null || sys < 40 || sys > 300 || dia < 20 || dia > 200) {
-      return 'Chỉ số huyết áp ngoài ngưỡng sinh học (40-300 / 20-200)';
+      return 'Ngưỡng hợp lệ: 40–300 / 20–200 mmHg';
     }
     if (sys <= dia) {
-      return 'Huyết áp tâm thu phải lớn hơn tâm trương';
+      return 'Tâm thu (số đầu) phải lớn hơn tâm trương';
     }
     return null;
   }

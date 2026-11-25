@@ -141,16 +141,17 @@ class MedicalAssistantService {
   );
   static const String _envModel = String.fromEnvironment(
     'GEMINI_MODEL',
-    defaultValue: 'gemini-2.5-flash',
+    defaultValue: 'gemini-3.6-flash',
   );
 
   static const String _secureKeyGeminiApi = 'assistant_gemini_api_key';
   static const String _secureKeyGeminiModel = 'assistant_gemini_model';
 
   static const List<String> supportedModels = [
-    'gemini-2.5-flash',
+    'gemini-3.6-flash',
+    'gemini-3.5-flash',
+    'gemini-3.5-flash-lite',
     'gemini-3.8-flash',
-    'gemini-2.5-pro',
   ];
 
   static const String medicalSystemInstruction = '''
@@ -478,8 +479,11 @@ NGUYÊN TẮC AN TOÀN Y KHOA BẮT BUỘC:
       'nhức đầu',
       'chóng mặt',
       'đau bụng',
+      'đau quặn',
       'tiêu chảy',
       'buồn nôn',
+      'ói',
+      'nôn mửa',
       'đau họng',
       'viêm họng',
       'ho khan',
@@ -795,10 +799,13 @@ Câu hỏi của người dùng: $userQuery
       ],
     });
 
-    final modelsToTry = <String>[
+    final modelsToTry = <String>{
       preferredModel,
-      if (preferredModel != 'gemini-2.5-flash') 'gemini-2.5-flash',
-    ];
+      'gemini-3.6-flash',
+      'gemini-3.5-flash',
+      'gemini-3.5-flash-lite',
+      'gemini-3.8-flash',
+    }.toList();
 
     Object? lastError;
     for (final model in modelsToTry) {
@@ -824,12 +831,13 @@ Câu hỏi của người dùng: $userQuery
     required List<Map<String, dynamic>> contents,
   }) async {
     final uri = Uri.parse(
-      'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey',
+      'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent',
     );
-    final client = HttpClient()..connectionTimeout = const Duration(seconds: 15);
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 12);
     try {
       final request = await client.postUrl(uri);
       request.headers.set(HttpHeaders.contentTypeHeader, 'application/json; charset=utf-8');
+      request.headers.set('x-goog-api-key', apiKey);
       final payload = jsonEncode({
         'system_instruction': {
           'parts': [
@@ -892,7 +900,7 @@ Câu hỏi của người dùng: $userQuery
 
     buf.writeln('🩺 **Tham khảo triệu chứng sơ bộ (Không phải chẩn đoán xác định)**');
     buf.writeln(
-      '_Lưu ý quan trọng: Các triệu chứng bên dưới có thể gặp ở nhiều bệnh lý khác nhau, không thể kết luận chính xác một bệnh nếu chưa thăm khám lâm sàng._\n',
+      'Lưu ý: Các triệu chứng bên dưới có thể gặp ở nhiều bệnh lý khác nhau, không thể kết luận chính xác một bệnh nếu chưa thăm khám lâm sàng.\n',
     );
 
     if (_matchesAny(q, const ['khó thở', 'tức ngực', 'đau ngực'])) {
@@ -902,10 +910,10 @@ Câu hỏi của người dùng: $userQuery
       buf.writeln('• **Nhóm nguyên nhân thường gặp (tham khảo):** Nhiễm siêu vi đường hô hấp trên (cảm lạnh, cúm), viêm họng/amidan, sốt xuất huyết (nếu sốt cao đột ngột) hoặc kích ứng thời tiết.');
       buf.writeln('• **Theo dõi tại nhà:** Nghỉ ngơi, uống đủ nước/oresol, đo thân nhiệt định kỳ, không tự ý dùng kháng sinh khi chưa có chỉ định bác sĩ.');
       buf.writeln('• **⚠️ Cần đi khám ngay nếu:** Sốt cao > 39°C không hạ, sốt kéo dài quá 48–72 giờ, khó thở, lừ đừ, xuất huyết dưới da hoặc đau đầu dữ dội.');
-    } else if (_matchesAny(q, const ['đau bụng', 'tiêu chảy', 'buồn nôn'])) {
-      buf.writeln('• **Nhóm nguyên nhân thường gặp (tham khảo):** Rối loạn tiêu hóa, ngộ độc thực phẩm nhẹ, viêm dạ dày - tá tràng hoặc hội chứng ruột kích thích.');
-      buf.writeln('• **Theo dõi tại nhà:** Bù nước và điện giải từng ngụm nhỏ, ăn thức ăn mềm dễ tiêu, theo dõi vị trí đau và số lần đi ngoài.');
-      buf.writeln('• **⚠️ Cần đi khám ngay nếu:** Đau bụng dữ dội khu trú (như hố chậu phải), bụng cứng, nôn liên tục không uống được nước, đi ngoài phân đen/có máu hoặc sốt cao.');
+    } else if (_matchesAny(q, const ['đau bụng', 'đau quặn', 'tiêu chảy', 'buồn nôn', 'ói', 'nôn'])) {
+      buf.writeln('• **Nhóm nguyên nhân thường gặp (tham khảo):** Rối loạn tiêu hóa, ngộ độc thực phẩm, viêm dạ dày - ruột cấp, cơn đau quặn mật/thận hoặc viêm ruột thừa (nếu đau khu trú tăng dần).');
+      buf.writeln('• **Theo dõi tại nhà:** Bù nước và điện giải từng ngụm nhỏ, nghỉ ngơi, không tự ý uống thuốc giảm đau mạnh làm che lấp triệu chứng bụng ngoại khoa.');
+      buf.writeln('• **⚠️ Cần đi khám ngay nếu:** Đau quặn bụng dữ dội hoặc đau khu trú hố chậu phải, bụng cứng, nôn/ói liên tục không ăn uống được, đi ngoài phân đen/có máu hoặc sốt cao.');
     } else if (_matchesAny(q, const ['đau đầu', 'nhức đầu', 'chóng mặt', 'mất ngủ'])) {
       buf.writeln('• **Nhóm nguyên nhân thường gặp (tham khảo):** Đau đầu căng cơ (stress, thiếu ngủ), đau nửa đầu (Migraine), thay đổi huyết áp, thiếu nước hoặc viêm xoang.');
       buf.writeln('• **Theo dõi tại nhà:** Nghỉ ngơi nơi yên tĩnh, đo kiểm tra huyết áp, hạn chế màn hình và thức uống chứa caffeine.');
@@ -927,9 +935,9 @@ Câu hỏi của người dùng: $userQuery
     }
 
     if (apiErrorHint != null) {
-      buf.writeln('\n_(Chế độ Gemini AI tạm gián đoạn: $apiErrorHint — đang hiển thị hướng dẫn an toàn nội bộ)._');
+      buf.writeln('\n(Tạm thời hiển thị hướng dẫn tham khảo nội bộ do kết nối AI gián đoạn: $apiErrorHint).');
     } else {
-      buf.writeln('\n💡 _Mẹo: Bấm biểu tượng **🔑 API Key** ở góc trên khung chat để dán Gemini API Key (miễn phí từ Google AI Studio) nếu bạn muốn AI phân tích chi tiết hơn._');
+      buf.writeln('\nThông tin trên chỉ mang tính tham khảo ban đầu, không thay thế việc thăm khám trực tiếp với bác sĩ.');
     }
 
     return AssistantReply(

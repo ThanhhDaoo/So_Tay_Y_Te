@@ -727,12 +727,13 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                       icon: Icons.speed_outlined,
                       children: [
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
                               child: _buildInputField(
                                 controller: _bpController,
                                 label: 'Huyết áp (mmHg)',
-                                hint: '120/80',
+                                hint: 'VD: 120/80',
                                 validator: InputValidators.validateBloodPressure,
                               ),
                             ),
@@ -741,7 +742,7 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                               child: _buildInputField(
                                 controller: _hrController,
                                 label: 'Nhịp tim (bpm)',
-                                hint: '72',
+                                hint: 'VD: 72',
                                 validator: InputValidators.validateHeartRate,
                               ),
                             ),
@@ -759,13 +760,24 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           TextButton.icon(
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
                             onPressed: _scanPrescriptionOcr,
-                            icon: const Icon(Icons.document_scanner_outlined, size: 16, color: AppColors.iceOlive),
+                            icon: const Icon(Icons.document_scanner_outlined, size: 15, color: AppColors.iceOlive),
                             label: const Text('Quét AI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.iceOlive)),
                           ),
+                          const SizedBox(width: 4),
                           TextButton.icon(
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
                             onPressed: () => _showAddMedicineDialog(),
-                            icon: const Icon(Icons.add, size: 16, color: AppColors.iceOlive),
+                            icon: const Icon(Icons.add, size: 15, color: AppColors.iceOlive),
                             label: const Text('Thêm tay', style: TextStyle(fontSize: 12, color: AppColors.iceOlive)),
                           ),
                         ],
@@ -992,6 +1004,8 @@ class _AddRecordScreenState extends State<AddRecordScreen> {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(fontSize: 13, color: AppColors.iceTextMuted),
+            errorMaxLines: 3,
+            errorStyle: const TextStyle(fontSize: 11.5, height: 1.25),
             filled: true,
             fillColor: AppColors.surfaceWarm,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

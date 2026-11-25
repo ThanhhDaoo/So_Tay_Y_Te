@@ -31,7 +31,7 @@ class MedicalAssistantState {
     this.messages = const [],
     this.isLoading = false,
     this.hasGeminiKey = false,
-    this.selectedModel = 'gemini-2.5-flash',
+    this.selectedModel = 'gemini-3.6-flash',
     this.activeMemberName = 'Hồ sơ gốc',
   });
 

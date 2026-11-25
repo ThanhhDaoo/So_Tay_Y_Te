@@ -142,144 +142,6 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
     }
   }
 
-  Future<void> _showApiKeySettingsDialog() async {
-    final currentKey = await _viewModel.getSavedApiKey();
-    if (!mounted) return;
-    final keyController = TextEditingController(text: currentKey);
-    String selectedModel = _viewModel.state.selectedModel;
-    if (!MedicalAssistantService.supportedModels.contains(selectedModel)) {
-      selectedModel = MedicalAssistantService.supportedModels.first;
-    }
-    bool obscure = true;
-
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: const Row(
-            children: [
-              Icon(Icons.vpn_key_rounded, color: AppColors.iceOlive, size: 20),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Cấu hình Gemini API (Test)',
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                ),
-              ),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Dán API Key tạo từ Google AI Studio (aistudio.google.com). Key được mã hóa lưu cục bộ trên máy bằng Secure Storage, không đẩy lên Git.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    height: 1.35,
-                    color: AppColors.iceTextSlate,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: keyController,
-                  obscureText: obscure,
-                  decoration: InputDecoration(
-                    labelText: 'Gemini API Key (AIza...)',
-                    hintText: 'Để trống nếu chỉ dùng chế độ Offline',
-                    isDense: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        obscure ? Icons.visibility_off : Icons.visibility,
-                        size: 18,
-                      ),
-                      onPressed: () =>
-                          setDialogState(() => obscure = !obscure),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Mô hình Gemini ưu tiên:',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 6),
-                DropdownButtonFormField<String>(
-                  initialValue: selectedModel,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  items: MedicalAssistantService.supportedModels
-                      .map(
-                        (m) => DropdownMenuItem(
-                          value: m,
-                          child: Text(m, style: const TextStyle(fontSize: 13)),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setDialogState(() => selectedModel = val);
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            if (currentKey.isNotEmpty)
-              TextButton(
-                onPressed: () async {
-                  await _viewModel.updateGeminiConfig(
-                    apiKey: '',
-                    model: selectedModel,
-                  );
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-                child: const Text(
-                  'Xóa Key',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Hủy'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.iceOlive,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () async {
-                await _viewModel.updateGeminiConfig(
-                  apiKey: keyController.text,
-                  model: selectedModel,
-                );
-                if (ctx.mounted) Navigator.pop(ctx);
-              },
-              child: const Text('Lưu cấu hình'),
-            ),
-          ],
-        ),
-      ),
-    );
-    keyController.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
@@ -362,19 +224,15 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                                       Container(
                                         width: 7,
                                         height: 7,
-                                        decoration: BoxDecoration(
+                                        decoration: const BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: state.hasGeminiKey
-                                              ? const Color(0xFF2E7D32)
-                                              : const Color(0xFFD97706),
+                                          color: Color(0xFF2E7D32),
                                         ),
                                       ),
                                       const SizedBox(width: 5),
                                       Flexible(
                                         child: Text(
-                                          state.hasGeminiKey
-                                              ? '${state.activeMemberName} • Local + ${state.selectedModel}'
-                                              : '${state.activeMemberName} • Local (Chạm 🔑 gắn Gemini)',
+                                          'Hồ sơ: ${state.activeMemberName} • Sẵn sàng hỗ trợ',
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
                                             fontSize: 11,
@@ -386,17 +244,6 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                                   ),
                                 ],
                               ),
-                            ),
-                            IconButton(
-                              tooltip: 'Cấu hình Gemini API Key',
-                              icon: Icon(
-                                Icons.vpn_key_rounded,
-                                size: 19,
-                                color: state.hasGeminiKey
-                                    ? const Color(0xFF2E7D32)
-                                    : AppColors.iceOlive,
-                              ),
-                              onPressed: _showApiKeySettingsDialog,
                             ),
                             IconButton(
                               tooltip: 'Làm mới hội thoại',
@@ -773,20 +620,30 @@ class _FormattedMessageText extends StatelessWidget {
       color: isUser ? Colors.white : AppColors.iceTextNavy,
     );
     final boldStyle = baseStyle.copyWith(fontWeight: FontWeight.w700);
+    final italicStyle = baseStyle.copyWith(fontStyle: FontStyle.italic);
+
+    final cleaned = text.replaceAllMapped(
+      RegExp(r'^#{1,4}\s+', multiLine: true),
+      (_) => '',
+    );
 
     final spans = <TextSpan>[];
-    final regex = RegExp(r'\*\*(.+?)\*\*');
+    final regex = RegExp(r'\*\*(.+?)\*\*|_([^_\n]+)_');
     int lastEnd = 0;
 
-    for (final match in regex.allMatches(text)) {
+    for (final match in regex.allMatches(cleaned)) {
       if (match.start > lastEnd) {
-        spans.add(TextSpan(text: text.substring(lastEnd, match.start)));
+        spans.add(TextSpan(text: cleaned.substring(lastEnd, match.start)));
       }
-      spans.add(TextSpan(text: match.group(1), style: boldStyle));
+      if (match.group(1) != null) {
+        spans.add(TextSpan(text: match.group(1), style: boldStyle));
+      } else if (match.group(2) != null) {
+        spans.add(TextSpan(text: match.group(2), style: italicStyle));
+      }
       lastEnd = match.end;
     }
-    if (lastEnd < text.length) {
-      spans.add(TextSpan(text: text.substring(lastEnd)));
+    if (lastEnd < cleaned.length) {
+      spans.add(TextSpan(text: cleaned.substring(lastEnd)));
     }
 
     return RichText(
