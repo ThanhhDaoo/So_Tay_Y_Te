@@ -177,5 +177,72 @@ void main() {
       expect(vm.state.isPro, isTrue);
       expect(await preferencesDataSource.getProStatus(), isTrue);
     });
+
+    testWidgets('Full simulated flow transitions PaywallScreen to VaultProActiveDashboard and supports reset', (tester) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      sl.registerSingleton<AppPreferencesDataSource>(preferencesDataSource);
+      sl.registerSingleton<SubscriptionRemoteDataSource>(mockSubscription);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: PaywallScreen(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Free state initially
+      expect(find.text('Nâng Cấp Sổ Tay Y Tế Pro'), findsOneWidget);
+
+      // Tap CTA to open simulated payment sheet
+      final ctaFinder = find.textContaining('Dùng thử 7 ngày miễn phí');
+      await tester.scrollUntilVisible(
+        ctaFinder,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(ctaFinder);
+      await tester.pumpAndSettle();
+      await tester.tap(ctaFinder);
+      await tester.pumpAndSettle();
+
+      // Switch to VietQR method and verify QR preview renders
+      final vietQrFinder = find.textContaining('VietQR');
+      await tester.ensureVisible(vietQrFinder);
+      await tester.tap(vietQrFinder);
+      await tester.pumpAndSettle();
+      expect(find.text('Mã VietQR Giả Lập'), findsOneWidget);
+
+      // Confirm payment -> transitions to Vault Pro Active Dashboard
+      await tester.tap(find.textContaining('Dùng Thử 7 Ngày'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('VAULT PRO • ĐANG HOẠT ĐỘNG'), findsOneWidget);
+      expect(find.text('5 Đặc Quyền Đã Mở Khóa'), findsOneWidget);
+
+      // Clear congratulatory floating snackbar before tapping bottom button
+      ScaffoldMessenger.of(tester.element(find.byType(Scaffold))).clearSnackBars();
+      await tester.pumpAndSettle();
+
+      // Reset back to Free for re-testing
+      final resetFinder = find.text('Reset về Free');
+      await tester.scrollUntilVisible(
+        resetFinder,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(resetFinder);
+      await tester.pumpAndSettle();
+      await tester.tap(resetFinder);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Reset về Free'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nâng Cấp Sổ Tay Y Tế Pro'), findsOneWidget);
+      expect(await preferencesDataSource.getProStatus(), isFalse);
+    });
   });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../../core/services/user_session_manager.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
 import '../../../../../core/widgets/safe_avatar_image.dart';
@@ -54,68 +55,92 @@ class ProfileFamilySwitcher extends StatelessWidget {
                   ),
                 ],
               ),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: onVaultProTap,
-                  borderRadius: BorderRadius.circular(999),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 11,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFFF3ECE0),
-                          Color(0xFFE5D5BF),
-                        ],
-                      ),
+              ListenableBuilder(
+                listenable: AppSessionNotifier.instance,
+                builder: (context, _) {
+                  final isPro = AppSessionNotifier.instance.isPro;
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onVaultProTap,
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: const Color(0xFFC7A87E),
-                        width: 1.2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 11,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isPro
+                                ? const [
+                                    Color(0xFF2C2418),
+                                    Color(0xFF4A3B28),
+                                  ]
+                                : const [
+                                    Color(0xFFF3ECE0),
+                                    Color(0xFFE5D5BF),
+                                  ],
+                          ),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: isPro
+                                ? const Color(0xFFD8B278)
+                                : const Color(0xFFC7A87E),
+                            width: 1.2,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x24433624),
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isPro)
+                              const Icon(
+                                Icons.verified_rounded,
+                                size: 13,
+                                color: Color(0xFFFFE0A3),
+                              )
+                            else
+                              SvgPicture.asset(
+                                'assets/icons/ic_prof_vault_pro.svg',
+                                width: 13,
+                                height: 13,
+                                colorFilter: const ColorFilter.mode(
+                                  Color(0xFF433624),
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                            const SizedBox(width: 5),
+                            Text(
+                              isPro ? 'Vault Pro VIP' : 'Gói Vault Pro',
+                              style: AppTypography.caption.copyWith(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.2,
+                                color: isPro
+                                    ? const Color(0xFFFFE0A3)
+                                    : const Color(0xFF433624),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.chevron_right,
+                              size: 14,
+                              color: isPro
+                                  ? const Color(0xFFFFE0A3)
+                                  : const Color(0xFF433624),
+                            ),
+                          ],
+                        ),
                       ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x24433624),
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SvgPicture.asset(
-                          'assets/icons/ic_prof_vault_pro.svg',
-                          width: 13,
-                          height: 13,
-                          colorFilter: const ColorFilter.mode(
-                            Color(0xFF433624),
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          'Gói Vault Pro',
-                          style: AppTypography.caption.copyWith(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.2,
-                            color: const Color(0xFF433624),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(
-                          Icons.chevron_right,
-                          size: 14,
-                          color: Color(0xFF433624),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                  );
+                },
               ),
             ],
           ),

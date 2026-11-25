@@ -1,6 +1,9 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
+import '../../../../core/config/supabase_config.dart';
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/services/user_session_manager.dart';
 import '../../../../data/datasources/local/app_preferences_datasource.dart';
 import '../../../../data/datasources/remote/subscription_remote_datasource.dart';
 import '../../../../domain/repositories/auth_repository.dart';
@@ -38,10 +41,31 @@ class PaywallViewModel extends ChangeNotifier {
 
   Future<void> _loadProStatus() async {
     final isPro = await _preferencesDataSource.getProStatus();
-    if (isPro != _state.isPro) {
-      _state = _state.copyWith(isPro: isPro);
-      notifyListeners();
-    }
+    final info = await _preferencesDataSource.getProSubscriptionInfo();
+    final activePlan = info['planId'] != null
+        ? PlanType.fromId(info['planId'])
+        : (isPro ? _state.selectedPlan : null);
+    final activatedAt = info['activatedAt'] != null
+        ? DateTime.tryParse(info['activatedAt']!)
+        : null;
+    final expiresAt = info['expiresAt'] != null
+        ? DateTime.tryParse(info['expiresAt']!)
+        : null;
+
+    AppSessionNotifier.instance.setProStatus(
+      isPro,
+      planTitle: activePlan?.title,
+    );
+
+    _state = _state.copyWith(
+      isPro: isPro,
+      activePlan: activePlan,
+      paymentMethod: info['paymentMethod'],
+      transactionCode: info['transactionCode'],
+      activatedAt: activatedAt,
+      expiresAt: expiresAt,
+    );
+    notifyListeners();
   }
 
   void selectPlan(PlanType plan) {
@@ -98,18 +122,57 @@ class PaywallViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> subscribeToPlan(PlanType plan) async {
+  DateTime? _calculateExpiry(PlanType plan, DateTime activatedAt) {
+    switch (plan) {
+      case PlanType.yearly:
+        return activatedAt.add(const Duration(days: 365));
+      case PlanType.monthly:
+        return activatedAt.add(const Duration(days: 30));
+      case PlanType.lifetime:
+        return null;
+    }
+  }
+
+  String _generateTransactionCode(DateTime now) {
+    final datePart =
+        '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
+    final randPart = (1000 + Random().nextInt(9000)).toString();
+    return 'VP-$datePart-$randPart';
+  }
+
+  Future<bool> subscribeToPlan(
+    PlanType plan, {
+    String paymentMethod = 'Apple Pay',
+  }) async {
     if (_state.isProcessing) return false;
-    _state = _state.copyWith(isProcessing: true);
+    _state = _state.copyWith(isProcessing: true, clearFeedbackMessage: true);
     notifyListeners();
 
     try {
       final success = await _subscriptionDataSource.purchaseProSubscription(plan.id);
       if (success) {
+        final now = DateTime.now();
+        final expiresAt = _calculateExpiry(plan, now);
+        final txCode = _generateTransactionCode(now);
+
         await _preferencesDataSource.setProStatus(true);
+        await _preferencesDataSource.saveProSubscriptionInfo(
+          planId: plan.id,
+          paymentMethod: paymentMethod,
+          transactionCode: txCode,
+          activatedAt: now,
+          expiresAt: expiresAt,
+        );
+        AppSessionNotifier.instance.setProStatus(true, planTitle: plan.title);
+
         _state = _state.copyWith(
           isProcessing: false,
           isPro: true,
+          activePlan: plan,
+          paymentMethod: paymentMethod,
+          transactionCode: txCode,
+          activatedAt: now,
+          expiresAt: expiresAt,
           feedbackMessage: 'Kích hoạt thành công ${plan.title}! Toàn bộ tính năng Pro đã được mở khóa.',
         );
         notifyListeners();
@@ -121,7 +184,7 @@ class PaywallViewModel extends ChangeNotifier {
 
     _state = _state.copyWith(
       isProcessing: false,
-      feedbackMessage: 'Cổng thanh toán In-App Purchase chưa hoàn tất giao dịch hoặc chưa cấu hình trên Store.',
+      feedbackMessage: 'Cổng thanh toán chưa hoàn tất giao dịch. Vui lòng thử lại.',
     );
     notifyListeners();
     return false;
@@ -129,16 +192,46 @@ class PaywallViewModel extends ChangeNotifier {
 
   Future<bool> restorePurchases() async {
     if (_state.isProcessing) return false;
-    _state = _state.copyWith(isProcessing: true);
+    _state = _state.copyWith(isProcessing: true, clearFeedbackMessage: true);
     notifyListeners();
 
     try {
-      final success = await _subscriptionDataSource.restorePurchases();
-      if (success) {
+      final savedInfo = await _preferencesDataSource.getProSubscriptionInfo();
+      final hasLocalReceipt = savedInfo['transactionCode'] != null &&
+          savedInfo['transactionCode']!.isNotEmpty;
+      final remoteSuccess = await _subscriptionDataSource.restorePurchases();
+      if (remoteSuccess || hasLocalReceipt) {
+        final restoredPlan = savedInfo['planId'] != null
+            ? PlanType.fromId(savedInfo['planId'])
+            : _state.selectedPlan;
+        final now = DateTime.now();
+        final activatedAt = savedInfo['activatedAt'] != null
+            ? (DateTime.tryParse(savedInfo['activatedAt']!) ?? now)
+            : now;
+        final expiresAt = savedInfo['expiresAt'] != null
+            ? DateTime.tryParse(savedInfo['expiresAt']!)
+            : _calculateExpiry(restoredPlan, activatedAt);
+        final txCode = savedInfo['transactionCode'] ?? _generateTransactionCode(now);
+        final method = savedInfo['paymentMethod'] ?? 'Khôi phục giao dịch';
+
         await _preferencesDataSource.setProStatus(true);
+        await _preferencesDataSource.saveProSubscriptionInfo(
+          planId: restoredPlan.id,
+          paymentMethod: method,
+          transactionCode: txCode,
+          activatedAt: activatedAt,
+          expiresAt: expiresAt,
+        );
+        AppSessionNotifier.instance.setProStatus(true, planTitle: restoredPlan.title);
+
         _state = _state.copyWith(
           isProcessing: false,
           isPro: true,
+          activePlan: restoredPlan,
+          paymentMethod: method,
+          transactionCode: txCode,
+          activatedAt: activatedAt,
+          expiresAt: expiresAt,
           feedbackMessage: 'Đã khôi phục thành công gói đăng ký Pro!',
         );
         notifyListeners();
@@ -154,6 +247,37 @@ class PaywallViewModel extends ChangeNotifier {
     );
     notifyListeners();
     return false;
+  }
+
+  Future<void> resetProForTesting() async {
+    if (_state.isProcessing) return;
+    _state = _state.copyWith(isProcessing: true, clearFeedbackMessage: true);
+    notifyListeners();
+
+    await _preferencesDataSource.setProStatus(false);
+    await _preferencesDataSource.clearProSubscriptionInfo();
+    AppSessionNotifier.instance.setProStatus(false);
+
+    if (!_isFlutterTest) {
+      final client = SupabaseConfig.client;
+      final currentUser = client?.auth.currentUser;
+      if (client != null && currentUser != null) {
+        try {
+          await client
+              .from('profiles')
+              .update({'is_pro': false})
+              .eq('id', currentUser.id);
+        } catch (_) {}
+      }
+    }
+
+    _state = _state.copyWith(
+      isProcessing: false,
+      isPro: false,
+      clearSubscriptionDetails: true,
+      feedbackMessage: 'Đã hủy gói Pro (chế độ test) và quay về Gói Free.',
+    );
+    notifyListeners();
   }
 
   void clearFeedbackMessage() {

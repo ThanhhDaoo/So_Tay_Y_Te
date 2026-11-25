@@ -43,6 +43,12 @@ enum PlanType {
   final String? originalPrice;
   final String? suffix;
   final String? recommendedBadge;
+  static PlanType fromId(String? id) {
+    for (final plan in PlanType.values) {
+      if (plan.id == id) return plan;
+    }
+    return PlanType.yearly;
+  }
 }
 
 class PaywallState {
@@ -51,6 +57,11 @@ class PaywallState {
     this.isProcessing = false,
     this.linkedProvider,
     this.isPro = false,
+    this.activePlan,
+    this.paymentMethod,
+    this.transactionCode,
+    this.activatedAt,
+    this.expiresAt,
     this.feedbackMessage,
   });
 
@@ -58,6 +69,11 @@ class PaywallState {
   final bool isProcessing;
   final String? linkedProvider;
   final bool isPro;
+  final PlanType? activePlan;
+  final String? paymentMethod;
+  final String? transactionCode;
+  final DateTime? activatedAt;
+  final DateTime? expiresAt;
   final String? feedbackMessage;
 
   PaywallState copyWith({
@@ -65,6 +81,12 @@ class PaywallState {
     bool? isProcessing,
     String? linkedProvider,
     bool? isPro,
+    PlanType? activePlan,
+    String? paymentMethod,
+    String? transactionCode,
+    DateTime? activatedAt,
+    DateTime? expiresAt,
+    bool clearSubscriptionDetails = false,
     String? feedbackMessage,
     bool clearFeedbackMessage = false,
   }) {
@@ -73,6 +95,11 @@ class PaywallState {
       isProcessing: isProcessing ?? this.isProcessing,
       linkedProvider: linkedProvider ?? this.linkedProvider,
       isPro: isPro ?? this.isPro,
+      activePlan: clearSubscriptionDetails ? null : (activePlan ?? this.activePlan),
+      paymentMethod: clearSubscriptionDetails ? null : (paymentMethod ?? this.paymentMethod),
+      transactionCode: clearSubscriptionDetails ? null : (transactionCode ?? this.transactionCode),
+      activatedAt: clearSubscriptionDetails ? null : (activatedAt ?? this.activatedAt),
+      expiresAt: clearSubscriptionDetails ? null : (expiresAt ?? this.expiresAt),
       feedbackMessage: clearFeedbackMessage ? null : (feedbackMessage ?? this.feedbackMessage),
     );
   }

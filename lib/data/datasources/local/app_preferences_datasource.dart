@@ -23,6 +23,16 @@ abstract class AppPreferencesDataSource {
   Future<String?> getLastLoginIdentifier();
   Future<void> setProStatus(bool isPro, {String? userId});
   Future<bool> getProStatus({String? userId});
+  Future<void> saveProSubscriptionInfo({
+    required String planId,
+    required String paymentMethod,
+    required String transactionCode,
+    required DateTime activatedAt,
+    DateTime? expiresAt,
+    String? userId,
+  });
+  Future<Map<String, String?>> getProSubscriptionInfo({String? userId});
+  Future<void> clearProSubscriptionInfo({String? userId});
   Future<void> setBiometricLockEnabled(bool enabled);
   Future<bool> isBiometricLockEnabled();
   Future<void> savePin({required String pinHash, required String salt});
@@ -206,6 +216,65 @@ class AppPreferencesDataSourceImpl implements AppPreferencesDataSource {
       return prefs.getBool('${_keyIsPro}_$effectiveUser') ?? false;
     }
     return prefs.getBool(_keyIsPro) ?? false;
+  }
+
+  String _proMetaKey(String field, String? effectiveUser) {
+    if (effectiveUser != null && effectiveUser.isNotEmpty) {
+      return 'pro_meta_${field}_$effectiveUser';
+    }
+    return 'pro_meta_$field';
+  }
+
+  @override
+  Future<void> saveProSubscriptionInfo({
+    required String planId,
+    required String paymentMethod,
+    required String transactionCode,
+    required DateTime activatedAt,
+    DateTime? expiresAt,
+    String? userId,
+  }) async {
+    final prefs = await _prefs;
+    final effectiveUser = userId ?? prefs.getString(_keyUserId);
+    await prefs.setString(_proMetaKey('plan_id', effectiveUser), planId);
+    await prefs.setString(_proMetaKey('method', effectiveUser), paymentMethod);
+    await prefs.setString(_proMetaKey('tx_code', effectiveUser), transactionCode);
+    await prefs.setString(
+      _proMetaKey('activated_at', effectiveUser),
+      activatedAt.toIso8601String(),
+    );
+    if (expiresAt != null) {
+      await prefs.setString(
+        _proMetaKey('expires_at', effectiveUser),
+        expiresAt.toIso8601String(),
+      );
+    } else {
+      await prefs.remove(_proMetaKey('expires_at', effectiveUser));
+    }
+  }
+
+  @override
+  Future<Map<String, String?>> getProSubscriptionInfo({String? userId}) async {
+    final prefs = await _prefs;
+    final effectiveUser = userId ?? prefs.getString(_keyUserId);
+    return {
+      'planId': prefs.getString(_proMetaKey('plan_id', effectiveUser)),
+      'paymentMethod': prefs.getString(_proMetaKey('method', effectiveUser)),
+      'transactionCode': prefs.getString(_proMetaKey('tx_code', effectiveUser)),
+      'activatedAt': prefs.getString(_proMetaKey('activated_at', effectiveUser)),
+      'expiresAt': prefs.getString(_proMetaKey('expires_at', effectiveUser)),
+    };
+  }
+
+  @override
+  Future<void> clearProSubscriptionInfo({String? userId}) async {
+    final prefs = await _prefs;
+    final effectiveUser = userId ?? prefs.getString(_keyUserId);
+    await prefs.remove(_proMetaKey('plan_id', effectiveUser));
+    await prefs.remove(_proMetaKey('method', effectiveUser));
+    await prefs.remove(_proMetaKey('tx_code', effectiveUser));
+    await prefs.remove(_proMetaKey('activated_at', effectiveUser));
+    await prefs.remove(_proMetaKey('expires_at', effectiveUser));
   }
 
   @override

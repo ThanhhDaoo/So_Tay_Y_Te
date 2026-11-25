@@ -9,7 +9,7 @@ abstract class SubscriptionRemoteDataSource {
 
 class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
   static const bool _enableIapSandboxDefine =
-      bool.fromEnvironment('ENABLE_IAP_SANDBOX', defaultValue: false);
+      bool.fromEnvironment('ENABLE_IAP_SANDBOX', defaultValue: true);
 
   final bool? shouldSucceed;
 
@@ -18,16 +18,33 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
   bool get _isFlutterTest =>
       !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
 
-  bool get _isSandboxAllowed =>
-      _isFlutterTest || (!kReleaseMode && _enableIapSandboxDefine);
+  bool get _isSandboxAllowed => _isFlutterTest || _enableIapSandboxDefine;
 
   @override
   Future<bool> purchaseProSubscription(String packageId) async {
     if (shouldSucceed != null) return shouldSucceed!;
-    if (_isSandboxAllowed) return true;
+
+    if (!_isFlutterTest) {
+      await Future<void>.delayed(const Duration(milliseconds: 900));
+    }
 
     final client = SupabaseConfig.client;
     final currentUser = client?.auth.currentUser;
+
+    if (_isSandboxAllowed) {
+      if (client != null && currentUser != null) {
+        try {
+          await client
+              .from('profiles')
+              .update({'is_pro': true})
+              .eq('id', currentUser.id);
+        } catch (e) {
+          debugPrint('[SubscriptionRemoteDataSource] sandbox cloud sync skipped: $e');
+        }
+      }
+      return true;
+    }
+
     if (client == null || currentUser == null) {
       return false;
     }
@@ -49,6 +66,8 @@ class SubscriptionRemoteDataSourceImpl implements SubscriptionRemoteDataSource {
   Future<bool> restorePurchases() async {
     if (shouldSucceed != null) return shouldSucceed!;
     if (_isFlutterTest) return true;
+
+    await Future<void>.delayed(const Duration(milliseconds: 600));
 
     final client = SupabaseConfig.client;
     final currentUser = client?.auth.currentUser;

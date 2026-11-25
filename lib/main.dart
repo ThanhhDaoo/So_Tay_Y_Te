@@ -43,8 +43,18 @@ class _SoTayYTeAppState extends State<SoTayYTeApp> with WidgetsBindingObserver {
   Future<void> _initPrivacyPreference() async {
     try {
       if (sl.isRegistered<AppPreferencesDataSource>()) {
-        final enabled = await sl<AppPreferencesDataSource>().isPrivacyScreenEnabled();
+        final prefs = sl<AppPreferencesDataSource>();
+        final enabled = await prefs.isPrivacyScreenEnabled();
         AppSessionNotifier.instance.setPrivacyScreenEnabled(enabled);
+        final isPro = await prefs.getProStatus();
+        final info = await prefs.getProSubscriptionInfo();
+        final planTitle = switch (info['planId']) {
+          'yearly' => 'Gói Năm',
+          'monthly' => 'Gói Hàng Tháng',
+          'lifetime' => 'Gói Trọn Đời',
+          _ => null,
+        };
+        AppSessionNotifier.instance.setProStatus(isPro, planTitle: planTitle);
       }
     } catch (_) {}
   }

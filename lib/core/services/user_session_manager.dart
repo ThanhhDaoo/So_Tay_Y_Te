@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../di/injection_container.dart';
+import '../../data/datasources/local/app_preferences_datasource.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 /// Notifier toàn cục quản lý ảnh đại diện, thông tin phiên người dùng, thành viên gia đình đang chọn
@@ -13,6 +14,8 @@ class AppSessionNotifier extends ChangeNotifier {
   String _activeMemberId = 'primary';
   String? _activeMemberName;
   bool _privacyScreenEnabled = true;
+  bool _isPro = false;
+  String? _proPlanTitle;
   int _medicalRecordsVersion = 0;
   int _profileVersion = 0;
 
@@ -21,6 +24,8 @@ class AppSessionNotifier extends ChangeNotifier {
   String get activeMemberId => _activeMemberId;
   String? get activeMemberName => _activeMemberName;
   bool get privacyScreenEnabled => _privacyScreenEnabled;
+  bool get isPro => _isPro;
+  String? get proPlanTitle => _proPlanTitle;
   int get medicalRecordsVersion => _medicalRecordsVersion;
   int get profileVersion => _profileVersion;
 
@@ -32,12 +37,39 @@ class AppSessionNotifier extends ChangeNotifier {
         if (session != null) {
           _avatarUrl = session.avatarUrl;
           _fullName = session.fullName;
-          notifyListeners();
         }
       }
+      if (sl.isRegistered<AppPreferencesDataSource>()) {
+        final prefs = sl<AppPreferencesDataSource>();
+        _isPro = await prefs.getProStatus();
+        final info = await prefs.getProSubscriptionInfo();
+        _proPlanTitle = _mapPlanIdToTitle(info['planId']);
+      }
+      notifyListeners();
     } catch (e) {
       debugPrint('[AppSessionNotifier] initFromSession error: $e');
     }
+  }
+
+  static String? _mapPlanIdToTitle(String? planId) {
+    switch (planId) {
+      case 'yearly':
+        return 'Gói Năm';
+      case 'monthly':
+        return 'Gói Hàng Tháng';
+      case 'lifetime':
+        return 'Gói Trọn Đời';
+      default:
+        return null;
+    }
+  }
+
+  void setProStatus(bool isPro, {String? planTitle}) {
+    final nextTitle = isPro ? (planTitle ?? _proPlanTitle) : null;
+    if (_isPro == isPro && _proPlanTitle == nextTitle) return;
+    _isPro = isPro;
+    _proPlanTitle = nextTitle;
+    notifyListeners();
   }
 
   void setActiveMember(String memberId, {String? memberName}) {
