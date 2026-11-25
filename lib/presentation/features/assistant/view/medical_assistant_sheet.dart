@@ -622,13 +622,18 @@ class _FormattedMessageText extends StatelessWidget {
     final boldStyle = baseStyle.copyWith(fontWeight: FontWeight.w700);
     final italicStyle = baseStyle.copyWith(fontStyle: FontStyle.italic);
 
-    final cleaned = text.replaceAllMapped(
-      RegExp(r'^#{1,4}\s+', multiLine: true),
-      (_) => '',
-    );
+    final cleaned = text
+        .replaceAllMapped(
+          RegExp(r'^#{1,4}\s+', multiLine: true),
+          (_) => '',
+        )
+        .replaceAllMapped(
+          RegExp(r'^\s*[\*\-]\s+', multiLine: true),
+          (_) => '• ',
+        );
 
     final spans = <TextSpan>[];
-    final regex = RegExp(r'\*\*(.+?)\*\*|_([^_\n]+)_');
+    final regex = RegExp(r'\*\*(.+?)\*\*|\*([^\*\n]+)\*|_([^_\n]+)_');
     int lastEnd = 0;
 
     for (final match in regex.allMatches(cleaned)) {
@@ -639,6 +644,8 @@ class _FormattedMessageText extends StatelessWidget {
         spans.add(TextSpan(text: match.group(1), style: boldStyle));
       } else if (match.group(2) != null) {
         spans.add(TextSpan(text: match.group(2), style: italicStyle));
+      } else if (match.group(3) != null) {
+        spans.add(TextSpan(text: match.group(3), style: italicStyle));
       }
       lastEnd = match.end;
     }

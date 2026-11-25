@@ -847,7 +847,10 @@ Câu hỏi của người dùng: $userQuery
         'contents': contents,
         'generationConfig': {
           'temperature': 0.35,
-          'maxOutputTokens': 900,
+          'maxOutputTokens': 4096,
+          'thinkingConfig': {
+            'thinkingBudget': 256,
+          },
         },
       });
       request.add(utf8.encode(payload));
@@ -876,7 +879,9 @@ Câu hỏi của người dùng: $userQuery
       final buffer = StringBuffer();
       if (parts != null) {
         for (final p in parts) {
-          final t = (p as Map<String, dynamic>)['text'] as String?;
+          final partMap = p as Map<String, dynamic>;
+          if (partMap['thought'] == true) continue;
+          final t = partMap['text'] as String?;
           if (t != null) buffer.write(t);
         }
       }
