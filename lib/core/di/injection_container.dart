@@ -26,6 +26,7 @@ import '../config/supabase_config.dart';
 import '../database/database_helper.dart';
 import '../security/biometric_service.dart';
 import '../security/secure_storage_helper.dart';
+import '../services/medical_assistant_service.dart';
 import '../services/notification_service.dart';
 import '../services/ocr_service.dart';
 import '../services/pdf_report_service.dart';
@@ -216,6 +217,14 @@ class InjectionContainer {
     if (!sl.isRegistered<SyncBothWaysUseCase>()) {
       sl.registerLazySingleton<SyncBothWaysUseCase>(
         () => SyncBothWaysUseCase(sl<SyncRepository>()),
+      );
+    }
+
+    if (!sl.isRegistered<MedicalAssistantService>()) {
+      sl.registerLazySingleton<MedicalAssistantService>(
+        () => MedicalAssistantService(
+          secureStorage: sl<SecureStorageHelper>(),
+        ),
       );
     }
   }
