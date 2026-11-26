@@ -6,6 +6,7 @@ import '../../../../core/security/biometric_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../domain/repositories/auth_repository.dart';
+import '../../../common_widgets/layout/app_layout.dart';
 import '../../../routes/app_routes.dart';
 import '../viewmodel/security_settings_viewmodel.dart';
 
@@ -264,137 +265,181 @@ class _AppLockScreenState extends State<AppLockScreen> {
       child: Scaffold(
         backgroundColor: AppColors.secBackground,
         body: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              // Brand & Lock Icon
-              Center(
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceLight,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppLayoutTokens.screenPadding,
+                  vertical: 16,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: (constraints.maxHeight - 32).clamp(0.0, double.infinity),
                   ),
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.lock_rounded,
-                    color: AppColors.primary,
-                    size: 32,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Sổ Tay Y Tế',
-                style: AppTypography.heading2.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimaryLight,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Hồ sơ sức khỏe đang được khóa bảo vệ',
-                style: AppTypography.caption.copyWith(
-                  fontSize: 13,
-                  color: AppColors.textSecondaryLight,
-                ),
-              ),
-              const SizedBox(height: 24),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 12),
+                        // Brand & Lock Icon
+                        Center(
+                          child: Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceLight,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.secCardBorder),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.lock_rounded,
+                              color: AppColors.primary,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          'Sổ Tay Y Tế',
+                          style: AppTypography.heading2.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimaryLight,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Hồ sơ sức khỏe đang được khóa bảo vệ',
+                          textAlign: TextAlign.center,
+                          style: AppTypography.caption.copyWith(
+                            fontSize: 13,
+                            color: AppColors.textSecondaryLight,
+                          ),
+                        ),
+                        const SizedBox(height: AppLayoutTokens.sectionGap),
 
-              // PIN Indicators (6 dots)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(6, (index) {
-                  final isFilled = index < _pin.length;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    width: isFilled ? 16 : 14,
-                    height: isFilled ? 16 : 14,
-                    decoration: BoxDecoration(
-                      color: isFilled ? AppColors.primary : AppColors.surfaceMuted,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isFilled ? AppColors.primary : AppColors.secCardBorder,
-                        width: 1.5,
-                      ),
+                        // PIN Indicators (6 dots)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(6, (index) {
+                            final isFilled = index < _pin.length;
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                              width: isFilled ? 16 : 14,
+                              height: isFilled ? 16 : 14,
+                              decoration: BoxDecoration(
+                                color: isFilled
+                                    ? AppColors.primary
+                                    : AppColors.surfaceMuted,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isFilled
+                                      ? AppColors.primary
+                                      : AppColors.secCardBorder,
+                                  width: 1.5,
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: AppColors.error,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+
+                        const Spacer(),
+                        const SizedBox(height: 20),
+
+                        // Numeric Keypad
+                        Opacity(
+                          opacity: _lockoutRemainingSeconds > 0 ? 0.45 : 1.0,
+                          child: _buildKeypad(),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Fallback Password / Logout Shortcut (prevents permanent lockout)
+                        TextButton(
+                          onPressed: _showPasswordUnlockDialog,
+                          child: Text(
+                            _hasPinConfigured
+                                ? 'Quên mã PIN? Mở khóa bằng mật khẩu tài khoản'
+                                : 'Mở khóa bằng mật khẩu tài khoản / Đăng xuất',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.iceTextSlate,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        // Emergency ICE Card Shortcut (distinct pill anchor)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.iceDangerBg,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: AppColors.error.withValues(alpha: 0.25),
+                            ),
+                          ),
+                          child: TextButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).pushNamed(
+                                AppRoutes.emergencyCard,
+                                arguments: true,
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 10,
+                              ),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.emergency_rounded,
+                              color: AppColors.error,
+                              size: 18,
+                            ),
+                            label: const Text(
+                              'Mở Thẻ Cấp Cứu Khẩn Cấp (ICE)',
+                              style: TextStyle(
+                                color: AppColors.error,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                }),
-              ),
-
-              if (_errorMessage != null) ...[
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Text(
-                    _errorMessage!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.error,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
                   ),
                 ),
-              ],
-
-              const Spacer(),
-
-              // Numeric Keypad
-              Opacity(
-                opacity: _lockoutRemainingSeconds > 0 ? 0.45 : 1.0,
-                child: _buildKeypad(),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Fallback Password / Logout Shortcut (prevents permanent lockout)
-              TextButton(
-                onPressed: _showPasswordUnlockDialog,
-                child: Text(
-                  _hasPinConfigured
-                      ? 'Quên mã PIN? Mở khóa bằng mật khẩu tài khoản'
-                      : 'Mở khóa bằng mật khẩu tài khoản / Đăng xuất',
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.iceTextSlate,
-                  ),
-                ),
-              ),
-
-              // Emergency ICE Card Shortcut
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-                child: TextButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed(
-                      AppRoutes.emergencyCard,
-                      arguments: true,
-                    );
-                  },
-                  icon: const Icon(Icons.emergency_rounded, color: AppColors.error, size: 20),
-                  label: const Text(
-                    'Mở Thẻ Cấp Cứu Khẩn Cấp (ICE)',
-                    style: TextStyle(
-                      color: AppColors.error,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
-            ],
+              );
+            },
           ),
         ),
       ),
@@ -412,7 +457,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
             _buildKeypadButton('3'),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -421,7 +466,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
             _buildKeypadButton('6'),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -430,7 +475,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
             _buildKeypadButton('9'),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
