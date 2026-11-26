@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 
 class AuthHeader extends StatelessWidget {
   final VoidCallback? onBack;
@@ -37,7 +38,7 @@ class AuthHeader extends StatelessWidget {
           child: SizedBox(
             height: 60,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: AppLayoutTokens.horizontalScreenPadding,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

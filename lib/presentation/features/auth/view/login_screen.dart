@@ -7,6 +7,7 @@ import '../../../../core/config/supabase_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/input_validators.dart';
+import '../../../common_widgets/layout/app_layout.dart';
 import '../../../routes/app_routes.dart';
 import '../viewmodel/login_viewmodel.dart';
 import 'widgets/auth_ambient_background.dart';
@@ -182,10 +183,10 @@ class _LoginScreenState extends State<LoginScreen> {
               final state = _viewModel.state;
               return SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(
-                  20,
+                  AppLayoutTokens.screenPadding,
                   topPadding + 60 + 20,
-                  20,
-                  28,
+                  AppLayoutTokens.screenPadding,
+                  32,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,137 +195,142 @@ class _LoginScreenState extends State<LoginScreen> {
                       delay: const Duration(milliseconds: 60),
                       child: _buildWelcomeHeading(),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppLayoutTokens.sectionGap),
                     Form(
                       key: _viewModel.formKey,
-                      child: Column(
-                        children: [
-                          AuthAnimatedEntrance(
-                            delay: const Duration(milliseconds: 140),
-                            child: AuthTextField(
-                              label: 'Số điện thoại, Email hoặc Mã hồ sơ',
-                              trailingLabel: 'VD: 0912... hoặc STYT',
-                              trailingLabelColor: AppColors.textMuted,
-                              hintText: '0912345678 hoặc ten@gmail.com',
-                              prefixIconAsset: 'assets/icons/ic_badge_id.svg',
-                              controller: _viewModel.identifierController,
-                              validator: InputValidators.validateLoginIdentifier,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          AuthAnimatedEntrance(
-                            delay: const Duration(milliseconds: 200),
-                            child: AuthTextField(
-                              label: 'Mật khẩu hồ sơ',
-                              hintText: 'Nhập mật khẩu bảo mật',
-                              prefixIconAsset: 'assets/icons/ic_lock.svg',
-                              prefixIconWidth: 13.33,
-                              prefixIconHeight: 17.5,
-                              controller: _viewModel.passwordController,
-                              obscureText: state.obscurePassword,
-                              onToggleObscure:
-                                  _viewModel.togglePasswordVisibility,
-                              suffixIconAsset: 'assets/icons/ic_eye.svg',
-                              suffixIconWidth: 18.33,
-                              suffixIconHeight: 12.5,
-                              validator: InputValidators.validatePassword,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          AuthAnimatedEntrance(
-                            delay: const Duration(milliseconds: 260),
-                            child: _buildRememberAndForgot(state.rememberMe),
-                          ),
-                          if (state.isAwaitingOAuth) ...[
-                            const SizedBox(height: 12),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
+                      child: AuthAnimatedEntrance(
+                        delay: const Duration(milliseconds: 140),
+                        child: CleanCard(
+                          padding:
+                              const EdgeInsets.all(AppLayoutTokens.cardPadding),
+                          child: Column(
+                            children: [
+                              AuthTextField(
+                                label: 'Số điện thoại, Email hoặc Mã hồ sơ',
+                                trailingLabel: 'VD: 0912... hoặc STYT',
+                                trailingLabelColor: AppColors.textMuted,
+                                hintText: '0912345678 hoặc ten@gmail.com',
+                                prefixIconAsset: 'assets/icons/ic_badge_id.svg',
+                                controller: _viewModel.identifierController,
+                                validator:
+                                    InputValidators.validateLoginIdentifier,
                               ),
-                              decoration: BoxDecoration(
-                                color: AppColors.secondary.withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: AppColors.iceOlive),
+                              const SizedBox(
+                                height: AppLayoutTokens.formFieldGap,
                               ),
-                              child: Row(
-                                children: [
-                                  const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.primary,
-                                    ),
+                              AuthTextField(
+                                label: 'Mật khẩu hồ sơ',
+                                hintText: 'Nhập mật khẩu bảo mật',
+                                prefixIconAsset: 'assets/icons/ic_lock.svg',
+                                prefixIconWidth: 13.33,
+                                prefixIconHeight: 17.5,
+                                controller: _viewModel.passwordController,
+                                obscureText: state.obscurePassword,
+                                onToggleObscure:
+                                    _viewModel.togglePasswordVisibility,
+                                suffixIconAsset: 'assets/icons/ic_eye.svg',
+                                suffixIconWidth: 18.33,
+                                suffixIconHeight: 12.5,
+                                validator: InputValidators.validatePassword,
+                              ),
+                              const SizedBox(height: 14),
+                              _buildRememberAndForgot(state.rememberMe),
+                              if (state.isAwaitingOAuth) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      'Đang chờ xác thực tài khoản trên trình duyệt...',
-                                      style: AppTypography.caption.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.textPrimaryLight,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.secondary
+                                        .withValues(alpha: 0.5),
+                                    borderRadius: BorderRadius.circular(
+                                      AppLayoutTokens.innerRadius,
+                                    ),
+                                    border:
+                                        Border.all(color: AppColors.iceOlive),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.primary,
+                                        ),
                                       ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          'Đang chờ xác thực tài khoản trên trình duyệt...',
+                                          style: AppTypography.caption.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textPrimaryLight,
+                                          ),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed:
+                                            _viewModel.cancelPendingOAuth,
+                                        child: const Text('Hủy'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              if (state.errorMessage != null) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.iceDangerBg,
+                                    borderRadius: BorderRadius.circular(
+                                      AppLayoutTokens.innerRadius,
+                                    ),
+                                    border: Border.all(
+                                      color: AppColors.error
+                                          .withValues(alpha: 0.35),
                                     ),
                                   ),
-                                  TextButton(
-                                    onPressed: _viewModel.cancelPendingOAuth,
-                                    child: const Text('Hủy'),
+                                  child: Text(
+                                    state.errorMessage!,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.error,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          ],
-                          if (state.errorMessage != null) ...[
-                            const SizedBox(height: 12),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.iceDangerBg,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color:
-                                      AppColors.error.withValues(alpha: 0.35),
                                 ),
-                              ),
-                              child: Text(
-                                state.errorMessage!,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.error,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 18),
-                          AuthAnimatedEntrance(
-                            delay: const Duration(milliseconds: 320),
-                            child: _buildPrimaryActionRow(state.isLoading),
+                              ],
+                              const SizedBox(height: 20),
+                              _buildPrimaryActionRow(state.isLoading),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppLayoutTokens.sectionGap),
                     const AuthAnimatedEntrance(
-                      delay: Duration(milliseconds: 380),
+                      delay: Duration(milliseconds: 300),
                       child: AuthDivider(
                         text: 'Hoặc tiếp tục nhanh với',
                       ),
                     ),
                     const SizedBox(height: 16),
                     AuthAnimatedEntrance(
-                      delay: const Duration(milliseconds: 440),
+                      delay: const Duration(milliseconds: 360),
                       child: _buildSocialOptions(state.isLoading),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppLayoutTokens.sectionGap),
                     AuthAnimatedEntrance(
-                      delay: const Duration(milliseconds: 500),
+                      delay: const Duration(milliseconds: 420),
                       child: GuestModeCard(
                         onContinueAsGuest: () async {
                           final ok = await _viewModel.continueAsGuestOffline();
@@ -334,12 +340,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
                     AuthAnimatedEntrance(
-                      delay: const Duration(milliseconds: 560),
+                      delay: const Duration(milliseconds: 480),
                       child: _buildSignUpRedirect(),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     AuthAnimatedEntrance(
-                      delay: const Duration(milliseconds: 620),
+                      delay: const Duration(milliseconds: 540),
                       child: _buildSecurityFootnote(),
                     ),
                   ],
