@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/medical_assistant_service.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../common_widgets/layout/app_layout.dart';
 import '../../../routes/app_routes.dart';
 import '../viewmodel/medical_assistant_state.dart';
 import '../viewmodel/medical_assistant_viewmodel.dart';
@@ -167,7 +168,12 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                 children: [
                   // Drag handle + Header
                   Container(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppLayoutTokens.screenPadding,
+                      10,
+                      12,
+                      12,
+                    ),
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       borderRadius:
@@ -186,12 +192,12 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 12),
                         Row(
                           children: [
                             Container(
-                              width: 38,
-                              height: 38,
+                              width: 40,
+                              height: 40,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
                                   colors: [Color(0xFF4E5547), Color(0xFF2F362B)],
@@ -204,7 +210,7 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                                 size: 20,
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,7 +219,7 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                                     'Trợ Lý Sổ Tay Y Tế',
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontSize: 15.5,
+                                      fontSize: 16,
                                       fontWeight: FontWeight.w800,
                                       color: AppColors.iceTextNavy,
                                     ),
@@ -229,13 +235,13 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                                           color: Color(0xFF2E7D32),
                                         ),
                                       ),
-                                      const SizedBox(width: 5),
+                                      const SizedBox(width: 6),
                                       Flexible(
                                         child: Text(
-                                          'Hồ sơ: ${state.activeMemberName} • Sẵn sàng hỗ trợ',
+                                          'Hồ sơ: ${state.activeMemberName}',
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
-                                            fontSize: 11,
+                                            fontSize: 11.5,
                                             color: AppColors.iceTextSlate,
                                           ),
                                         ),
@@ -247,6 +253,7 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                             ),
                             IconButton(
                               tooltip: 'Làm mới hội thoại',
+                              visualDensity: VisualDensity.compact,
                               icon: const Icon(
                                 Icons.refresh_rounded,
                                 size: 20,
@@ -258,6 +265,7 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                             ),
                             IconButton(
                               tooltip: 'Đóng',
+                              visualDensity: VisualDensity.compact,
                               icon: const Icon(
                                 Icons.close_rounded,
                                 size: 21,
@@ -271,11 +279,11 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                     ),
                   ),
 
-                  // Medical Disclaimer Banner
+                  // Medical Disclaimer Banner (compact & scannable)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
+                      horizontal: AppLayoutTokens.screenPadding,
                       vertical: 8,
                     ),
                     decoration: const BoxDecoration(
@@ -287,18 +295,23 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                     child: const Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          size: 15,
-                          color: Color(0xFFB45309),
+                        Padding(
+                          padding: EdgeInsets.only(top: 1),
+                          child: Icon(
+                            Icons.info_outline_rounded,
+                            size: 14,
+                            color: Color(0xFFB45309),
+                          ),
                         ),
-                        SizedBox(width: 7),
+                        SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Tham khảo triệu chứng không phải chẩn đoán xác định (nhiều bệnh có chung biểu hiện) và không thay thế ý kiến bác sĩ.',
+                            'Lưu ý: Tham khảo triệu chứng không phải chẩn đoán xác định và không thay thế ý kiến bác sĩ.',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 11,
-                              height: 1.3,
+                              height: 1.35,
                               color: Color(0xFF92400E),
                               fontWeight: FontWeight.w500,
                             ),
@@ -312,7 +325,12 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                   Expanded(
                     child: ListView.builder(
                       controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppLayoutTokens.screenPadding,
+                        16,
+                        AppLayoutTokens.screenPadding,
+                        12,
+                      ),
                       itemCount:
                           state.messages.length + (state.isLoading ? 1 : 0),
                       itemBuilder: (context, index) {
@@ -335,7 +353,7 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                     height: 38,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      padding: AppLayoutTokens.horizontalScreenPadding,
                       itemCount: _quickPrompts.length,
                       separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (context, index) {
@@ -362,15 +380,15 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                       },
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
 
                   // Input Bar
                   Container(
                     padding: EdgeInsets.fromLTRB(
-                      12,
-                      8,
-                      12,
-                      10 + (bottomInset > 0 ? 0 : safeBottom),
+                      16,
+                      10,
+                      16,
+                      12 + (bottomInset > 0 ? 0 : safeBottom),
                     ),
                     decoration: const BoxDecoration(
                       color: Colors.white,
@@ -455,20 +473,23 @@ class _MessageBubble extends StatelessWidget {
     final isUser = message.isUser;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment:
             isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           if (!isUser && message.source != null) ...[
             _SourceBadge(source: message.source!),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
           ],
           Container(
             constraints: BoxConstraints(
               maxWidth: MediaQuery.sizeOf(context).width * 0.84,
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppLayoutTokens.cardPadding,
+              vertical: 12,
+            ),
             decoration: BoxDecoration(
               color: isUser ? const Color(0xFF3E4638) : Colors.white,
               borderRadius: BorderRadius.only(

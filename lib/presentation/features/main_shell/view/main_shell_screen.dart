@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/user_session_manager.dart';
+import '../../../common_widgets/layout/app_layout.dart';
 import '../../assistant/view/medical_assistant_sheet.dart';
 import '../../emergency_card/view/emergency_card_screen.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
@@ -72,7 +73,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
           AnimatedPositioned(
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,
-            right: 16,
+            right: AppLayoutTokens.screenPadding,
             bottom: assistantBottomOffset,
             child: _FloatingAssistantButton(onTap: _openAssistant),
           ),
