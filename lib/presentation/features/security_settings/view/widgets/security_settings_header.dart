@@ -39,8 +39,8 @@ class SecuritySettingsHeader extends StatelessWidget implements PreferredSizeWid
           ),
           padding: EdgeInsets.only(
             top: topPadding,
-            left: 16,
-            right: 16,
+            left: 20,
+            right: 20,
           ),
           height: 64 + topPadding,
           child: Row(

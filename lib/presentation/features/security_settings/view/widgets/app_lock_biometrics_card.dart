@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
-import '../../../../../core/theme/app_typography.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 import '../../viewmodel/security_settings_state.dart';
 
+/// Cụm Khóa Ứng Dụng & Sinh Trắc Học thoáng đãng:
+/// Bỏ các đường Divider rườm rà, dùng khoảng thở 16px và thanh chọn thời gian khóa gọn gàng.
 class AppLockBiometricsCard extends StatelessWidget {
   final SecuritySettingsState state;
   final ValueChanged<bool> onToggleBiometrics;
@@ -22,279 +24,227 @@ class AppLockBiometricsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Category Header
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Row(
-            children: [
-              SvgPicture.asset(
-                'assets/icons/ic_sec_app_lock_cat.svg',
-                width: 16,
-                height: 17,
-              ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  'Khóa Ứng Dụng & Sinh Trắc Học',
-                  style: AppTypography.heading3.copyWith(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimaryLight,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+    return SectionContainer(
+      title: 'Khóa Ứng Dụng & Sinh Trắc Học',
+      iconAsset: 'assets/icons/ic_sec_app_lock_cat.svg',
+      titleColor: AppColors.textPrimaryLight,
+      bottomSpacing: 0,
+      trailing: onLockNow != null
+          ? InkWell(
+              onTap: onLockNow,
+              borderRadius: BorderRadius.circular(8),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.lock_outline_rounded,
+                      size: 14,
+                      color: AppColors.secOlive,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'Khóa ngay',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.secOlive,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Main Card
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.secCardBorder),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0D000000),
-                blurRadius: 2,
-                offset: Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Toggle Face ID / Vân tay
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.secItemBg,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          alignment: Alignment.center,
-                          child: SvgPicture.asset(
-                            'assets/icons/ic_sec_face_id.svg',
-                            width: 20,
-                            height: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Khóa bằng Face ID / Vân tay',
-                                style: AppTypography.body.copyWith(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimaryLight,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Yêu cầu nhận diện mỗi khi mở ứng dụng',
-                                style: AppTypography.caption.copyWith(
-                                  fontSize: 11.5,
-                                  color: AppColors.secOliveMuted,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+            )
+          : null,
+      child: CleanCard(
+        borderColor: AppColors.secCardBorder,
+        padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Toggle Face ID / Vân tay
+            Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppColors.secItemBg,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  const SizedBox(width: 8),
-                  Switch.adaptive(
-                    value: state.isBiometricLockEnabled,
-                    onChanged: onToggleBiometrics,
-                    activeTrackColor: AppColors.secToggleActive,
-                    activeThumbColor: Colors.white,
+                  alignment: Alignment.center,
+                  child: SvgPicture.asset(
+                    'assets/icons/ic_sec_face_id.svg',
+                    width: 19,
+                    height: 19,
                   ),
-                ],
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Divider(height: 1, color: AppColors.secItemBg),
-              ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Khóa bằng Face ID / Vân tay',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimaryLight,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Xác thực nhanh khi mở ứng dụng',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.secOliveMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch.adaptive(
+                  value: state.isBiometricLockEnabled,
+                  onChanged: onToggleBiometrics,
+                  activeTrackColor: AppColors.secToggleActive,
+                  activeThumbColor: Colors.white,
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
 
-              // 2. PIN Code Row
-              GestureDetector(
-                onTap: onChangePin,
-                behavior: HitTestBehavior.opaque,
+            // 2. PIN Code Row
+            InkWell(
+              onTap: onChangePin,
+              borderRadius: BorderRadius.circular(10),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      child: Row(
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.secItemBg,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      alignment: Alignment.center,
+                      child: SvgPicture.asset(
+                        'assets/icons/ic_sec_pin_code.svg',
+                        width: 19,
+                        height: 15,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.secItemBg,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            alignment: Alignment.center,
-                            child: SvgPicture.asset(
-                              'assets/icons/ic_sec_pin_code.svg',
-                              width: 20,
-                              height: 16,
+                          Text(
+                            'Mã PIN bảo mật 6 chữ số',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimaryLight,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Mã PIN bảo mật 6 chữ số',
-                                  style: AppTypography.body.copyWith(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimaryLight,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Mã dự phòng khẩn cấp khi cảm biến lỗi',
-                                  style: AppTypography.caption.copyWith(
-                                    fontSize: 11.5,
-                                    color: AppColors.secOliveMuted,
-                                  ),
-                                ),
-                              ],
+                          SizedBox(height: 2),
+                          Text(
+                            'Dự phòng khi không dùng sinh trắc học',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.secOliveMuted,
                             ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          state.maskedPin,
-                          style: const TextStyle(
-                            fontFamily: 'Courier',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 2,
-                            color: AppColors.secOliveMuted,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        SvgPicture.asset(
-                          'assets/icons/ic_sec_chevron_right.svg',
-                          width: 8,
-                          height: 12,
-                        ),
-                      ],
+                    Text(
+                      state.maskedPin,
+                      style: const TextStyle(
+                        fontFamily: 'Courier',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.5,
+                        color: AppColors.secOliveMuted,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    SvgPicture.asset(
+                      'assets/icons/ic_sec_chevron_right.svg',
+                      width: 8,
+                      height: 12,
                     ),
                   ],
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Divider(height: 1, color: AppColors.secItemBg),
-              ),
+            ),
+            const SizedBox(height: 18),
 
-              // 3. Radio Selection: Auto-lock timer
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      SvgPicture.asset(
-                        'assets/icons/ic_sec_auto_lock_timer.svg',
-                        width: 14,
-                        height: 16,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Tự động khóa ứng dụng',
-                        style: AppTypography.body.copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimaryLight,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildRadioOptionCard(
-                          label: 'TỨC THÌ',
-                          description: 'Ngay khi thoát ứng dụng',
-                          isSelected: state.autoLockTimeout == AutoLockTimeout.immediate,
-                          onTap: () => onSelectTimeout(AutoLockTimeout.immediate),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildRadioOptionCard(
-                          label: 'SAU 1 PHÚT',
-                          description: 'Tiện dụng khi tra cứu',
-                          isSelected: state.autoLockTimeout == AutoLockTimeout.oneMinute,
-                          onTap: () => onSelectTimeout(AutoLockTimeout.oneMinute),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (onLockNow != null) ...[
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primary,
-                          side: const BorderSide(color: AppColors.primary),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                        onPressed: onLockNow,
-                        icon: const Icon(Icons.lock_outline, size: 18),
-                        label: const Text(
-                          'Khóa Ứng Dụng Ngay (Test Màn hình Khóa & PIN)',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                        ),
-                      ),
+            // 3. Auto-lock timer gọn ngang
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Flexible(
+                  child: Text(
+                    'Tự động khóa ứng dụng',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimaryLight,
                     ),
-                  ],
-                ],
-              ),
-            ],
-          ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: AppColors.secItemBg,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildTimeoutSegment(
+                        label: 'TỨC THÌ',
+                        isSelected: state.autoLockTimeout ==
+                            AutoLockTimeout.immediate,
+                        onTap: () =>
+                            onSelectTimeout(AutoLockTimeout.immediate),
+                      ),
+                      const SizedBox(width: 4),
+                      _buildTimeoutSegment(
+                        label: 'SAU 1 PHÚT',
+                        isSelected: state.autoLockTimeout ==
+                            AutoLockTimeout.oneMinute,
+                        onTap: () =>
+                            onSelectTimeout(AutoLockTimeout.oneMinute),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildRadioOptionCard({
+  Widget _buildTimeoutSegment({
     required String label,
-    required String description,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
@@ -302,50 +252,24 @@ class AppLockBiometricsCard extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.all(10),
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.secRadioSelectedBg : AppColors.secItemBg,
+          color: isSelected ? AppColors.surfaceLight : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? AppColors.secOlive.withValues(alpha: 0.3) : Colors.transparent,
-          ),
+          border: isSelected
+              ? Border.all(
+                  color: AppColors.secOlive.withValues(alpha: 0.25),
+                )
+              : null,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  label,
-                  style: AppTypography.caption.copyWith(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.44,
-                    color: isSelected ? AppColors.secOlive : AppColors.secOliveMuted,
-                  ),
-                ),
-                SvgPicture.asset(
-                  isSelected
-                      ? 'assets/icons/ic_sec_radio_checked.svg'
-                      : 'assets/icons/ic_sec_radio_unchecked.svg',
-                  width: 15,
-                  height: 15,
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              description,
-              style: AppTypography.caption.copyWith(
-                fontSize: 11.5,
-                color: AppColors.secOliveMuted,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 10.5,
+            fontWeight: FontWeight.w700,
+            color: isSelected ? AppColors.secOlive : AppColors.secOliveMuted,
+          ),
         ),
       ),
     );
