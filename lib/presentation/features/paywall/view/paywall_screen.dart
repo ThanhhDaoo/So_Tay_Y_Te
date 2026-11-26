@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/user_session_manager.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../common_widgets/layout/app_layout.dart';
 import '../viewmodel/paywall_state.dart';
 import '../viewmodel/paywall_viewmodel.dart';
 import 'widgets/account_linking_card.dart';
@@ -196,9 +197,9 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   ),
                   SliverPadding(
                     padding: EdgeInsets.fromLTRB(
-                      16,
+                      AppLayoutTokens.screenPadding,
                       20,
-                      16,
+                      AppLayoutTokens.screenPadding,
                       32 + bottomPadding,
                     ),
                     sliver: state.isPro
@@ -215,19 +216,23 @@ class _PaywallScreenState extends State<PaywallScreen> {
                         : SliverList.list(
                             children: [
                               const VaultBrandHero(),
-                              const SizedBox(height: 22),
+                              const SizedBox(height: AppLayoutTokens.sectionGap),
                               const VaultFeaturesChecklist(),
-                              const SizedBox(height: 22),
-                              VaultPricingSelector(
-                                selectedPlan: state.selectedPlan,
-                                onSelectPlan: _viewModel.selectPlan,
+                              const SizedBox(height: AppLayoutTokens.sectionGap),
+                              SectionContainer(
+                                title: 'Chọn gói đăng ký',
+                                subtitle: 'Linh hoạt theo nhu cầu cá nhân & gia đình',
+                                bottomSpacing: 20,
+                                child: VaultPricingSelector(
+                                  selectedPlan: state.selectedPlan,
+                                  onSelectPlan: _viewModel.selectPlan,
+                                ),
                               ),
-                              const SizedBox(height: 20),
                               VaultCtaButton(
                                 onStartTrial: () => _onStartTrial(),
                                 isProcessing: state.isProcessing,
                               ),
-                              const SizedBox(height: 22),
+                              const SizedBox(height: AppLayoutTokens.sectionGap),
                               AccountLinkingCard(
                                 linkedProvider: state.linkedProvider,
                                 onLinkGoogle: () async {
@@ -272,7 +277,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
                               ),
                               const SizedBox(height: 20),
                               const TrustAssurancesRow(),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 8),
                               Center(
                                 child: TextButton.icon(
                                   onPressed: state.isProcessing

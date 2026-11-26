@@ -5,6 +5,7 @@ import '../../../../../core/services/user_session_manager.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
 import '../../../../../core/widgets/safe_avatar_image.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 
 class PaywallHeader extends StatelessWidget {
   const PaywallHeader({
@@ -24,7 +25,12 @@ class PaywallHeader extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
-          padding: EdgeInsets.fromLTRB(16, topPadding + 10, 16, 12),
+          padding: EdgeInsets.fromLTRB(
+            AppLayoutTokens.screenPadding,
+            topPadding + 10,
+            AppLayoutTokens.screenPadding,
+            12,
+          ),
           decoration: BoxDecoration(
             color: const Color(0xD9FBF9F4),
             border: const Border(

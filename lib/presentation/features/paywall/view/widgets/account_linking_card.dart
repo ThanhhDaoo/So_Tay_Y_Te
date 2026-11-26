@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 
-class AccountLinkingCard extends StatelessWidget {
+class AccountLinkingCard extends StatefulWidget {
   const AccountLinkingCard({
     super.key,
     required this.onLinkGoogle,
@@ -18,152 +19,190 @@ class AccountLinkingCard extends StatelessWidget {
   final String? linkedProvider;
 
   @override
+  State<AccountLinkingCard> createState() => _AccountLinkingCardState();
+}
+
+class _AccountLinkingCardState extends State<AccountLinkingCard> {
+  bool _isExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFECE7DF)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0D000000),
-            blurRadius: 4,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
+    final linked = widget.linkedProvider;
+    final hasLinked = linked != null && linked.isNotEmpty;
+
+    return CleanCard(
+      backgroundColor: Colors.white,
+      borderColor: const Color(0xFFECE7DF),
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              SvgPicture.asset(
-                'assets/icons/ic_vault_account_link.svg',
-                width: 17,
-                height: 17,
-                colorFilter: const ColorFilter.mode(
-                  Color(0xFF4E5547),
-                  BlendMode.srcIn,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Liên Kết Tài Khoản Bảo Mật',
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.heading3.copyWith(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.iceTextNavy,
+          InkWell(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            borderRadius: BorderRadius.circular(AppLayoutTokens.innerRadius),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF7F5EF),
+                    borderRadius:
+                        BorderRadius.circular(AppLayoutTokens.innerRadius),
                   ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Liên kết tài khoản để kích hoạt sao lưu tức thời dữ liệu offline hiện tại và tránh thất lạc khi đổi thiết bị.',
-            style: AppTypography.body.copyWith(
-              fontSize: 12,
-              color: const Color(0xFF3D4947),
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _SocialLinkButton(
-                  iconAsset: 'assets/icons/ic_vault_google.svg',
-                  label: linkedProvider == 'Google' ? 'Đã kết nối' : 'Google',
-                  isLinked: linkedProvider == 'Google',
-                  onTap: onLinkGoogle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _SocialLinkButton(
-                  iconAsset: 'assets/icons/ic_vault_apple.svg',
-                  label: linkedProvider == 'Apple' ? 'Đã kết nối' : 'Apple ID',
-                  isLinked: linkedProvider == 'Apple',
-                  onTap: onLinkApple,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Material(
-            color: const Color(0xFFF7F5EF),
-            borderRadius: BorderRadius.circular(8),
-            child: InkWell(
-              onTap: onLinkPhone,
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                height: 42,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE5E0D6)),
-                ),
-                alignment: Alignment.center,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SvgPicture.asset(
-                      'assets/icons/ic_vault_phone.svg',
-                      width: 12,
-                      height: 16,
+                  child: Center(
+                    child: SvgPicture.asset(
+                      'assets/icons/ic_vault_account_link.svg',
+                      width: 17,
+                      height: 17,
                       colorFilter: const ColorFilter.mode(
                         Color(0xFF4E5547),
                         BlendMode.srcIn,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        linkedProvider == 'Phone'
-                            ? 'Đã xác thực OTP (+84)'
-                            : 'Sử dụng Số Điện Thoại (SMS OTP)',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Liên Kết Tài Khoản Bảo Mật',
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTypography.labelSemiBold.copyWith(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
+                        style: AppTypography.heading3.copyWith(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.iceTextNavy,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        hasLinked
+                            ? 'Đã kết nối $linked • Sao lưu tự động'
+                            : 'Sao lưu hồ sơ offline khi đổi thiết bị',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.body.copyWith(
+                          fontSize: 12,
+                          color: hasLinked
+                              ? const Color(0xFF00685F)
+                              : const Color(0xFF3D4947),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Icon(
+                  _isExpanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  color: const Color(0xFF4E5547),
+                  size: 22,
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SvgPicture.asset(
-                'assets/icons/ic_vault_iso_shield.svg',
-                width: 11,
-                height: 13,
-                colorFilter: const ColorFilter.mode(
-                  Color(0xFF6D7A77),
-                  BlendMode.srcIn,
+          if (_isExpanded) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _SocialLinkButton(
+                    iconAsset: 'assets/icons/ic_vault_google.svg',
+                    label: linked == 'Google' ? 'Đã kết nối' : 'Google',
+                    isLinked: linked == 'Google',
+                    onTap: widget.onLinkGoogle,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  'Tuân thủ tiêu chuẩn bảo mật dữ liệu y tế ISO 27799',
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.caption.copyWith(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF6D7A77),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _SocialLinkButton(
+                    iconAsset: 'assets/icons/ic_vault_apple.svg',
+                    label: linked == 'Apple' ? 'Đã kết nối' : 'Apple ID',
+                    isLinked: linked == 'Apple',
+                    onTap: widget.onLinkApple,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Material(
+              color: const Color(0xFFF7F5EF),
+              borderRadius: BorderRadius.circular(AppLayoutTokens.innerRadius),
+              child: InkWell(
+                onTap: widget.onLinkPhone,
+                borderRadius:
+                    BorderRadius.circular(AppLayoutTokens.innerRadius),
+                child: Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    borderRadius:
+                        BorderRadius.circular(AppLayoutTokens.innerRadius),
+                    border: Border.all(color: const Color(0xFFE5E0D6)),
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/icons/ic_vault_phone.svg',
+                        width: 12,
+                        height: 16,
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF4E5547),
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          linked == 'Phone'
+                              ? 'Đã xác thực OTP (+84)'
+                              : 'Sử dụng Số Điện Thoại (SMS OTP)',
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.labelSemiBold.copyWith(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.iceTextNavy,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SvgPicture.asset(
+                  'assets/icons/ic_vault_iso_shield.svg',
+                  width: 11,
+                  height: 13,
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFF6D7A77),
+                    BlendMode.srcIn,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    'Tuân thủ tiêu chuẩn bảo mật dữ liệu y tế ISO 27799',
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.caption.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF6D7A77),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

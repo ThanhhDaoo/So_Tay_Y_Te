@@ -9,7 +9,7 @@ class TrustAssurancesRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Wrap(
       alignment: WrapAlignment.center,
-      spacing: 16,
+      spacing: 24,
       runSpacing: 8,
       children: [
         Row(
@@ -35,7 +35,6 @@ class TrustAssurancesRow extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(width: 24),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [

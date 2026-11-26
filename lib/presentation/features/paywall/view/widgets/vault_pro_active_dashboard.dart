@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/services/user_session_manager.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 import '../../../../routes/app_routes.dart';
 import '../../viewmodel/paywall_state.dart';
 
@@ -114,7 +115,7 @@ class VaultProActiveDashboard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
               Text(
                 plan.title,
                 style: AppTypography.heading1.copyWith(
@@ -126,38 +127,83 @@ class VaultProActiveDashboard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 'Chủ thẻ: $displayHolder',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Color(0xFFE6D5B8),
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 18),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.22),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.1),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Hiệu lực đến',
+                          style: TextStyle(
+                            color: Color(0xFFCBBBA0),
+                            fontSize: 11,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          expiryText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFFFFE0A3),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                child: Column(
-                  children: [
-                    _buildMetaRow('Mã giao dịch', txCode),
-                    const SizedBox(height: 6),
-                    _buildMetaRow('Phương thức', method),
-                    const SizedBox(height: 6),
-                    _buildMetaRow('Ngày kích hoạt', activatedText),
-                    const SizedBox(height: 6),
-                    _buildMetaRow('Hiệu lực đến', expiryText, highlight: true),
-                  ],
-                ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: () => _showTransactionDetailSheet(
+                      context,
+                      planTitle: plan.title,
+                      holder: displayHolder,
+                      txCode: txCode,
+                      method: method,
+                      activatedText: activatedText,
+                      expiryText: expiryText,
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFFFFE0A3),
+                      backgroundColor: Colors.black.withValues(alpha: 0.22),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.14),
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.receipt_long_rounded, size: 14),
+                    label: const Text(
+                      'Biên lai',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppLayoutTokens.sectionGap),
 
         // Unlocked Pro Features Hub
         Container(
@@ -356,31 +402,69 @@ class VaultProActiveDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildMetaRow(String label, String value, {bool highlight = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFFCBBBA0),
-            fontSize: 11.5,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: highlight ? const Color(0xFFFFE0A3) : Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+  void _showTransactionDetailSheet(
+    BuildContext context, {
+    required String planTitle,
+    required String holder,
+    required String txCode,
+    required String method,
+    required String activatedText,
+    required String expiryText,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD8D3C8),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Chi tiết gói đăng ký Vault Pro',
+                  style: AppTypography.heading3.copyWith(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.iceTextNavy,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                KeyValueRow(label: 'Gói kích hoạt', value: planTitle),
+                const SizedBox(height: 12),
+                KeyValueRow(label: 'Chủ thẻ', value: holder),
+                const SizedBox(height: 12),
+                KeyValueRow(label: 'Mã giao dịch', value: txCode),
+                const SizedBox(height: 12),
+                KeyValueRow(label: 'Phương thức', value: method),
+                const SizedBox(height: 12),
+                KeyValueRow(label: 'Ngày kích hoạt', value: activatedText),
+                const SizedBox(height: 12),
+                KeyValueRow(
+                  label: 'Hiệu lực đến',
+                  value: expiryText,
+                  valueColor: AppColors.primary,
+                ),
+              ],
             ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -402,65 +486,66 @@ class _UnlockedPerkTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-            child: Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 20,
-                    color: const Color(0xFF2E7D32),
-                  ),
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : AppLayoutTokens.itemGap),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.iceTextNavy,
-                        ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: const Color(0xFF2E7D32),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.iceTextNavy,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          color: AppColors.iceTextSlate,
-                        ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.iceTextSlate,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 6),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 13,
-                  color: AppColors.iceTextMuted,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 6),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 13,
+                color: AppColors.iceTextMuted,
+              ),
+            ],
           ),
         ),
-        if (!isLast)
-          const Divider(height: 6, color: Color(0xFFF1EDE6)),
-      ],
+      ),
     );
   }
 }

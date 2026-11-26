@@ -2,26 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 
 class VaultFeaturesChecklist extends StatelessWidget {
   const VaultFeaturesChecklist({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFECE7DF)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0D000000),
-            blurRadius: 4,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
+    return CleanCard(
+      backgroundColor: Colors.white,
+      borderColor: const Color(0xFFECE7DF),
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -44,7 +35,6 @@ class VaultFeaturesChecklist extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF6EFE5),
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: const Color(0xFFE8D2B5)),
                 ),
                 child: Text(
                   '5 TÍNH NĂNG MỞ KHÓA',
@@ -58,52 +48,40 @@ class VaultFeaturesChecklist extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          _FeatureItem(
+          const SizedBox(height: 14),
+          const _FeatureItem(
             iconAsset: 'assets/icons/ic_vault_feat_family.svg',
-            iconBg: const Color(0xFFF0F1ED),
+            iconBg: Color(0xFFF0F1ED),
             title: 'Đa hồ sơ gia đình không giới hạn',
-            description:
-                'Lập hồ sơ riêng biệt cho con nhỏ, bố mẹ và người cao tuổi.',
+            description: 'Lập hồ sơ riêng cho con nhỏ, bố mẹ & ông bà.',
           ),
-          const SizedBox(height: 14),
-          _FeatureItem(
+          const SizedBox(height: AppLayoutTokens.cardGap),
+          const _FeatureItem(
             iconAsset: 'assets/icons/ic_vault_feat_cloud.svg',
-            iconBg: const Color(0xFFF0F1ED),
+            iconBg: Color(0xFFF0F1ED),
             title: 'Đồng bộ đám mây 2 chiều tự động',
-            tagText: 'Zero-loss',
-            tagBg: AppColors.iceAccentCream,
-            tagColor: const Color(0xFF251A08),
-            description:
-                'Mã hóa AES-256 đầu cuối đạt chuẩn an toàn ngân hàng.',
+            description: 'Mã hóa AES-256 đầu cuối, an toàn khi đổi máy.',
           ),
-          const SizedBox(height: 14),
-          _FeatureItem(
+          const SizedBox(height: AppLayoutTokens.cardGap),
+          const _FeatureItem(
             iconAsset: 'assets/icons/ic_vault_feat_ocr.svg',
-            iconBg: const Color(0xFFF0F1ED),
+            iconBg: Color(0xFFF0F1ED),
             title: 'AI Medical OCR không giới hạn',
-            tagText: '3 GIÂY',
-            tagBg: const Color(0xFFF0F1ED),
-            tagBorder: const Color(0xFFA5A79B),
-            tagColor: const Color(0xFF4E5547),
-            description:
-                'Quét & trích xuất chính xác đơn thuốc, chỉ số xét nghiệm máu.',
+            description: 'Quét tự động đơn thuốc & xét nghiệm trong 3 giây.',
           ),
-          const SizedBox(height: 14),
-          _FeatureItem(
+          const SizedBox(height: AppLayoutTokens.cardGap),
+          const _FeatureItem(
             iconAsset: 'assets/icons/ic_vault_feat_pdf.svg',
-            iconBg: const Color(0xFFF0F1ED),
+            iconBg: Color(0xFFF0F1ED),
             title: 'Xuất Bệnh án PDF A4 chuẩn y khoa',
-            description:
-                'Mẫu tài liệu chuyên môn trình bác sĩ và giám định bảo hiểm.',
+            description: 'Bản tóm tắt lâm sàng trình bác sĩ & bảo hiểm.',
           ),
-          const SizedBox(height: 14),
-          _FeatureItem(
+          const SizedBox(height: AppLayoutTokens.cardGap),
+          const _FeatureItem(
             iconAsset: 'assets/icons/ic_vault_feat_ice.svg',
-            iconBg: const Color(0xFFE5EEFF),
-            title: 'Widget Thẻ Cấp Cứu ICE ngoài màn hình khóa',
-            description:
-                'Cung cấp nhóm máu, dị ứng thuốc cho đội cứu thương 24/7.',
+            iconBg: Color(0xFFE5EEFF),
+            title: 'Thẻ Cấp Cứu ICE ngoài màn hình khóa',
+            description: 'Hiển thị nhóm máu & dị ứng thuốc khẩn cấp 24/7.',
           ),
         ],
       ),
@@ -117,20 +95,12 @@ class _FeatureItem extends StatelessWidget {
     required this.iconBg,
     required this.title,
     required this.description,
-    this.tagText,
-    this.tagBg,
-    this.tagBorder,
-    this.tagColor,
   });
 
   final String iconAsset;
   final Color iconBg;
   final String title;
   final String description;
-  final String? tagText;
-  final Color? tagBg;
-  final Color? tagBorder;
-  final Color? tagColor;
 
   @override
   Widget build(BuildContext context) {
@@ -138,11 +108,11 @@ class _FeatureItem extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 32,
-          height: 32,
+          width: 34,
+          height: 34,
           decoration: BoxDecoration(
             color: iconBg,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppLayoutTokens.innerRadius),
           ),
           child: Center(
             child: SvgPicture.asset(
@@ -161,46 +131,21 @@ class _FeatureItem extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    style: AppTypography.labelSemiBold.copyWith(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.iceTextNavy,
-                    ),
-                  ),
-                  if (tagText != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 1.5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: tagBg ?? Colors.transparent,
-                        borderRadius: BorderRadius.circular(4),
-                        border: tagBorder != null
-                            ? Border.all(color: tagBorder!)
-                            : null,
-                      ),
-                      child: Text(
-                        tagText!,
-                        style: AppTypography.caption.copyWith(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w700,
-                          color: tagColor ?? AppColors.iceTextNavy,
-                        ),
-                      ),
-                    ),
-                ],
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.labelSemiBold.copyWith(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.iceTextNavy,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
                 description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: AppTypography.body.copyWith(
                   fontSize: 12,
                   color: const Color(0xFF3D4947),

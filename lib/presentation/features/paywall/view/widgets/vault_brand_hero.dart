@@ -11,67 +11,27 @@ class VaultBrandHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF6EFE5),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: const Color(0xFFE8D2B5)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0D000000),
-                blurRadius: 4,
-                offset: Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SvgPicture.asset(
-                'assets/icons/ic_vault_hipaa_lock.svg',
-                width: 11,
-                height: 14,
-                colorFilter: const ColorFilter.mode(
-                  Color(0xFF4E5547),
-                  BlendMode.srcIn,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'CHUẨN AN TOÀN Y KHOA HIPAA',
-                style: AppTypography.caption.copyWith(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.55,
-                  color: const Color(0xFF4E5547),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 18),
         Center(
           child: SizedBox(
-            width: 72,
-            height: 72,
+            width: 60,
+            height: 60,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 Transform.rotate(
                   angle: 6 * math.pi / 180,
                   child: Container(
-                    width: 62,
-                    height: 62,
+                    width: 52,
+                    height: 52,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF008378).withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(16),
+                      color: const Color(0xFF008378).withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                 ),
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       begin: Alignment.topLeft,
@@ -81,20 +41,20 @@ class VaultBrandHero extends StatelessWidget {
                         Color(0xFF717669),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0x594E5547),
-                        blurRadius: 20,
-                        offset: Offset(0, 8),
+                        color: Color(0x404E5547),
+                        blurRadius: 16,
+                        offset: Offset(0, 6),
                       ),
                     ],
                   ),
                   child: Center(
                     child: SvgPicture.asset(
                       'assets/icons/ic_vault_shield_crest.svg',
-                      width: 22,
-                      height: 27,
+                      width: 20,
+                      height: 24,
                       colorFilter: const ColorFilter.mode(
                         Colors.white,
                         BlendMode.srcIn,
@@ -106,12 +66,45 @@ class VaultBrandHero extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF6EFE5),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: const Color(0xFFE8D2B5)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SvgPicture.asset(
+                'assets/icons/ic_vault_hipaa_lock.svg',
+                width: 10,
+                height: 13,
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFF4E5547),
+                  BlendMode.srcIn,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'CHUẨN AN TOÀN Y KHOA HIPAA',
+                style: AppTypography.caption.copyWith(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                  color: const Color(0xFF4E5547),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
         Text(
           'Nâng Cấp Sổ Tay Y Tế Pro',
           textAlign: TextAlign.center,
           style: AppTypography.heading1.copyWith(
-            fontSize: 23,
+            fontSize: 22,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.3,
             color: AppColors.iceTextNavy,
@@ -119,13 +112,13 @@ class VaultBrandHero extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
-            'Bảo vệ trọn vẹn sức khỏe cả gia đình với công nghệ đồng bộ mã hóa y tế chuyên sâu.',
+            'Đồng bộ đám mây mã hóa đầu cuối & quản lý trọn vẹn sức khỏe cả gia đình.',
             textAlign: TextAlign.center,
             style: AppTypography.body.copyWith(
               fontSize: 13.5,
-              height: 1.45,
+              height: 1.4,
               color: const Color(0xFF3D4947),
             ),
           ),
