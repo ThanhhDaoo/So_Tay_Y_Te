@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../common_widgets/layout/app_layout.dart';
 import '../viewmodel/vital_reports_state.dart';
 import '../viewmodel/vital_reports_viewmodel.dart';
 import 'widgets/a4_medical_summary_preview.dart';
@@ -47,7 +48,9 @@ class _VitalReportsScreenState extends State<VitalReportsScreen> {
             duration: const Duration(seconds: 3),
             backgroundColor: AppColors.reportOliveDark,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
         _viewModel.clearNotification();
@@ -71,42 +74,40 @@ class _VitalReportsScreenState extends State<VitalReportsScreen> {
           body: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.only(
-              left: 16,
-              right: 16,
+              left: AppLayoutTokens.screenPadding,
+              right: AppLayoutTokens.screenPadding,
               top: 16,
               bottom: 96,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Clinical Context Header Banner
+                // Cụm 1: Ngữ cảnh báo cáo & Bộ chọn chỉ số sinh hiệu
                 ClinicalContextHeaderCard(
                   selectedMetric: state.selectedMetric,
                   onSelectMetric: _viewModel.selectMetric,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppLayoutTokens.sectionGap),
 
-                // 2. Interactive Telemetry Dashboard Card
+                // Cụm 2: Biểu đồ xu hướng trực quan
                 VitalTelemetryChartCard(
                   state: state,
                   onSelectTimeframe: _viewModel.selectTimeframe,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppLayoutTokens.sectionGap),
 
-                // 3. Medical Summary Report Export (Scaled down A4 Preview)
+                // Cụm 3: Thẻ tóm tắt Xuất Bệnh Án A4 (bấm mở Modal phóng to toàn trang) & Nút Xuất/In
                 A4MedicalSummaryPreview(state: state),
                 const SizedBox(height: 16),
-
-                // 4. Action Export Buttons
                 VitalReportActionButtons(
                   exportingAction: state.exportingAction,
                   onExportPdf: _viewModel.exportPdf,
                   onPrintAirPrint: _viewModel.printAirPrint,
                   onSendDoctor: _viewModel.sendDoctor,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-                // 5. Safety & Confidentiality Notice
+                // Cụm 4: Ghi chú bảo mật HIPAA/GDPR
                 const VitalConfidentialityNotice(),
               ],
             ),

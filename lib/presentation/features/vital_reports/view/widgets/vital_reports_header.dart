@@ -4,6 +4,7 @@ import '../../../../../core/services/user_session_manager.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
 import '../../../../../core/widgets/safe_avatar_image.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 
 class VitalReportsHeader extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onProfileTap;
@@ -28,7 +29,7 @@ class VitalReportsHeader extends StatelessWidget implements PreferredSizeWidget 
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF8F9FF).withValues(alpha: 0.85),
+            color: const Color(0xFFF8F9FF).withValues(alpha: 0.88),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x0A000000),
@@ -39,8 +40,8 @@ class VitalReportsHeader extends StatelessWidget implements PreferredSizeWidget 
           ),
           padding: EdgeInsets.only(
             top: topPadding,
-            left: 16,
-            right: 16,
+            left: AppLayoutTokens.screenPadding,
+            right: AppLayoutTokens.screenPadding,
           ),
           height: 64 + topPadding,
           child: Row(
@@ -51,7 +52,7 @@ class VitalReportsHeader extends StatelessWidget implements PreferredSizeWidget 
                   children: [
                     if (showBackButton && Navigator.of(context).canPop())
                       Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
+                        padding: const EdgeInsets.only(right: 10),
                         child: GestureDetector(
                           onTap: onBackTap ?? () => Navigator.of(context).pop(),
                           child: Container(
@@ -86,14 +87,15 @@ class VitalReportsHeader extends StatelessWidget implements PreferredSizeWidget 
                       child: Image.asset(
                         'assets/images/img_sotayyte_logo.png',
                         fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => const Icon(
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(
                           Icons.local_hospital_rounded,
                           color: AppColors.reportTeal,
                           size: 24,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -114,7 +116,7 @@ class VitalReportsHeader extends StatelessWidget implements PreferredSizeWidget 
                             'Báo Cáo Sinh Hiệu',
                             style: AppTypography.heading3.copyWith(
                               fontSize: 18,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                               color: AppColors.reportTextDark,
                               height: 1.25,
                             ),
@@ -132,7 +134,8 @@ class VitalReportsHeader extends StatelessWidget implements PreferredSizeWidget 
                 onTap: onProfileTap,
                 child: Container(
                   height: 44,
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEFF4FF),
                     borderRadius: BorderRadius.circular(9999),
@@ -150,8 +153,10 @@ class VitalReportsHeader extends StatelessWidget implements PreferredSizeWidget 
                         child: ListenableBuilder(
                           listenable: AppSessionNotifier.instance,
                           builder: (context, _) => buildSafeAvatarImage(
-                            imageSource: AppSessionNotifier.instance.avatarUrl ?? '',
-                            fallbackAsset: 'assets/images/img_profile_avatar.png',
+                            imageSource:
+                                AppSessionNotifier.instance.avatarUrl ?? '',
+                            fallbackAsset:
+                                'assets/images/img_profile_avatar.png',
                             fit: BoxFit.cover,
                           ),
                         ),

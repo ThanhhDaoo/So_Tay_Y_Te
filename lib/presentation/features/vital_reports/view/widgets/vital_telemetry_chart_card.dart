@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 import '../../viewmodel/vital_reports_state.dart';
 import 'vital_chart_painter.dart';
 
+/// Thẻ biểu đồ xu hướng sinh hiệu thoáng đãng:
+/// Tập trung vào Chỉ số mới nhất + Phân loại WHO + Biểu đồ xu hướng,
+/// đưa các thông số lịch đo/trung bình tháng xuống dải tóm tắt gọn hoặc BottomSheet chi tiết.
 class VitalTelemetryChartCard extends StatelessWidget {
   final VitalReportsState state;
   final ValueChanged<VitalTimeframe> onSelectTimeframe;
@@ -15,29 +19,24 @@ class VitalTelemetryChartCard extends StatelessWidget {
     required this.onSelectTimeframe,
   });
 
+  String get _metricDisplayTitle => switch (state.selectedMetric) {
+        VitalMetricType.bloodPressure => 'Huyết Áp Động Mạch',
+        VitalMetricType.bloodGlucose => 'Đường Huyết Lúc Đói',
+        VitalMetricType.heartRate => 'Nhịp Tim Nghỉ Ngơi',
+        VitalMetricType.bmiAndWeight => 'Chỉ Số BMI & Cân Nặng',
+      };
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0D000000),
-            blurRadius: 2,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
+    return CleanCard(
+      borderColor: AppColors.reportBorderLight,
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Chart Header & Timeline selector
+          // 1. Tiêu đề chỉ số & Bộ chọn Tuần / Tháng
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Column(
@@ -46,21 +45,21 @@ class VitalTelemetryChartCard extends StatelessWidget {
                     Text(
                       'CHỈ SỐ XU HƯỚNG',
                       style: AppTypography.caption.copyWith(
-                        fontSize: 11,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0.55,
+                        letterSpacing: 0.5,
                         color: AppColors.reportTextMuted,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Row(
                       children: [
                         Flexible(
                           child: Text(
-                            'Huyết Áp Động Mạch',
+                            _metricDisplayTitle,
                             style: AppTypography.heading3.copyWith(
                               fontSize: 17,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                               color: AppColors.reportTextDark,
                             ),
                             maxLines: 1,
@@ -71,7 +70,7 @@ class VitalTelemetryChartCard extends StatelessWidget {
                         Text(
                           '(${state.latestUnit})',
                           style: AppTypography.caption.copyWith(
-                            fontSize: 11,
+                            fontSize: 11.5,
                             fontWeight: FontWeight.w600,
                             color: AppColors.reportTextSlate,
                           ),
@@ -81,23 +80,26 @@ class VitalTelemetryChartCard extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.all(2),
+                padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
                   color: AppColors.reportPillBg,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildTimeframeBtn(
                       label: 'Tuần',
-                      isSelected: state.selectedTimeframe == VitalTimeframe.week,
+                      isSelected:
+                          state.selectedTimeframe == VitalTimeframe.week,
                       onTap: () => onSelectTimeframe(VitalTimeframe.week),
                     ),
                     _buildTimeframeBtn(
                       label: 'Tháng',
-                      isSelected: state.selectedTimeframe == VitalTimeframe.month,
+                      isSelected:
+                          state.selectedTimeframe == VitalTimeframe.month,
                       onTap: () => onSelectTimeframe(VitalTimeframe.month),
                     ),
                   ],
@@ -105,84 +107,83 @@ class VitalTelemetryChartCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
-          // 2. Latest Measure Hero Display
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEFF4FF).withValues(alpha: 0.7),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left Column: Latest measure
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          SvgPicture.asset(
-                            'assets/icons/ic_report_measure_clock.svg',
-                            width: 16,
-                            height: 16,
+          // 2. Điểm neo thị giác chính: Giá trị gần nhất + Phân loại + Độ tuân thủ
+          InkWell(
+            onTap: () => _showTelemetryMetricsSheet(context),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF4FF).withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Đo gần nhất • ${state.latestTimestamp}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.reportTextSlate,
                           ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              'Lần đo gần nhất (${state.latestTimestamp})',
-                              style: AppTypography.caption.copyWith(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.reportTextSlate,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              state.latestValue,
-                              style: AppTypography.heading1.copyWith(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.7,
-                                color: AppColors.reportTextDark,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              state.latestUnit,
-                              style: AppTypography.caption.copyWith(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.reportTextMuted,
-                              ),
-                            ),
-                          ],
                         ),
-                      ),
-                      const SizedBox(height: 6),
+                        const SizedBox(height: 6),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                state.latestValue,
+                                style: const TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.7,
+                                  color: AppColors.reportTextDark,
+                                  height: 1.05,
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                state.latestUnit,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.reportTextMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.reportCream,
-                          borderRadius: BorderRadius.circular(9999),
+                          borderRadius: BorderRadius.circular(999),
                         ),
-                        child: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 4,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
                               width: 6,
@@ -192,91 +193,34 @@ class VitalTelemetryChartCard extends StatelessWidget {
                                 shape: BoxShape.circle,
                               ),
                             ),
+                            const SizedBox(width: 5),
                             Text(
                               state.latestClassification,
-                              style: AppTypography.caption.copyWith(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
                                 color: AppColors.reportCreamDark,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 1,
-                  height: 80,
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  color: AppColors.reportDividerGray.withValues(alpha: 0.3),
-                ),
-                // Right Column: Monitoring Frequency
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Tần suất theo dõi',
-                        style: AppTypography.caption.copyWith(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.reportTextSlate,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          SvgPicture.asset(
-                            'assets/icons/ic_report_frequency_cal.svg',
-                            width: 16,
-                            height: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              state.monitoringFrequency,
-                              style: AppTypography.body.copyWith(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.reportTextDark,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        state.monitoringSchedule,
-                        style: AppTypography.caption.copyWith(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.reportTextMuted,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        spacing: 2,
-                        children: [
-                          Text(
-                            'Độ tuân thủ: ',
-                            style: AppTypography.caption.copyWith(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w500,
+                          const Text(
+                            'Tuân thủ đo: ',
+                            style: TextStyle(
+                              fontSize: 11.5,
                               color: AppColors.reportTextSlate,
                             ),
                           ),
                           Text(
                             state.compliancePercent,
-                            style: AppTypography.caption.copyWith(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
                               color: AppColors.reportTeal,
                             ),
                           ),
@@ -284,39 +228,38 @@ class VitalTelemetryChartCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 14),
 
-          // 3. Zone Legend Indicator
+          // 3. Chú giải vùng sinh lý gọn gàng
           Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            alignment: WrapAlignment.spaceBetween,
+            spacing: 12,
+            runSpacing: 6,
             children: [
               _buildLegendItem(
-                color: const Color(0xCC10B981),
+                color: AppColors.reportZoneGreen,
                 label: 'Tối ưu (<120/80)',
               ),
               _buildLegendItem(
-                color: const Color(0xFFFBBF24),
-                label: 'Tiền THA (120-139)',
+                color: AppColors.reportZoneYellow,
+                label: 'Tiền THA (120–139)',
               ),
               _buildLegendItem(
-                color: const Color(0xFFBB0112),
+                color: AppColors.reportZoneRed,
                 label: 'Tăng HA (≥140/90)',
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
-          // 4. SVG Chart Visual Container
+          // 4. Khung Biểu đồ trực quan
           Container(
-            height: 216,
+            height: 208,
             width: double.infinity,
-            padding: const EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 6),
+            padding: const EdgeInsets.fromLTRB(8, 10, 8, 6),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
@@ -338,10 +281,14 @@ class VitalTelemetryChartCard extends StatelessWidget {
                         child: Center(
                           child: Text(
                             point.dayLabel,
-                            style: AppTypography.caption.copyWith(
-                              fontSize: 9.5,
-                              fontWeight: point.isLatest ? FontWeight.w700 : FontWeight.w500,
-                              color: point.isLatest ? AppColors.reportTeal : AppColors.reportTextMuted,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: point.isLatest
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: point.isLatest
+                                  ? AppColors.reportTeal
+                                  : AppColors.reportTextMuted,
                             ),
                           ),
                         ),
@@ -352,151 +299,134 @@ class VitalTelemetryChartCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // 5. Telemetry Summary Badges
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.reportSegmentBg,
-                    borderRadius: BorderRadius.circular(8),
+          // 5. Hàng tóm tắt trung bình tháng gọn (chạm để xem lịch đo chi tiết)
+          InkWell(
+            onTap: () => _showTelemetryMetricsSheet(context),
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  SvgPicture.asset(
+                    'assets/icons/ic_report_summary_bp.svg',
+                    width: 16,
+                    height: 16,
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: AppColors.reportTeal.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: SvgPicture.asset(
-                          'assets/icons/ic_report_summary_bp.svg',
-                          width: 18,
-                          height: 18,
-                        ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'TB tháng: ${state.monthlyAverageBp} mmHg • Nhịp tim ${state.monthlyAverageHeart} bpm',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.reportTextSlate,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'HA TRUNG BÌNH THÁNG',
-                              style: AppTypography.caption.copyWith(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.reportTextMuted,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            Wrap(
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              spacing: 4,
-                              children: [
-                                Text(
-                                  state.monthlyAverageBp,
-                                  style: AppTypography.body.copyWith(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.reportTextDark,
-                                  ),
-                                ),
-                                Text(
-                                  'mmHg',
-                                  style: AppTypography.caption.copyWith(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColors.reportTextMuted,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  const Text(
+                    'Chi tiết ›',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.reportTeal,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.reportSegmentBg,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: AppColors.reportZoneRed.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: SvgPicture.asset(
-                          'assets/icons/ic_report_summary_heart.svg',
-                          width: 18,
-                          height: 18,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'NHỊP TIM TRUNG BÌNH',
-                              style: AppTypography.caption.copyWith(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.reportTextMuted,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 2),
-                            Wrap(
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              spacing: 4,
-                              children: [
-                                Text(
-                                  state.monthlyAverageHeart,
-                                  style: AppTypography.body.copyWith(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.reportTextDark,
-                                  ),
-                                ),
-                                Text(
-                                  'bpm',
-                                  style: AppTypography.caption.copyWith(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColors.reportTextMuted,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showTelemetryMetricsSheet(BuildContext context) {
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.fromLTRB(
+          AppLayoutTokens.screenPadding,
+          12,
+          AppLayoutTokens.screenPadding,
+          bottomPadding + 24,
+        ),
+        decoration: const BoxDecoration(
+          color: AppColors.reportBackground,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.reportBorderLight,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SectionHeader(
+              title: 'Thống kê theo dõi sinh hiệu',
+              subtitle: _metricDisplayTitle,
+              icon: Icons.analytics_outlined,
+              iconColor: AppColors.reportTeal,
+              trailing: IconButton(
+                onPressed: () => Navigator.pop(ctx),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: AppColors.reportTextMuted,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            CleanCard(
+              borderColor: AppColors.reportBorderLight,
+              child: Column(
+                children: [
+                  KeyValueRow(
+                    label: 'Lần đo gần nhất',
+                    value: '${state.latestValue} ${state.latestUnit}',
+                  ),
+                  KeyValueRow(
+                    label: 'Thời điểm ghi nhận',
+                    value: state.latestTimestamp,
+                  ),
+                  KeyValueRow(
+                    label: 'Phân loại lâm sàng',
+                    value: state.latestClassification,
+                  ),
+                  KeyValueRow(
+                    label: 'Tần suất theo dõi',
+                    value: state.monitoringFrequency,
+                  ),
+                  KeyValueRow(
+                    label: 'Khung giờ đo định kỳ',
+                    value: state.monitoringSchedule,
+                  ),
+                  KeyValueRow(
+                    label: 'Độ tuân thủ lịch đo',
+                    value: state.compliancePercent,
+                  ),
+                  KeyValueRow(
+                    label: 'Huyết áp trung bình tháng',
+                    value: '${state.monthlyAverageBp} mmHg',
+                  ),
+                  KeyValueRow(
+                    label: 'Nhịp tim trung bình tháng',
+                    value: '${state.monthlyAverageHeart} bpm',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -509,17 +439,19 @@ class VitalTelemetryChartCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(7),
         ),
         child: Text(
           label,
-          style: AppTypography.caption.copyWith(
-            fontSize: 11,
+          style: TextStyle(
+            fontSize: 11.5,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? AppColors.reportOliveDark : AppColors.reportTextSlate,
+            color: isSelected
+                ? AppColors.reportOliveDark
+                : AppColors.reportTextSlate,
           ),
         ),
       ),
@@ -541,16 +473,13 @@ class VitalTelemetryChartCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(2),
           ),
         ),
-        const SizedBox(width: 4),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            label,
-            style: AppTypography.caption.copyWith(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: AppColors.reportTextSlate,
-            ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: AppColors.reportTextSlate,
           ),
         ),
       ],
