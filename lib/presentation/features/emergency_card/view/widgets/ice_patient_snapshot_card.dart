@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/widgets/safe_avatar_image.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 import '../../viewmodel/emergency_card_state.dart';
 
-/// Thẻ thông tin bệnh nhân, nhóm máu và chỉ số sinh trắc nhanh.
+/// Thẻ định danh bệnh nhân cấp cứu tuân thủ 3-Point Rule:
+/// 1. Ảnh & Họ tên bệnh nhân + Tuổi/Giới
+/// 2. Nhóm máu & Yếu tố Rh nổi bật lớn
+/// 3. Dòng tóm tắt thể trạng 1 dòng (chạm để mở chi tiết Chiều cao, Cân nặng, Hiến tạng).
 class IcePatientSnapshotCard extends StatelessWidget {
   final PatientSnapshotInfo patient;
 
@@ -12,21 +16,11 @@ class IcePatientSnapshotCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(17),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.iceCardBorder),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.iceTextNavy.withValues(alpha: 0.06),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return CleanCard(
+      onTap: () => _showPatientBiometricsSheet(context),
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -63,45 +57,41 @@ class IcePatientSnapshotCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'HỒ SƠ BỆNH NHÂN',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.iceOlive,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
                     Text(
                       patient.fullName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 18.5,
                         fontWeight: FontWeight.w700,
                         color: AppColors.iceTextNavy,
+                        height: 1.2,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
                       patient.demographics,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 12.5,
                         color: AppColors.iceTextSlate,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Container(
-                constraints: const BoxConstraints(minWidth: 76),
+                constraints: const BoxConstraints(minWidth: 78),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 13,
-                  vertical: 9,
+                  horizontal: 12,
+                  vertical: 8,
                 ),
                 decoration: BoxDecoration(
                   color: AppColors.iceAccentCream,
@@ -113,7 +103,7 @@ class IcePatientSnapshotCard extends StatelessWidget {
                     const Text(
                       'NHÓM MÁU',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 9.5,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textWarmBrown,
                       ),
@@ -121,8 +111,8 @@ class IcePatientSnapshotCard extends StatelessWidget {
                     Text(
                       patient.bloodType,
                       style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 23,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.iceTextBrownDark,
                         height: 1.15,
                       ),
@@ -130,7 +120,7 @@ class IcePatientSnapshotCard extends StatelessWidget {
                     Text(
                       patient.rhFactor,
                       style: const TextStyle(
-                        fontSize: 9,
+                        fontSize: 9.5,
                         fontWeight: FontWeight.w600,
                         color: AppColors.iceOlive,
                       ),
@@ -140,119 +130,102 @@ class IcePatientSnapshotCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _MetricTile(
-                  label: 'CHIỀU CAO',
-                  value: patient.height,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _MetricTile(
-                  label: 'CÂN NẶNG',
-                  value: patient.weight,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 11,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.iceAccentCream,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'HIẾN TẠNG',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textWarmBrown,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SvgPicture.asset(
-                            'assets/icons/ic_heart_donor.svg',
-                            width: 11.67,
-                            height: 10.7,
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              patient.organDonorStatus,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.iceTextBrownDark,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.iceMetricBox,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Cao ${patient.height} • Nặng ${patient.weight} • Hiến tạng: ${patient.organDonorStatus}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.iceTextSlate,
+                    ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 16,
+                  color: AppColors.iceOlive,
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
-}
 
-class _MetricTile extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _MetricTile({
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 11),
-      decoration: BoxDecoration(
-        color: AppColors.iceMetricBox,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.iceCardBorder.withValues(alpha: 0.6),
+  void _showPatientBiometricsSheet(BuildContext context) {
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.fromLTRB(
+          AppLayoutTokens.screenPadding,
+          12,
+          AppLayoutTokens.screenPadding,
+          bottomPadding + 24,
         ),
-      ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: AppColors.iceOlive,
+        decoration: const BoxDecoration(
+          color: AppColors.iceBackground,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.iceCardBorder,
+                borderRadius: BorderRadius.circular(999),
+              ),
             ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.iceTextNavy,
+            const SizedBox(height: 16),
+            SectionHeader(
+              title: patient.fullName,
+              subtitle: 'Thông số sinh trắc & Hiến tạng cấp cứu',
+              icon: Icons.person_outline_rounded,
+              trailing: IconButton(
+                onPressed: () => Navigator.pop(ctx),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: AppColors.iceTextMuted,
+                ),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            CleanCard(
+              child: Column(
+                children: [
+                  KeyValueRow(label: 'Nhân khẩu học', value: patient.demographics),
+                  KeyValueRow(
+                    label: 'Nhóm máu',
+                    value: '${patient.bloodType} (${patient.rhFactor})',
+                    valueColor: AppColors.iceDangerText,
+                  ),
+                  KeyValueRow(label: 'Chiều cao', value: patient.height),
+                  KeyValueRow(label: 'Cân nặng', value: patient.weight),
+                  KeyValueRow(
+                    label: 'Đăng ký hiến tạng',
+                    value: patient.organDonorStatus,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

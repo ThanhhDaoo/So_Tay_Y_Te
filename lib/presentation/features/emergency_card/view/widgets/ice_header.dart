@@ -29,8 +29,8 @@ class IceHeader extends StatelessWidget {
           padding: EdgeInsets.only(
             top: topPadding + 10,
             bottom: 10,
-            left: 16,
-            right: 16,
+            left: 20,
+            right: 20,
           ),
           decoration: BoxDecoration(
             color: AppColors.iceGlassSurface,

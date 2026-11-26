@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../common_widgets/layout/app_layout.dart';
 import '../../main_shell/view/main_shell_screen.dart';
 import '../viewmodel/emergency_card_state.dart';
 import '../viewmodel/emergency_card_viewmodel.dart';
@@ -86,13 +87,14 @@ class _EmergencyCardScreenState extends State<EmergencyCardScreen> {
               ListView(
                 padding: EdgeInsets.only(
                   top: topPadding + 78,
-                  bottom: bottomPadding + 88,
-                  left: 16,
-                  right: 16,
+                  bottom: bottomPadding + 96,
+                  left: AppLayoutTokens.screenPadding,
+                  right: AppLayoutTokens.screenPadding,
                 ),
                 children: [
+                  // Cụm 1: Hành động gọi cấp cứu 1 chạm
                   const IceEmergencyBanner(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppLayoutTokens.cardGap),
                   IceCallActionsSection(
                     primaryContact: state.primaryContact,
                     doctorContact: state.doctorContact,
@@ -101,30 +103,51 @@ class _EmergencyCardScreenState extends State<EmergencyCardScreen> {
                     onCallDoctor: _viewModel.callDoctor,
                     onCall115: _viewModel.callEmergency115,
                   ),
-                  const SizedBox(height: 16),
-                  IcePatientSnapshotCard(patient: state.patient),
-                  const SizedBox(height: 16),
-                  IceAllergyWarningCard(warning: state.allergyWarning),
-                  const SizedBox(height: 16),
-                  IceChronicConditionsCard(
-                    conditions: state.chronicConditions,
-                  ),
-                  const SizedBox(height: 16),
-                  IceQrModuleCard(
-                    qrPayload: _buildEmergencyQrPayload(state),
-                    onExpandQr: () => showFullScreenEmergencyQrDialog(
-                      context,
-                      qrPayload: _buildEmergencyQrPayload(state),
+                  const SizedBox(height: AppLayoutTokens.sectionGap),
+
+                  // Cụm 2: Dữ liệu sinh tồn cốt lõi (Định danh + Nhóm máu + Dị ứng + Bệnh nền)
+                  SectionContainer(
+                    title: 'Thông tin lâm sàng sống còn',
+                    icon: Icons.medical_information_outlined,
+                    bottomSpacing: AppLayoutTokens.sectionGap,
+                    child: Column(
+                      children: [
+                        IcePatientSnapshotCard(patient: state.patient),
+                        const SizedBox(height: AppLayoutTokens.cardGap),
+                        IceAllergyWarningCard(warning: state.allergyWarning),
+                        const SizedBox(height: AppLayoutTokens.cardGap),
+                        IceChronicConditionsCard(
+                          conditions: state.chronicConditions,
+                        ),
+                      ],
                     ),
                   ),
-                  if (!widget.readOnlyLockMode) ...[
-                    const SizedBox(height: 16),
-                    IceLockScreenWidgetCard(
-                      isEnabled: state.isLockScreenWidgetEnabled,
-                      onToggle: _viewModel.toggleLockScreenWidget,
+
+                  // Cụm 3: Mã QR Bác sĩ & Hiển thị màn hình khóa
+                  SectionContainer(
+                    title: 'Chia sẻ nhanh & Tiện ích',
+                    icon: Icons.qr_code_scanner_rounded,
+                    bottomSpacing: 20,
+                    child: Column(
+                      children: [
+                        IceQrModuleCard(
+                          qrPayload: _buildEmergencyQrPayload(state),
+                          onExpandQr: () => showFullScreenEmergencyQrDialog(
+                            context,
+                            qrPayload: _buildEmergencyQrPayload(state),
+                          ),
+                        ),
+                        if (!widget.readOnlyLockMode) ...[
+                          const SizedBox(height: AppLayoutTokens.cardGap),
+                          IceLockScreenWidgetCard(
+                            isEnabled: state.isLockScreenWidgetEnabled,
+                            onToggle: _viewModel.toggleLockScreenWidget,
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                  const SizedBox(height: 16),
+                  ),
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

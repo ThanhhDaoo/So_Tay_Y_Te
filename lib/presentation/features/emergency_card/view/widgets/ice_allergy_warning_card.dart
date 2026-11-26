@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 import '../../viewmodel/emergency_card_state.dart';
 
-/// Thẻ cảnh báo dị ứng thuốc nguy hiểm.
+/// Thẻ cảnh báo dị ứng thuốc nguy hiểm trên màn ICE:
+/// Hiển thị nổi bật tên dị nguyên & mức độ, rút gọn mô tả dài còn 2 dòng và cho phép chạm xem toàn bộ.
 class IceAllergyWarningCard extends StatelessWidget {
   final DrugAllergyWarning warning;
 
@@ -13,22 +15,14 @@ class IceAllergyWarningCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSevere = warning.isSevere;
 
-    return Container(
-      padding: const EdgeInsets.all(17),
-      decoration: BoxDecoration(
-        color: isSevere ? AppColors.iceAllergyBg : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isSevere ? AppColors.iceAllergyBorder : AppColors.iceCardBorder,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.iceTextNavy.withValues(alpha: 0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return CleanCard(
+      onTap: warning.description.trim().isNotEmpty
+          ? () => _showFullAllergySheet(context)
+          : null,
+      backgroundColor: isSevere ? AppColors.iceAllergyBg : AppColors.surfaceLight,
+      borderColor:
+          isSevere ? AppColors.iceAllergyBorder : AppColors.iceCardBorder,
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -45,13 +39,13 @@ class IceAllergyWarningCard extends StatelessWidget {
             child: isSevere
                 ? SvgPicture.asset(
                     'assets/icons/ic_warning_triangle.svg',
-                    width: 22,
-                    height: 19,
+                    width: 20,
+                    height: 18,
                   )
                 : const Icon(
                     Icons.shield_outlined,
                     color: AppColors.iceOlive,
-                    size: 22,
+                    size: 20,
                   ),
           ),
           const SizedBox(width: 12),
@@ -60,15 +54,17 @@ class IceAllergyWarningCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Flexible(
                       child: Text(
-                        isSevere ? 'CẢNH BÁO NGUY HIỂM' : 'THÔNG TIN DỊ ỨNG',
+                        isSevere ? 'CẢNH BÁO DỊ ỨNG' : 'THÔNG TIN DỊ ỨNG',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
                           color: isSevere
                               ? AppColors.textWarmBrown
                               : AppColors.iceOlive,
@@ -79,7 +75,7 @@ class IceAllergyWarningCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
-                        vertical: 2,
+                        vertical: 2.5,
                       ),
                       decoration: BoxDecoration(
                         color: isSevere
@@ -101,6 +97,8 @@ class IceAllergyWarningCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   warning.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -109,19 +107,85 @@ class IceAllergyWarningCard extends StatelessWidget {
                         : AppColors.iceTextNavy,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  warning.description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    height: 1.45,
-                    color: isSevere ? AppColors.iceOlive : AppColors.iceTextSlate,
+                if (warning.description.trim().isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    warning.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      height: 1.35,
+                      color:
+                          isSevere ? AppColors.iceOlive : AppColors.iceTextSlate,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showFullAllergySheet(BuildContext context) {
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.fromLTRB(
+          AppLayoutTokens.screenPadding,
+          12,
+          AppLayoutTokens.screenPadding,
+          bottomPadding + 24,
+        ),
+        decoration: const BoxDecoration(
+          color: AppColors.iceBackground,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.iceCardBorder,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SectionHeader(
+              title: warning.title,
+              subtitle: warning.severityBadge,
+              icon: Icons.warning_amber_rounded,
+              iconColor: AppColors.iceCriticalBadge,
+              trailing: IconButton(
+                onPressed: () => Navigator.pop(ctx),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: AppColors.iceTextMuted,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            CleanCard(
+              child: Text(
+                warning.description,
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.45,
+                  color: AppColors.iceTextNavy,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
