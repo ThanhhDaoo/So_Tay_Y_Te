@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 import '../../viewmodel/prescriptions_state.dart';
 
-/// Thẻ hiển thị một cữ uống thuốc (Đã uống / Sắp đến giờ / Chưa đến giờ).
-class RxDoseSlotCard extends StatelessWidget {
+/// Thẻ hiển thị một cữ uống thuốc:
+/// - Cữ "Đã uống" tự thu gọn 1 dòng thoáng mắt (chạm để mở xem danh sách thuốc).
+/// - Cữ "Sắp đến giờ" làm nổi bật rõ danh sách thuốc và 2 nút thao tác chính.
+class RxDoseSlotCard extends StatefulWidget {
   final MedicationDoseSlot slot;
   final VoidCallback onMarkTaken;
   final VoidCallback onSnooze;
@@ -17,60 +20,77 @@ class RxDoseSlotCard extends StatelessWidget {
   });
 
   @override
+  State<RxDoseSlotCard> createState() => _RxDoseSlotCardState();
+}
+
+class _RxDoseSlotCardState extends State<RxDoseSlotCard> {
+  late bool _isExpanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _isExpanded = widget.slot.status != DoseSlotStatus.completed;
+  }
+
+  @override
+  void didUpdateWidget(covariant RxDoseSlotCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.slot.status != widget.slot.status) {
+      _isExpanded = widget.slot.status != DoseSlotStatus.completed;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final slot = widget.slot;
     final isDueSoon = slot.status == DoseSlotStatus.dueSoon;
+    final isCompleted = slot.status == DoseSlotStatus.completed;
     final isUpcoming = slot.status == DoseSlotStatus.upcoming;
 
-    final card = Container(
-      padding: const EdgeInsets.all(17),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.rxBorder),
-        boxShadow: isDueSoon
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 6,
-                  offset: const Offset(0, 4),
-                ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 1,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-      ),
+    final card = CleanCard(
+      onTap: isCompleted
+          ? () => setState(() => _isExpanded = !_isExpanded)
+          : null,
+      borderColor: isDueSoon ? AppColors.rxOlive : AppColors.rxBorder,
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
+      boxShadow: isDueSoon
+          ? [
+              BoxShadow(
+                color: AppColors.rxOlive.withValues(alpha: 0.12),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ]
+          : null,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSlotHeader(),
-          const SizedBox(height: 10),
-          for (int i = 0; i < slot.medications.length; i++) ...[
-            _MedicationRow(
-              item: slot.medications[i],
-              isCompleted: slot.status == DoseSlotStatus.completed,
-            ),
-            if (i < slot.medications.length - 1) const SizedBox(height: 8),
-          ],
-          if (isDueSoon) ...[
-            const SizedBox(height: 10),
-            _buildDueActions(),
+          _buildSlotHeader(slot, isCompleted: isCompleted),
+          if (_isExpanded) ...[
+            const SizedBox(height: 12),
+            for (int i = 0; i < slot.medications.length; i++) ...[
+              _MedicationCleanRow(
+                item: slot.medications[i],
+                isCompleted: isCompleted,
+              ),
+              if (i < slot.medications.length - 1) const SizedBox(height: 10),
+            ],
+            if (isDueSoon) ...[
+              const SizedBox(height: 14),
+              _buildDueActions(),
+            ],
           ],
         ],
       ),
     );
 
-    return isUpcoming ? Opacity(opacity: 0.9, child: card) : card;
+    return isUpcoming ? Opacity(opacity: 0.92, child: card) : card;
   }
 
-  Widget _buildSlotHeader() {
+  Widget _buildSlotHeader(
+    MedicationDoseSlot slot, {
+    required bool isCompleted,
+  }) {
     final (circleBg, badgeBg, badgeTextColor, timeColor) = switch (slot.status) {
       DoseSlotStatus.completed => (
         AppColors.rxBadgeCream.withValues(alpha: 0.85),
@@ -95,8 +115,8 @@ class RxDoseSlotCard extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 32,
-          height: 32,
+          width: 34,
+          height: 34,
           decoration: BoxDecoration(
             color: circleBg,
             shape: BoxShape.circle,
@@ -108,71 +128,106 @@ class RxDoseSlotCard extends StatelessWidget {
             height: 15,
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Expanded(
-          child: Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 6,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                slot.title,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.iceTextNavy,
-                ),
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 2,
+                children: [
+                  Text(
+                    slot.title,
+                    style: const TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.iceTextNavy,
+                    ),
+                  ),
+                  Text(
+                    slot.timeLabel,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: slot.status == DoseSlotStatus.dueSoon
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                      color: timeColor,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                slot.timeLabel,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: slot.status == DoseSlotStatus.dueSoon
-                      ? FontWeight.w700
-                      : FontWeight.w500,
-                  letterSpacing: 0.24,
-                  color: timeColor,
+              if (isCompleted && !_isExpanded) ...[
+                const SizedBox(height: 2),
+                Text(
+                  '${slot.medications.length} loại thuốc • Chạm để xem',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: AppColors.iceTextMuted,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: badgeBg,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (slot.status == DoseSlotStatus.completed) ...[
-                SvgPicture.asset(
-                  'assets/icons/ic_rx_double_check.svg',
-                  width: 12.78,
-                  height: 7.02,
-                ),
-                const SizedBox(width: 4),
-              ] else if (slot.status == DoseSlotStatus.dueSoon) ...[
-                SvgPicture.asset(
-                  'assets/icons/ic_rx_hourglass_red.svg',
-                  width: 8.67,
-                  height: 10.83,
-                ),
-                const SizedBox(width: 4),
               ],
-              Text(
-                slot.statusBadge,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: slot.status == DoseSlotStatus.upcoming
-                      ? FontWeight.w500
-                      : FontWeight.w700,
-                  color: badgeTextColor,
-                ),
-              ),
             ],
           ),
         ),
+        const SizedBox(width: 8),
+        Flexible(
+          flex: 0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            decoration: BoxDecoration(
+              color: badgeBg,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (slot.status == DoseSlotStatus.completed) ...[
+                  SvgPicture.asset(
+                    'assets/icons/ic_rx_double_check.svg',
+                    width: 12,
+                    height: 7,
+                  ),
+                  const SizedBox(width: 4),
+                ] else if (slot.status == DoseSlotStatus.dueSoon) ...[
+                  SvgPicture.asset(
+                    'assets/icons/ic_rx_hourglass_red.svg',
+                    width: 8.5,
+                    height: 11,
+                  ),
+                  const SizedBox(width: 4),
+                ],
+                Flexible(
+                  child: Text(
+                    slot.statusBadge,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: slot.status == DoseSlotStatus.upcoming
+                          ? FontWeight.w500
+                          : FontWeight.w700,
+                      color: badgeTextColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (isCompleted) ...[
+          const SizedBox(width: 4),
+          Icon(
+            _isExpanded
+                ? Icons.keyboard_arrow_up_rounded
+                : Icons.keyboard_arrow_down_rounded,
+            size: 18,
+            color: AppColors.iceTextMuted,
+          ),
+        ],
       ],
     );
   }
@@ -184,12 +239,13 @@ class RxDoseSlotCard extends StatelessWidget {
           child: SizedBox(
             height: 44,
             child: TextButton(
-              onPressed: onSnooze,
+              onPressed: widget.onSnooze,
               style: TextButton.styleFrom(
                 backgroundColor: AppColors.rxBlueSoft,
                 foregroundColor: AppColors.iceTextNavy,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
               child: Row(
@@ -197,20 +253,19 @@ class RxDoseSlotCard extends StatelessWidget {
                 children: [
                   SvgPicture.asset(
                     'assets/icons/ic_rx_snooze_alarm.svg',
-                    width: 15.98,
-                    height: 14.74,
+                    width: 15,
+                    height: 14,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   const Flexible(
                     child: Text(
-                      'Nhắc lại sau 15p',
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
+                      'Nhắc lại 15p',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: AppColors.iceTextNavy,
-                        height: 1.2,
                       ),
                     ),
                   ),
@@ -219,18 +274,19 @@ class RxDoseSlotCard extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Expanded(
           child: SizedBox(
             height: 44,
             child: ElevatedButton(
-              onPressed: onMarkTaken,
+              onPressed: widget.onMarkTaken,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.rxOlive,
                 foregroundColor: Colors.white,
-                elevation: 1,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
               child: Row(
@@ -238,15 +294,19 @@ class RxDoseSlotCard extends StatelessWidget {
                 children: [
                   SvgPicture.asset(
                     'assets/icons/ic_rx_check_white.svg',
-                    width: 12.23,
-                    height: 9.02,
+                    width: 12,
+                    height: 9,
                   ),
                   const SizedBox(width: 6),
-                  const Text(
-                    'Đã uống',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                  const Flexible(
+                    child: Text(
+                      'Đã uống',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -259,28 +319,24 @@ class RxDoseSlotCard extends StatelessWidget {
   }
 }
 
-class _MedicationRow extends StatelessWidget {
+class _MedicationCleanRow extends StatelessWidget {
   final MedicationItem item;
   final bool isCompleted;
 
-  const _MedicationRow({
+  const _MedicationCleanRow({
     required this.item,
     required this.isCompleted,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCream,
-        borderRadius: BorderRadius.circular(8),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(top: 2),
+            padding: const EdgeInsets.only(top: 3),
             child: SvgPicture.asset(
               item.iconAsset,
               width: 16,
@@ -297,9 +353,11 @@ class _MedicationRow extends StatelessWidget {
                     Expanded(
                       child: Text(
                         item.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.iceTextNavy,
                         ),
                       ),
@@ -309,7 +367,7 @@ class _MedicationRow extends StatelessWidget {
                       Text(
                         item.quantityBadge!,
                         style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                           color: AppColors.iceDangerText,
                         ),
@@ -317,12 +375,15 @@ class _MedicationRow extends StatelessWidget {
                     ],
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   item.instruction,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.5,
                     color: AppColors.iceTextSlate,
+                    height: 1.35,
                   ),
                 ),
               ],
@@ -334,8 +395,8 @@ class _MedicationRow extends StatelessWidget {
               padding: const EdgeInsets.only(top: 2),
               child: SvgPicture.asset(
                 'assets/icons/ic_rx_check_circle.svg',
-                width: 16.67,
-                height: 16.67,
+                width: 16,
+                height: 16,
               ),
             ),
           ],
@@ -344,4 +405,3 @@ class _MedicationRow extends StatelessWidget {
     );
   }
 }
-

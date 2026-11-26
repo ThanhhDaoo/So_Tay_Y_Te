@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 
 /// Hai nút thao tác nhanh: "+ Thêm đơn thuốc" và "Quét đơn OCR (PRO)".
 class RxQuickActionsRow extends StatelessWidget {
@@ -19,16 +20,16 @@ class RxQuickActionsRow extends StatelessWidget {
       children: [
         Expanded(
           child: SizedBox(
-            height: 44,
+            height: 46,
             child: ElevatedButton(
               onPressed: onAddPrescription,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.rxOlive,
                 foregroundColor: Colors.white,
-                elevation: 1,
+                elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: Row(
@@ -36,8 +37,8 @@ class RxQuickActionsRow extends StatelessWidget {
                 children: [
                   SvgPicture.asset(
                     'assets/icons/ic_rx_add_white.svg',
-                    width: 16.67,
-                    height: 16.67,
+                    width: 16,
+                    height: 16,
                   ),
                   const SizedBox(width: 6),
                   const Flexible(
@@ -46,8 +47,8 @@ class RxQuickActionsRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
@@ -56,10 +57,10 @@ class RxQuickActionsRow extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppLayoutTokens.cardGap),
         Expanded(
           child: SizedBox(
-            height: 44,
+            height: 46,
             child: OutlinedButton(
               onPressed: onScanOcr,
               style: OutlinedButton.styleFrom(
@@ -68,7 +69,7 @@ class RxQuickActionsRow extends StatelessWidget {
                 side: const BorderSide(color: AppColors.rxBorder),
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: Row(
@@ -76,8 +77,8 @@ class RxQuickActionsRow extends StatelessWidget {
                 children: [
                   SvgPicture.asset(
                     'assets/icons/ic_rx_ocr_scan.svg',
-                    width: 16.67,
-                    height: 18.33,
+                    width: 16,
+                    height: 18,
                   ),
                   const SizedBox(width: 6),
                   const Flexible(
@@ -86,8 +87,8 @@ class RxQuickActionsRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.rxOlive,
                       ),
                     ),
@@ -120,4 +121,3 @@ class RxQuickActionsRow extends StatelessWidget {
     );
   }
 }
-

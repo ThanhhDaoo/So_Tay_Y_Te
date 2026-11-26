@@ -2,8 +2,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 
-/// Thẻ tóm tắt kế hoạch uống thuốc trong ngày và tỷ lệ tuân thủ.
+/// Thẻ tóm tắt kế hoạch uống thuốc trong ngày phẳng gọn theo 3-Point Rule
+/// (bỏ hộp con nền kem lồng bên trong gây chật chội).
 class RxAdherenceSummaryCard extends StatelessWidget {
   final String dayTitle;
   final String planSubtitle;
@@ -24,164 +26,118 @@ class RxAdherenceSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(17),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.rxBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
+    return CleanCard(
+      borderColor: AppColors.rxBorder,
+      padding: const EdgeInsets.all(AppLayoutTokens.heroCardPadding),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: const BoxDecoration(
-                  color: AppColors.rxBadgeCream,
-                  shape: BoxShape.circle,
+          // Điểm 1: Vòng tròn tỷ lệ tuân thủ
+          SizedBox(
+            width: 60,
+            height: 60,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Transform.rotate(
+                  angle: -math.pi / 2,
+                  child: SvgPicture.asset(
+                    'assets/icons/ic_rx_progress_ring.svg',
+                    width: 60,
+                    height: 60,
+                  ),
                 ),
-                alignment: Alignment.center,
-                child: SvgPicture.asset(
-                  'assets/icons/ic_rx_capsule.svg',
-                  width: 13.5,
-                  height: 13.5,
+                Text(
+                  '$adherencePercent%',
+                  style: const TextStyle(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.rxOlive,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+
+          // Điểm 2 & 3: Tiêu đề ngày + Số cữ hoàn thành + Cữ tiếp theo
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      dayTitle,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.iceTextNavy,
+                    Flexible(
+                      child: Text(
+                        dayTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.iceTextNavy,
+                        ),
                       ),
                     ),
-                    Text(
-                      planSubtitle,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.iceTextMuted,
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 3.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.rxBadgeCream,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '$completedCount/$totalCount cữ',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textWarmBrown,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.rxBadgeCream,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '$completedCount/$totalCount Cữ hoàn thành',
+                const SizedBox(height: 6),
+                Text(
+                  planSubtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textWarmBrown,
+                    fontSize: 12.5,
+                    color: AppColors.iceTextMuted,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceCream,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 56,
-                  height: 56,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Transform.rotate(
-                        angle: -math.pi / 2,
-                        child: SvgPicture.asset(
-                          'assets/icons/ic_rx_progress_ring.svg',
-                          width: 56,
-                          height: 56,
-                        ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppColors.rxOlive,
+                        shape: BoxShape.circle,
                       ),
-                      Text(
-                        '$adherencePercent%',
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        totalCount > 0
+                            ? 'Cữ tiếp theo: $nextDoseHighlight'
+                            : nextDoseHighlight,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.rxOlive,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Flexible(
-                            child: Text(
-                              'Đúng giờ & chuẩn cữ',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.iceTextNavy,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          SvgPicture.asset(
-                            'assets/icons/ic_rx_verified_badge.svg',
-                            width: 16.5,
-                            height: 15.75,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      RichText(
-                        text: TextSpan(
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.iceTextSlate,
-                          ),
-                          children: [
-                            const TextSpan(text: 'Tuyệt vời! Còn 1 cữ lúc '),
-                            TextSpan(
-                              text: nextDoseHighlight,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.rxOlive,
-                              ),
-                            ),
-                            const TextSpan(text: ' và 1 cữ đêm.'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -191,4 +147,3 @@ class RxAdherenceSummaryCard extends StatelessWidget {
     );
   }
 }
-

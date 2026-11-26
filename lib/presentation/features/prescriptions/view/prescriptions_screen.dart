@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../common_widgets/layout/app_layout.dart';
 import '../../../routes/app_routes.dart';
 import '../../main_shell/view/main_shell_screen.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
@@ -75,6 +75,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.paddingOf(context).top;
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    final now = DateTime.now();
 
     return ListenableBuilder(
       listenable: _viewModel,
@@ -90,11 +91,12 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
               ListView(
                 padding: EdgeInsets.only(
                   top: topPadding + 78,
-                  bottom: bottomPadding + 96,
-                  left: 16,
-                  right: 16,
+                  bottom: bottomPadding + 104,
+                  left: AppLayoutTokens.screenPadding,
+                  right: AppLayoutTokens.screenPadding,
                 ),
                 children: [
+                  // Cụm 1: Tóm tắt tuân thủ & Thao tác nhanh
                   RxAdherenceSummaryCard(
                     dayTitle: state.dayTitle,
                     planSubtitle: state.planSubtitle,
@@ -103,7 +105,7 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                     adherencePercent: state.adherencePercent,
                     nextDoseHighlight: state.nextDoseHighlight,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppLayoutTokens.cardGap),
                   RxQuickActionsRow(
                     onAddPrescription: () =>
                         Navigator.pushNamed(context, AppRoutes.addRecord),
@@ -116,166 +118,159 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
                       );
                     },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   InkWell(
                     onTap: _viewModel.testSendInstantReminder,
                     borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceLight,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.rxBorder),
-                      ),
-                      child: const Row(
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                      child: Row(
                         children: [
-                          Icon(Icons.notifications_active_outlined, size: 16, color: AppColors.rxOlive),
-                          SizedBox(width: 8),
+                          Icon(
+                            Icons.notifications_active_outlined,
+                            size: 15,
+                            color: AppColors.rxOlive,
+                          ),
+                          SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               'Bấm để thử chuông báo thức uống thuốc ngay lập tức',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: AppColors.rxOlive,
+                                color: AppColors.iceTextMuted,
                               ),
                             ),
                           ),
-                          Icon(Icons.chevron_right, size: 16, color: AppColors.rxOlive),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 16,
+                            color: AppColors.iceTextMuted,
+                          ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            SvgPicture.asset(
-                              'assets/icons/ic_rx_clock_schedule.svg',
-                              width: 16.67,
-                              height: 16.67,
+                  const SizedBox(height: 18),
+
+                  // Cụm 2: Lịch nhắc thuốc hôm nay (Trọng tâm màn hình)
+                  SectionContainer(
+                    title: 'Lịch nhắc thuốc hôm nay',
+                    iconAsset: 'assets/icons/ic_rx_clock_schedule.svg',
+                    bottomSpacing: AppLayoutTokens.sectionGap,
+                    trailing: Text(
+                      '${now.day}/${now.month}/${now.year}',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.iceTextMuted,
+                      ),
+                    ),
+                    child: state.slots.isEmpty
+                        ? CleanCard(
+                            borderColor: AppColors.rxBorder,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 28,
                             ),
-                            const SizedBox(width: 6),
-                            const Flexible(
-                              child: Text(
-                                'Lịch nhắc thuốc hôm nay',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.iceTextNavy,
+                            child: Column(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.rxOlive
+                                        .withValues(alpha: 0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.notifications_off_outlined,
+                                    size: 32,
+                                    color: AppColors.rxOlive,
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(height: 14),
+                                const Text(
+                                  'Chưa Có Đơn Thuốc Nào',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.iceTextNavy,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Bạn chưa có lịch nhắc uống thuốc đang hoạt động. Mọi thông báo nhắc lịch cũ đã được tắt.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.iceTextSlate,
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                OutlinedButton.icon(
+                                  onPressed: _viewModel.clearAllReminders,
+                                  icon: const Icon(
+                                    Icons.notifications_off_outlined,
+                                    size: 16,
+                                    color: AppColors.rxOlive,
+                                  ),
+                                  label: const Text(
+                                    'Hủy sạch chuông thông báo cũ',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.rxOlive,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(
+                                      color: AppColors.rxBorder,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${DateTime.now().day} Tháng ${DateTime.now().month}, ${DateTime.now().year}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.44,
-                          color: AppColors.iceTextMuted,
-                        ),
-                      ),
-                    ],
+                          )
+                        : Column(
+                            children: [
+                              for (int i = 0; i < state.slots.length; i++) ...[
+                                RxDoseSlotCard(
+                                  slot: state.slots[i],
+                                  onMarkTaken: () => _viewModel
+                                      .markDoseTaken(state.slots[i].id),
+                                  onSnooze: () =>
+                                      _viewModel.snoozeDose(state.slots[i].id),
+                                ),
+                                if (i < state.slots.length - 1)
+                                  const SizedBox(
+                                    height: AppLayoutTokens.cardGap,
+                                  ),
+                              ],
+                            ],
+                          ),
                   ),
-                  const SizedBox(height: 10),
-                  if (state.slots.isEmpty) ...[
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.rxBorder),
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.rxOlive.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.notifications_off_outlined,
-                              size: 32,
-                              color: AppColors.rxOlive,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Chưa Có Đơn Thuốc Nào',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.iceTextNavy,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Bạn chưa có lịch nhắc uống thuốc hoặc đơn thuốc đang điều trị. Mọi thông báo nhắc lịch cũ đã được tắt.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.iceTextSlate,
-                              height: 1.4,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          OutlinedButton.icon(
-                            onPressed: _viewModel.clearAllReminders,
-                            icon: const Icon(Icons.notifications_off_outlined, size: 16, color: AppColors.rxOlive),
-                            label: const Text(
-                              'Hủy sạch chuông thông báo cũ',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.rxOlive,
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: AppColors.rxBorder),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ] else ...[
-                    for (int i = 0; i < state.slots.length; i++) ...[
-                      RxDoseSlotCard(
-                        slot: state.slots[i],
-                        onMarkTaken: () =>
-                            _viewModel.markDoseTaken(state.slots[i].id),
-                        onSnooze: () => _viewModel.snoozeDose(state.slots[i].id),
-                      ),
-                      if (i < state.slots.length - 1) const SizedBox(height: 8),
-                    ],
-                  ],
-                  if (state.activePlan != null) ...[
-                    const SizedBox(height: 24),
+
+                  // Cụm 3: Đơn thuốc đang điều trị (gộp Lời dặn dược sĩ & chi phí vào BottomSheet Chi tiết)
+                  if (state.activePlan != null)
                     RxActivePlanCard(
                       plan: state.activePlan!,
+                      pharmacistAdvice: state.pharmacistAdvice,
                       onDetailTap: () => _viewModel.notifyUser(
                         'Đang xem chi tiết đơn thuốc: ${state.activePlan!.title}',
                       ),
-                    ),
-                  ],
-                  if (state.pharmacistAdvice != null) ...[
-                    const SizedBox(height: 16),
+                    )
+                  else if (state.pharmacistAdvice != null)
                     RxPharmacistAdviceCard(advice: state.pharmacistAdvice!),
-                  ],
                 ],
               ),
               const Positioned(
@@ -301,4 +296,3 @@ class _PrescriptionsScreenState extends State<PrescriptionsScreen> {
     );
   }
 }
-

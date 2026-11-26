@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/services/user_session_manager.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/widgets/safe_avatar_image.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 
 /// Thanh tiêu đề kính mờ cố định phía trên của màn hình Đơn Thuốc & Lịch Uống.
 class RxHeader extends StatelessWidget {
@@ -22,21 +23,14 @@ class RxHeader extends StatelessWidget {
           padding: EdgeInsets.only(
             top: topPadding + 10,
             bottom: 10,
-            left: 16,
-            right: 16,
+            left: AppLayoutTokens.screenPadding,
+            right: AppLayoutTokens.screenPadding,
           ),
           decoration: BoxDecoration(
-            color: AppColors.rxBackground.withValues(alpha: 0.85),
+            color: AppColors.rxBackground.withValues(alpha: 0.88),
             border: const Border(
               bottom: BorderSide(color: AppColors.rxBorder, width: 1),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 1),
-              ),
-            ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -49,7 +43,7 @@ class RxHeader extends StatelessWidget {
                     height: 32,
                     fit: BoxFit.contain,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -68,7 +62,7 @@ class RxHeader extends StatelessWidget {
                         'Đơn Thuốc',
                         style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.iceTextNavy,
                           height: 1.2,
                         ),
@@ -96,8 +90,10 @@ class RxHeader extends StatelessWidget {
                         listenable: AppSessionNotifier.instance,
                         builder: (context, _) => ClipOval(
                           child: buildSafeAvatarImage(
-                            imageSource: AppSessionNotifier.instance.avatarUrl ?? '',
-                            fallbackAsset: 'assets/images/img_profile_avatar.png',
+                            imageSource:
+                                AppSessionNotifier.instance.avatarUrl ?? '',
+                            fallbackAsset:
+                                'assets/images/img_profile_avatar.png',
                             width: 32,
                             height: 32,
                             fit: BoxFit.cover,
@@ -124,4 +120,3 @@ class RxHeader extends StatelessWidget {
     );
   }
 }
-
