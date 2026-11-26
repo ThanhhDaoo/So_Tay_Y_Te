@@ -22,7 +22,7 @@ class DocumentsHeader extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
-          padding: EdgeInsets.fromLTRB(16, topPadding + 10, 16, 12),
+          padding: EdgeInsets.fromLTRB(20, topPadding + 10, 20, 12),
           decoration: BoxDecoration(
             color: const Color(0xCCF8F9FF),
             border: const Border(

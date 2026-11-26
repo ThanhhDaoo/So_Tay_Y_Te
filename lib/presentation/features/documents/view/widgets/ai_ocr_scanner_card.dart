@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 
+/// Thẻ Quét Toa Thuốc Thông Minh rút gọn mô tả rườm rà, tập trung vào 2 hành động chụp/chọn ảnh.
 class AiOcrScannerCard extends StatelessWidget {
   const AiOcrScannerCard({
     super.key,
@@ -15,7 +17,7 @@ class AiOcrScannerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -25,11 +27,11 @@ class AiOcrScannerCard extends StatelessWidget {
             Color(0xFF434B3E),
           ],
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppLayoutTokens.cardRadius),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x1F000000),
-            blurRadius: 8,
+            color: Color(0x18000000),
+            blurRadius: 10,
             offset: Offset(0, 3),
           ),
         ],
@@ -40,77 +42,47 @@ class AiOcrScannerCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Flexible(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.20),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        'AI PRO',
-                        style: AppTypography.caption.copyWith(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF9CF2E8),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0x999CF2E8),
-                            blurRadius: 4,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+              Expanded(
+                child: Text(
+                  'Quét Toa Thuốc Thông Minh',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.heading2.copyWith(
+                    fontSize: 17.5,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: -0.3,
+                  ),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 8,
-                  vertical: 4,
+                  vertical: 3.5,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.20),
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SvgPicture.asset(
                       'assets/icons/ic_doc_ocr_spark.svg',
-                      width: 13,
-                      height: 13,
+                      width: 12,
+                      height: 12,
                       colorFilter: const ColorFilter.mode(
                         Colors.white,
                         BlendMode.srcIn,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      'OCR v2.4',
-                      style: AppTypography.caption.copyWith(
-                        fontSize: 11,
+                    const Text(
+                      'AI OCR',
+                      style: TextStyle(
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0.4,
                         color: Colors.white,
                       ),
                     ),
@@ -119,23 +91,15 @@ class AiOcrScannerCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            'Quét Toa Thuốc Thông Minh',
-            style: AppTypography.heading2.copyWith(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              letterSpacing: -0.3,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Nhận diện văn bản y khoa, chuyển đổi đơn thuốc viết tay thành cảnh báo nhắc liều tự động và lập chỉ mục tìm kiếm…',
-            style: AppTypography.body.copyWith(
-              fontSize: 12,
-              height: 1.45,
-              color: const Color(0xE6F4FFFC),
+          const SizedBox(height: 6),
+          const Text(
+            'Số hóa đơn thuốc & phiếu xét nghiệm thành lịch nhắc tự động.',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.35,
+              color: Color(0xE6F4FFFC),
             ),
           ),
           const SizedBox(height: 14),
@@ -144,12 +108,12 @@ class AiOcrScannerCard extends StatelessWidget {
               Expanded(
                 child: Material(
                   color: const Color(0xFFF9F7F2),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                   child: InkWell(
                     onTap: onScanCamera,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 11),
                       alignment: Alignment.center,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -163,15 +127,15 @@ class AiOcrScannerCard extends StatelessWidget {
                               BlendMode.srcIn,
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          Flexible(
+                          const SizedBox(width: 6),
+                          const Flexible(
                             child: Text(
                               'Chụp Toa Ngay',
                               overflow: TextOverflow.ellipsis,
-                              style: AppTypography.labelSemiBold.copyWith(
-                                fontSize: 11.5,
+                              style: TextStyle(
+                                fontSize: 12.5,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF4E5547),
+                                color: Color(0xFF4E5547),
                               ),
                             ),
                           ),
@@ -181,18 +145,18 @@ class AiOcrScannerCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppLayoutTokens.cardGap),
               Expanded(
                 child: Material(
                   color: const Color(0xCC4E5547),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                   child: InkWell(
                     onTap: onSelectFromAlbum,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 11),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: Colors.white.withValues(alpha: 0.25),
                         ),
@@ -210,13 +174,13 @@ class AiOcrScannerCard extends StatelessWidget {
                               BlendMode.srcIn,
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          Flexible(
+                          const SizedBox(width: 6),
+                          const Flexible(
                             child: Text(
                               'Chọn Từ Album',
                               overflow: TextOverflow.ellipsis,
-                              style: AppTypography.labelSemiBold.copyWith(
-                                fontSize: 11.5,
+                              style: TextStyle(
+                                fontSize: 12.5,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
                               ),

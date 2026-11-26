@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
+import '../../../common_widgets/layout/app_layout.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import '../../main_shell/view/main_shell_screen.dart';
 import '../viewmodel/documents_state.dart';
@@ -90,20 +90,21 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
               ),
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(
+                  AppLayoutTokens.screenPadding,
                   16,
-                  16,
-                  16,
+                  AppLayoutTokens.screenPadding,
                   110 + bottomPadding,
                 ),
                 sliver: SliverList.list(
                   children: [
+                    // Cụm 1: Trạng thái E2EE mảnh gọn + Công cụ Quét AI
                     SecurityStorageBanner(
                       usedStorageMb: state.usedStorageMb,
                       savedStorageMb: state.savedStorageMb,
                       totalStorageGb: state.totalStorageGb,
                       docCount: state.totalDocCount,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppLayoutTokens.cardGap),
                     AiOcrScannerCard(
                       onScanCamera: () => AiOcrScannerModal.show(
                         context,
@@ -118,11 +119,15 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                         documentsViewModel: _viewModel,
                         onScanComplete: () {
                           _viewModel.loadDocuments();
-                          _showSnack('Đã phân tích và lưu tài liệu từ album!');
+                          _showSnack(
+                            'Đã phân tích và lưu tài liệu từ album!',
+                          );
                         },
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppLayoutTokens.sectionGap),
+
+                    // Cụm 2: Phân loại & Danh sách Tài liệu gần đây
                     DocumentFilterChips(
                       selectedCategory: state.selectedCategory,
                       onSelectCategory: _viewModel.selectCategory,
@@ -135,192 +140,23 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                         onDismiss: _viewModel.dismissViewerTip,
                       ),
                     ],
-                    const SizedBox(height: 18),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            'Tài Liệu Gần Đây',
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.heading3.copyWith(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.iceTextNavy,
-                            ),
-                          ),
+                    const SizedBox(height: AppLayoutTokens.sectionGap),
+
+                    SectionContainer(
+                      title: 'Tài Liệu Gần Đây',
+                      bottomSpacing: AppLayoutTokens.sectionGap,
+                      trailing: const Text(
+                        'Mới nhất',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF3D4947),
                         ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            'Sắp xếp: Mới nhất',
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTypography.caption.copyWith(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.44,
-                              color: const Color(0xFF3D4947),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
+                      child: _buildDocumentsList(state),
                     ),
-                    const SizedBox(height: 12),
-                    if (state.totalDocCount == 0) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE5DFD4)),
-                        ),
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: const BoxDecoration(
-                                color: AppColors.surfaceWarm,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.folder_open_outlined,
-                                  size: 28,
-                                  color: AppColors.iceOlive,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            const Text(
-                              'Chưa Có Tài Liệu Nào',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.iceTextNavy,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            const Text(
-                              'Hồ sơ của bạn chưa có tài liệu bệnh án, kết quả xét nghiệm hay toa thuốc nào. Hãy sử dụng chức năng chụp quét ở trên hoặc đính kèm ảnh khi thêm đợt khám mới.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: AppColors.iceTextSlate,
-                                height: 1.4,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ] else ...[
-                      Builder(
-                        builder: (context) {
-                          final filteredDocs = state.documents
-                              .where((d) =>
-                                  state.selectedCategory == DocumentCategory.all ||
-                                  d.category == state.selectedCategory)
-                              .toList();
-                          if (filteredDocs.isEmpty) {
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 16),
-                              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: const Color(0xFFE5DFD4)),
-                              ),
-                              child: Column(
-                                children: [
-                                  const Icon(
-                                    Icons.filter_alt_off_outlined,
-                                    size: 32,
-                                    color: AppColors.iceOlive,
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    'Chưa có tài liệu thuộc danh mục "${state.selectedCategory.label}"',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.iceTextNavy,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  TextButton.icon(
-                                    onPressed: () =>
-                                        _viewModel.selectCategory(DocumentCategory.all),
-                                    icon: const Icon(Icons.clear_all, size: 18),
-                                    label: const Text('Xem tất cả tài liệu'),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: AppColors.iceOlive,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                          return Column(
-                            children: [
-                              for (final doc in filteredDocs) ...[
-                                _DynamicDocumentCard(
-                                  doc: doc,
-                                  onTap: () => DocumentViewerModal.show(
-                                    context,
-                                    title: doc.title,
-                                    category: doc.category.label,
-                                    date: doc.date,
-                                    hospital: doc.hospital,
-                                    imageAsset: doc.imagePath,
-                                    keyFindings: doc.keyFindings,
-                                  ),
-                                  onDelete: () async {
-                                    final confirm = await showDialog<bool>(
-                                      context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(16),
-                                        ),
-                                        title: const Text(
-                                          'Xác nhận xóa tài liệu',
-                                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                                        ),
-                                        content: Text(
-                                          'Bạn có chắc chắn muốn xóa tài liệu "${doc.title}" khỏi kho lưu trữ không?',
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(ctx, false),
-                                            child: const Text('Hủy'),
-                                          ),
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.redAccent,
-                                              foregroundColor: Colors.white,
-                                            ),
-                                            onPressed: () => Navigator.pop(ctx, true),
-                                            child: const Text('Xóa'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                    if (confirm == true) {
-                                      await _viewModel.deleteDocument(doc.id);
-                                      if (context.mounted) {
-                                        _showSnack('Đã xóa tài liệu: ${doc.title}');
-                                      }
-                                    }
-                                  },
-                                ),
-                                const SizedBox(height: 16),
-                              ],
-                            ],
-                          );
-                        },
-                      ),
-                    ],
+
+                    // Cụm 3: Chia sẻ QR an toàn cho Bác sĩ
                     ShareDoctorQuickAction(
                       onCreateQr: () => ShareDoctorQrModal.show(context),
                     ),
@@ -333,8 +169,159 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       ),
     );
   }
+
+  Widget _buildDocumentsList(DocumentsState state) {
+    if (state.totalDocCount == 0) {
+      return CleanCard(
+        borderColor: const Color(0xFFE5DFD4),
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(
+                color: AppColors.surfaceWarm,
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.folder_open_outlined,
+                  size: 28,
+                  color: AppColors.iceOlive,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Chưa Có Tài Liệu Nào',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.iceTextNavy,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Sử dụng chức năng chụp quét ở trên hoặc đính kèm ảnh khi thêm đợt khám mới.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.iceTextSlate,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final filteredDocs = state.documents
+        .where(
+          (d) =>
+              state.selectedCategory == DocumentCategory.all ||
+              d.category == state.selectedCategory,
+        )
+        .toList();
+
+    if (filteredDocs.isEmpty) {
+      return CleanCard(
+        borderColor: const Color(0xFFE5DFD4),
+        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.filter_alt_off_outlined,
+              size: 32,
+              color: AppColors.iceOlive,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Chưa có tài liệu thuộc danh mục "${state.selectedCategory.label}"',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppColors.iceTextNavy,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: () => _viewModel.selectCategory(DocumentCategory.all),
+              icon: const Icon(Icons.clear_all, size: 18),
+              label: const Text('Xem tất cả tài liệu'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.iceOlive,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        for (int i = 0; i < filteredDocs.length; i++) ...[
+          _DynamicDocumentCard(
+            doc: filteredDocs[i],
+            onTap: () => DocumentViewerModal.show(
+              context,
+              title: filteredDocs[i].title,
+              category: filteredDocs[i].category.label,
+              date: filteredDocs[i].date,
+              hospital: filteredDocs[i].hospital,
+              imageAsset: filteredDocs[i].imagePath,
+              keyFindings: filteredDocs[i].keyFindings,
+            ),
+            onDelete: () async {
+              final doc = filteredDocs[i];
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  title: const Text(
+                    'Xác nhận xóa tài liệu',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  content: Text(
+                    'Bạn có chắc chắn muốn xóa tài liệu "${doc.title}" khỏi kho lưu trữ không?',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Hủy'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('Xóa'),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm == true) {
+                await _viewModel.deleteDocument(doc.id);
+                if (mounted) {
+                  _showSnack('Đã xóa tài liệu: ${doc.title}');
+                }
+              }
+            },
+          ),
+          if (i < filteredDocs.length - 1)
+            const SizedBox(height: AppLayoutTokens.cardGap),
+        ],
+      ],
+    );
+  }
 }
 
+/// Thẻ tài liệu y tế chuẩn 3-Point Rule:
+/// (1) Danh mục & Ngày, (2) Tên tài liệu đậm rõ, (3) Cơ sở y tế 1 dòng.
 class _DynamicDocumentCard extends StatelessWidget {
   final MedicalDocumentItem doc;
   final VoidCallback onTap;
@@ -349,107 +336,97 @@ class _DynamicDocumentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLocalFile = !doc.imagePath.startsWith('assets/');
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5DFD4)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return CleanCard(
+      onTap: onTap,
+      borderColor: const Color(0xFFE5DFD4),
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 56,
+              height: 56,
+              color: AppColors.surfaceWarm,
+              child: isLocalFile && File(doc.imagePath).existsSync()
+                  ? Image.file(File(doc.imagePath), fit: BoxFit.cover)
+                  : Image.asset(
+                      doc.imagePath.startsWith('assets/')
+                          ? doc.imagePath
+                          : 'assets/images/img_doc_blood_test.png',
+                      fit: BoxFit.cover,
+                    ),
+            ),
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    width: 56,
-                    height: 56,
-                    color: AppColors.surfaceWarm,
-                    child: isLocalFile && File(doc.imagePath).existsSync()
-                        ? Image.file(File(doc.imagePath), fit: BoxFit.cover)
-                        : Image.asset(
-                            doc.imagePath.startsWith('assets/')
-                                ? doc.imagePath
-                                : 'assets/images/img_doc_blood_test.png',
-                            fit: BoxFit.cover,
-                          ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.iceOlive.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              doc.category.label,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.iceOlive,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            doc.date,
-                            style: const TextStyle(fontSize: 11, color: AppColors.iceTextSlate),
-                          ),
-                        ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2.5,
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        doc.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      decoration: BoxDecoration(
+                        color: AppColors.iceOlive.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        doc.category.label,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 10.5,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.iceTextNavy,
+                          color: AppColors.iceOlive,
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        doc.hospital,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.iceTextSlate,
-                        ),
+                    ),
+                    Text(
+                      doc.date,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: AppColors.iceTextMuted,
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  doc.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.iceTextNavy,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20, color: Colors.black38),
-                  onPressed: onDelete,
+                const SizedBox(height: 3),
+                Text(
+                  doc.hospital,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.iceTextSlate,
+                  ),
                 ),
               ],
             ),
           ),
-        ),
+          IconButton(
+            icon: const Icon(
+              Icons.delete_outline,
+              size: 20,
+              color: Colors.black38,
+            ),
+            onPressed: onDelete,
+          ),
+        ],
       ),
     );
   }
 }
-
