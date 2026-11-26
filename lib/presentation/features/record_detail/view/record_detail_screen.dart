@@ -9,6 +9,7 @@ import '../../../../domain/entities/prescription.dart';
 import '../../../../domain/entities/user_profile.dart';
 import '../../../../domain/repositories/auth_repository.dart';
 import '../../../../domain/repositories/medical_record_repository.dart';
+import '../../../common_widgets/layout/app_layout.dart';
 import '../../add_record/view/add_record_screen.dart';
 
 class RecordDetailScreen extends StatefulWidget {
@@ -42,7 +43,8 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
       return MedicalEvent(
         id: 'REC-2024-0418',
         title: 'Viêm dạ dày & Trào ngược dạ dày thực quản (GERD Độ A)',
-        description: 'Đau âm ỉ vùng thượng vị sau ăn, ợ chua nhiều về đêm. Xét nghiệm vi khuẩn HP dương tính.',
+        description:
+            'Đau âm ỉ vùng thượng vị sau ăn, ợ chua nhiều về đêm. Xét nghiệm vi khuẩn HP dương tính.',
         date: DateTime(2024, 4, 18, 9, 30),
         type: MedicalEventType.generalCheckup,
         facilityName: 'Bệnh viện Đa khoa Quốc tế Vinmec Central Park',
@@ -60,10 +62,30 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
           issuedDate: DateTime(2024, 4, 18),
           durationDays: 14,
           medicines: const [
-            Medicine(id: 'm1', name: 'Nexium Mups 40mg', dosage: '40mg • 1 viên/ngày', frequency: 'Trước ăn sáng 30p'),
-            Medicine(id: 'm2', name: 'Amoxicillin 500mg', dosage: '500mg • 2 viên/ngày', frequency: 'Sau ăn no'),
-            Medicine(id: 'm3', name: 'Clarithromycin 500mg', dosage: '500mg • 2 viên/ngày', frequency: 'Sau ăn no'),
-            Medicine(id: 'm4', name: 'Gaviscon Dual Action', dosage: '1 gói • 3 lần/ngày', frequency: 'Sau ăn trưa/tối'),
+            Medicine(
+              id: 'm1',
+              name: 'Nexium Mups 40mg',
+              dosage: '40mg • 1 viên/ngày',
+              frequency: 'Trước ăn sáng 30p',
+            ),
+            Medicine(
+              id: 'm2',
+              name: 'Amoxicillin 500mg',
+              dosage: '500mg • 2 viên/ngày',
+              frequency: 'Sau ăn no',
+            ),
+            Medicine(
+              id: 'm3',
+              name: 'Clarithromycin 500mg',
+              dosage: '500mg • 2 viên/ngày',
+              frequency: 'Sau ăn no',
+            ),
+            Medicine(
+              id: 'm4',
+              name: 'Gaviscon Dual Action',
+              dosage: '1 gói • 3 lần/ngày',
+              frequency: 'Sau ăn trưa/tối',
+            ),
           ],
         ),
         attachments: const [
@@ -125,25 +147,40 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
       }
       final details = await authRepo.getUserProfileDetails(session.id);
       final rawAllergies = details?['allergies']?.toString().trim() ?? '';
-      final rawConditions = details?['chronic_conditions']?.toString().trim() ?? '';
+      final rawConditions =
+          details?['chronic_conditions']?.toString().trim() ?? '';
       final allergyList = rawAllergies.isNotEmpty
-          ? rawAllergies.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+          ? rawAllergies
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList()
           : const <String>[];
       final conditionList = rawConditions.isNotEmpty
-          ? rawConditions.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()
+          ? rawConditions
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList()
           : const <String>[];
       final emergency = details?['emergency_contact']?.toString().trim();
 
       return UserProfile(
         id: session.id,
         fullName: session.fullName,
-        dateOfBirth: session.dateOfBirth != null ? DateTime.tryParse(session.dateOfBirth!) : null,
+        dateOfBirth: session.dateOfBirth != null
+            ? DateTime.tryParse(session.dateOfBirth!)
+            : null,
         bloodType: session.bloodType,
         allergies: allergyList,
         chronicConditions: conditionList,
-        emergencyContact: (emergency != null && emergency.isNotEmpty && !emergency.contains('@'))
+        emergencyContact: (emergency != null &&
+                emergency.isNotEmpty &&
+                !emergency.contains('@'))
             ? emergency
-            : (!session.primaryContact.contains('@') ? session.primaryContact : null),
+            : (!session.primaryContact.contains('@')
+                ? session.primaryContact
+                : null),
       );
     } catch (_) {
       return null;
@@ -152,7 +189,9 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
 
   Future<void> _exportPdf(BuildContext context) async {
     final pdfService = widget.pdfReportService ??
-        (sl.isRegistered<PdfReportService>() ? sl<PdfReportService>() : PdfReportServiceImpl());
+        (sl.isRegistered<PdfReportService>()
+            ? sl<PdfReportService>()
+            : PdfReportServiceImpl());
     try {
       final profile = await _loadCurrentPatientProfile();
       await pdfService.printRecord(record: _event, patientProfile: profile);
@@ -167,7 +206,9 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
 
   Future<void> _sharePdf(BuildContext context) async {
     final pdfService = widget.pdfReportService ??
-        (sl.isRegistered<PdfReportService>() ? sl<PdfReportService>() : PdfReportServiceImpl());
+        (sl.isRegistered<PdfReportService>()
+            ? sl<PdfReportService>()
+            : PdfReportServiceImpl());
     try {
       final profile = await _loadCurrentPatientProfile();
       await pdfService.shareRecordPdf(record: _event, patientProfile: profile);
@@ -199,7 +240,10 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Xác Nhận Xóa Bệnh Án',
-          style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: AppColors.iceTextNavy,
+          ),
         ),
         content: const Text(
           'Bạn có chắc chắn muốn xóa hồ sơ đợt khám này? Hành động này sẽ xóa dữ liệu và không thể hoàn tác.',
@@ -208,13 +252,18 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Hủy', style: TextStyle(color: AppColors.iceTextSlate)),
+            child: const Text(
+              'Hủy',
+              style: TextStyle(color: AppColors.iceTextSlate),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Xác nhận xóa'),
@@ -248,12 +297,19 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Không thể xóa đợt khám: $e'), backgroundColor: AppColors.error),
+        SnackBar(
+          content: Text('Không thể xóa đợt khám: $e'),
+          backgroundColor: AppColors.error,
+        ),
       );
     }
   }
 
-  void _showImagePreview(BuildContext context, String title, String imagePath) {
+  void _showImagePreview(
+    BuildContext context,
+    String title,
+    String imagePath,
+  ) {
     final isAsset = imagePath.startsWith('assets/');
     final file = File(imagePath);
 
@@ -278,7 +334,10 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -293,27 +352,37 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: AppColors.iceTextMuted),
+                      icon: const Icon(
+                        Icons.close,
+                        color: AppColors.iceTextMuted,
+                      ),
                       onPressed: () => Navigator.of(ctx).pop(),
                     ),
                   ],
                 ),
               ),
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-                child: isAsset
-                    ? Image.asset(
-                        imagePath,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => _buildImageError(),
-                      )
-                    : (file.existsSync()
-                        ? Image.file(
-                            file,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => _buildImageError(),
-                          )
-                        : _buildImageError()),
+                borderRadius:
+                    const BorderRadius.vertical(bottom: Radius.circular(20)),
+                child: InteractiveViewer(
+                  minScale: 0.9,
+                  maxScale: 3.0,
+                  child: isAsset
+                      ? Image.asset(
+                          imagePath,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildImageError(),
+                        )
+                      : (file.existsSync()
+                          ? Image.file(
+                              file,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _buildImageError(),
+                            )
+                          : _buildImageError()),
+                ),
               ),
             ],
           ),
@@ -327,7 +396,11 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
       height: 220,
       color: AppColors.surfaceWarm,
       alignment: Alignment.center,
-      child: const Icon(Icons.image_not_supported, size: 48, color: AppColors.iceTextMuted),
+      child: const Icon(
+        Icons.image_not_supported,
+        size: 48,
+        color: AppColors.iceTextMuted,
+      ),
     );
   }
 
@@ -335,53 +408,64 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFFFAF8F5),
-        body: Center(child: CircularProgressIndicator(color: AppColors.iceOlive)),
+        backgroundColor: AppColors.iceBackground,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.iceOlive),
+        ),
       );
     }
 
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final medicines = _event.prescription?.medicines ?? [];
     final attachments = _event.attachments;
+    final formattedDate =
+        '${_event.date.day.toString().padLeft(2, '0')}/${_event.date.month.toString().padLeft(2, '0')}/${_event.date.year}';
+    final doctorLabel =
+        _event.doctorName != null && _event.doctorName!.isNotEmpty
+            ? (_event.doctorName!.startsWith('BS')
+                ? _event.doctorName!
+                : 'BS. ${_event.doctorName}')
+            : 'Chưa cập nhật bác sĩ';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF8F5),
+      backgroundColor: AppColors.iceBackground,
       body: SafeArea(
         top: false,
         child: Column(
           children: [
-            // Header
+            // Header gọn thoáng: gom Sửa/Xóa vào menu ⋮ để nhường chỗ cho tiêu đề
             Container(
               padding: EdgeInsets.only(
                 top: MediaQuery.paddingOf(context).top + 8,
                 bottom: 12,
-                left: 8,
-                right: 8,
+                left: 10,
+                right: 10,
               ),
               decoration: BoxDecoration(
                 color: Colors.white,
-                border: Border(bottom: BorderSide(color: AppColors.iceCardBorder.withValues(alpha: 0.6))),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                border: Border(
+                  bottom: BorderSide(
+                    color: AppColors.iceCardBorder.withValues(alpha: 0.6),
                   ),
-                ],
+                ),
               ),
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.iceTextNavy),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      size: 20,
+                      color: AppColors.iceTextNavy,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   const SizedBox(width: 4),
-                  Expanded(
+                  const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
+                        Text(
                           'SỔ TAY Y TẾ',
                           style: TextStyle(
                             fontSize: 11,
@@ -391,149 +475,263 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                             height: 1.1,
                           ),
                         ),
-                        const Text(
+                        Text(
                           'Chi Tiết Bệnh Án',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             color: AppColors.iceTextNavy,
-                            height: 1.2,
+                            height: 1.25,
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.iceOlive),
-                    tooltip: 'Chỉnh sửa đợt khám',
-                    onPressed: _onEdit,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
-                    tooltip: 'Xóa đợt khám',
-                    onPressed: _onDelete,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.share_outlined, size: 20, color: AppColors.iceOlive),
+                    icon: const Icon(
+                      Icons.share_outlined,
+                      size: 20,
+                      color: AppColors.iceOlive,
+                    ),
+                    tooltip: 'Chia sẻ PDF',
                     onPressed: () => _sharePdf(context),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 20, color: AppColors.iceOlive),
+                    icon: const Icon(
+                      Icons.picture_as_pdf_outlined,
+                      size: 20,
+                      color: AppColors.iceOlive,
+                    ),
+                    tooltip: 'Xuất PDF',
                     onPressed: () => _exportPdf(context),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(
+                      Icons.more_vert_rounded,
+                      size: 20,
+                      color: AppColors.iceTextNavy,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    onSelected: (val) {
+                      if (val == 'edit') _onEdit();
+                      if (val == 'delete') _onDelete();
+                    },
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.edit_outlined,
+                              size: 18,
+                              color: AppColors.iceOlive,
+                            ),
+                            SizedBox(width: 10),
+                            Text('Chỉnh sửa đợt khám'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.delete_outline,
+                              size: 18,
+                              color: AppColors.error,
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              'Xóa đợt khám',
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
 
-            // Content List
+            // Content List với khoảng thở chuẩn 24px
             Expanded(
               child: ListView(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 32 + bottomPadding),
+                padding: EdgeInsets.fromLTRB(
+                  AppLayoutTokens.screenPadding,
+                  20,
+                  AppLayoutTokens.screenPadding,
+                  32 + bottomPadding,
+                ),
                 children: [
-                  // 1. Patient & Code Badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.iceOlive.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.iceOlive.withValues(alpha: 0.2)),
+                  // Cụm 1: Thẻ Tổng quan Đợt khám & Cơ sở điều trị (hợp nhất gọn gàng, không lồng Divider)
+                  CleanCard(
+                    padding: const EdgeInsets.all(
+                      AppLayoutTokens.heroCardPadding,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 18,
-                                backgroundColor: AppColors.iceOlive.withValues(alpha: 0.2),
-                                child: const Icon(Icons.person, color: AppColors.iceOliveDark, size: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Ngày khám: $formattedDate',
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.iceOlive,
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _event.title,
-                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      'Ngày khám: ${_event.date.day.toString().padLeft(2, '0')}/${_event.date.month.toString().padLeft(2, '0')}/${_event.date.year}',
-                                      style: const TextStyle(fontSize: 12, color: AppColors.iceTextSlate),
-                                    ),
-                                  ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 3.5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceWarm,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '#${_event.id.toUpperCase()}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.iceTextSlate,
                                 ),
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          _event.title,
+                          style: const TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.iceTextNavy,
+                            height: 1.3,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.iceCardBorder),
+                        const SizedBox(height: 14),
+                        KeyValueRow(
+                          label: 'Cơ sở y tế',
+                          value: (_event.facilityName != null &&
+                                  _event.facilityName!.isNotEmpty)
+                              ? _event.facilityName!
+                              : 'Chưa cập nhật cơ sở khám',
+                        ),
+                        if (_event.department != null &&
+                            _event.department!.isNotEmpty)
+                          KeyValueRow(
+                            label: 'Chuyên khoa',
+                            value: _event.department!,
                           ),
-                          child: Text(
-                            '#${_event.id.toUpperCase()}',
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.iceOlive),
-                          ),
+                        KeyValueRow(
+                          label: 'Bác sĩ điều trị',
+                          value: doctorLabel,
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppLayoutTokens.sectionGap),
 
-                  // 2. Hospital & Doctor Info Card
-                  _buildSectionCard(
-                    title: 'Cơ Sở Khám & Bác Sĩ Điều Trị',
-                    icon: Icons.local_hospital_outlined,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          (_event.facilityName != null && _event.facilityName!.isNotEmpty)
-                              ? _event.facilityName!
-                              : 'Chưa cập nhật cơ sở khám',
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
-                        ),
-                        if (_event.department != null && _event.department!.isNotEmpty) ...[
-                          const SizedBox(height: 4),
+                  // Cụm 2: Chẩn đoán lâm sàng & Diễn tiến
+                  SectionContainer(
+                    title: 'Chẩn Đoán & Diễn Tiến Lâm Sàng',
+                    icon: Icons.health_and_safety_outlined,
+                    bottomSpacing: AppLayoutTokens.sectionGap,
+                    child: CleanCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            _event.department!,
-                            style: const TextStyle(fontSize: 13, color: AppColors.iceTextSlate),
+                            (_event.diagnosis != null &&
+                                    _event.diagnosis!.trim().isNotEmpty)
+                                ? _event.diagnosis!.trim()
+                                : _event.title,
+                            style: const TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.iceOliveDark,
+                              height: 1.35,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            (_event.description != null &&
+                                    _event.description!.trim().isNotEmpty)
+                                ? _event.description!.trim()
+                                : 'Chưa có ghi chú triệu chứng / diễn tiến lâm sàng.',
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              color: AppColors.iceTextSlate,
+                              height: 1.45,
+                            ),
                           ),
                         ],
-                        const SizedBox(height: 10),
-                        const Divider(height: 1, color: AppColors.iceCardBorder),
-                        const SizedBox(height: 10),
+                      ),
+                    ),
+                  ),
+
+                  // Cụm 3: Chỉ số sinh hiệu lưới 2x2 dễ đọc (thay dãy 4 ô ép ngang chữ 9px)
+                  SectionContainer(
+                    title: 'Chỉ Số Sinh Hiệu Đo Lúc Khám',
+                    icon: Icons.monitor_heart_outlined,
+                    bottomSpacing: AppLayoutTokens.sectionGap,
+                    child: Column(
+                      children: [
                         Row(
                           children: [
-                            const CircleAvatar(
-                              radius: 16,
-                              backgroundColor: AppColors.surfaceWarm,
-                              child: Icon(Icons.medical_services_outlined, size: 18, color: AppColors.iceOlive),
-                            ),
-                            const SizedBox(width: 10),
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _event.doctorName != null && _event.doctorName!.isNotEmpty
-                                        ? (_event.doctorName!.startsWith('BS') ? _event.doctorName! : 'BS. ${_event.doctorName}')
-                                        : 'Chưa cập nhật bác sĩ điều trị',
-                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.iceTextNavy),
-                                  ),
-                                  const Text(
-                                    'Bác sĩ điều trị chuyên khoa',
-                                    style: TextStyle(fontSize: 12, color: AppColors.iceTextSlate),
-                                  ),
-                                ],
+                              child: _buildVitalTile(
+                                label: 'Huyết áp',
+                                value: (_event.bloodPressure != null &&
+                                        _event.bloodPressure!.trim().isNotEmpty)
+                                    ? _event.bloodPressure!.trim()
+                                    : '--',
+                                unit: 'mmHg',
+                              ),
+                            ),
+                            const SizedBox(width: AppLayoutTokens.cardGap),
+                            Expanded(
+                              child: _buildVitalTile(
+                                label: 'Nhịp tim',
+                                value: (_event.heartRate != null &&
+                                        _event.heartRate!.trim().isNotEmpty)
+                                    ? _event.heartRate!.trim()
+                                    : '--',
+                                unit: 'bpm',
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppLayoutTokens.cardGap),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildVitalTile(
+                                label: 'SpO2 (Oxy máu)',
+                                value: (_event.spo2 != null &&
+                                        _event.spo2!.trim().isNotEmpty)
+                                    ? _event.spo2!.trim()
+                                    : '--',
+                                unit: '%',
+                              ),
+                            ),
+                            const SizedBox(width: AppLayoutTokens.cardGap),
+                            Expanded(
+                              child: _buildVitalTile(
+                                label: 'Nhiệt độ cơ thể',
+                                value: (_event.temperature != null &&
+                                        _event.temperature!.trim().isNotEmpty)
+                                    ? _event.temperature!.trim()
+                                    : '--',
+                                unit: '°C',
                               ),
                             ),
                           ],
@@ -541,154 +739,113 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
 
-                  // 3. Clinical Diagnosis & Description
-                  _buildSectionCard(
-                    title: 'Chẩn Đoán Lâm Sàng & Diễn Tiến',
-                    icon: Icons.health_and_safety_outlined,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          (_event.diagnosis != null && _event.diagnosis!.trim().isNotEmpty)
-                              ? _event.diagnosis!.trim()
-                              : _event.title,
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.iceOliveDark),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          (_event.description != null && _event.description!.trim().isNotEmpty)
-                              ? _event.description!.trim()
-                              : 'Chưa có ghi chú triệu chứng / diễn tiến lâm sàng.',
-                          style: const TextStyle(fontSize: 13, color: AppColors.iceTextSlate, height: 1.35),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 4. Recorded Vitals Bento (never fabricate vital signs)
-                  _buildSectionCard(
-                    title: 'Chỉ Số Sinh Hiệu Đo Lúc Khám',
-                    icon: Icons.monitor_heart_outlined,
-                    child: Row(
-                      children: [
-                        _buildVitalPill(
-                          'Huyết áp',
-                          (_event.bloodPressure != null && _event.bloodPressure!.trim().isNotEmpty)
-                              ? _event.bloodPressure!.trim()
-                              : '--',
-                          'mmHg',
-                          true,
-                        ),
-                        const SizedBox(width: 8),
-                        _buildVitalPill(
-                          'Nhịp tim',
-                          (_event.heartRate != null && _event.heartRate!.trim().isNotEmpty)
-                              ? _event.heartRate!.trim()
-                              : '--',
-                          'bpm',
-                          true,
-                        ),
-                        const SizedBox(width: 8),
-                        _buildVitalPill(
-                          'SpO2',
-                          (_event.spo2 != null && _event.spo2!.trim().isNotEmpty)
-                              ? _event.spo2!.trim()
-                              : '--',
-                          '%',
-                          true,
-                        ),
-                        const SizedBox(width: 8),
-                        _buildVitalPill(
-                          'Nhiệt độ',
-                          (_event.temperature != null && _event.temperature!.trim().isNotEmpty)
-                              ? _event.temperature!.trim()
-                              : '--',
-                          '°C',
-                          true,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 5. Attached Clinical Files (with tap-to-zoom)
-                  _buildSectionCard(
-                    title: 'Tài Liệu & Kết Quả Cận Lâm Sàng (${attachments.length})',
-                    icon: Icons.folder_open_outlined,
-                    child: attachments.isEmpty
-                        ? const Text('Chưa có tài liệu đính kèm.', style: TextStyle(color: AppColors.iceTextMuted, fontSize: 13))
-                        : Column(
-                            children: [
-                              for (int i = 0; i < attachments.length; i++) ...[
-                                _buildAttachmentRow(
-                                  context: context,
-                                  title: attachments[i].split('/').last,
-                                  subtitle: 'Ảnh tài liệu đính kèm',
-                                  imagePath: attachments[i],
-                                ),
-                                if (i < attachments.length - 1) const SizedBox(height: 8),
-                              ],
-                            ],
-                          ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 6. Prescriptions Card
-                  _buildSectionCard(
+                  // Cụm 4: Toa thuốc điều trị ngoại trú
+                  SectionContainer(
                     title: _event.prescription?.durationDays != null
                         ? 'Toa Thuốc Điều Trị Ngoại Trú (${_event.prescription!.durationDays} Ngày)'
                         : 'Toa Thuốc Điều Trị Ngoại Trú',
                     icon: Icons.medication_outlined,
-                    child: medicines.isEmpty
-                        ? const Text('Chưa có toa thuốc chỉ định cho đợt khám này.', style: TextStyle(color: AppColors.iceTextMuted, fontSize: 13))
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              for (int i = 0; i < medicines.length; i++) ...[
-                                _buildMedicationItem(
-                                  stt: '${i + 1}',
-                                  name: medicines[i].name,
-                                  dosage: medicines[i].dosage,
-                                  duration: medicines[i].frequency,
-                                ),
-                                if (i < medicines.length - 1) const Divider(height: 16, color: AppColors.iceCardBorder),
+                    bottomSpacing: AppLayoutTokens.sectionGap,
+                    child: CleanCard(
+                      child: medicines.isEmpty
+                          ? const Text(
+                              'Chưa có toa thuốc chỉ định cho đợt khám này.',
+                              style: TextStyle(
+                                color: AppColors.iceTextMuted,
+                                fontSize: 13.5,
+                              ),
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                for (int i = 0; i < medicines.length; i++) ...[
+                                  _buildMedicationItem(
+                                    stt: '${i + 1}',
+                                    name: medicines[i].name,
+                                    dosage: medicines[i].dosage,
+                                    duration: medicines[i].frequency,
+                                  ),
+                                  if (i < medicines.length - 1)
+                                    const SizedBox(height: 14),
+                                ],
                               ],
-                            ],
-                          ),
+                            ),
+                    ),
                   ),
-                  const SizedBox(height: 28),
 
-                  // Bottom Action Buttons: Edit and Export
+                  // Cụm 5: Tài liệu & Kết quả cận lâm sàng
+                  SectionContainer(
+                    title:
+                        'Tài Liệu & Kết Quả Cận Lâm Sàng (${attachments.length})',
+                    icon: Icons.folder_open_outlined,
+                    bottomSpacing: 28,
+                    child: CleanCard(
+                      child: attachments.isEmpty
+                          ? const Text(
+                              'Chưa có tài liệu đính kèm.',
+                              style: TextStyle(
+                                color: AppColors.iceTextMuted,
+                                fontSize: 13.5,
+                              ),
+                            )
+                          : Column(
+                              children: [
+                                for (int i = 0;
+                                    i < attachments.length;
+                                    i++) ...[
+                                  _buildAttachmentRow(
+                                    context: context,
+                                    title: attachments[i].split('/').last,
+                                    subtitle: 'Chạm để phóng to hình ảnh',
+                                    imagePath: attachments[i],
+                                  ),
+                                  if (i < attachments.length - 1)
+                                    const SizedBox(height: 10),
+                                ],
+                              ],
+                            ),
+                    ),
+                  ),
+
+                  // Nút hành động chính ở cuối trang
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: _onEdit,
                           icon: const Icon(Icons.edit_outlined, size: 18),
-                          label: const Text('Chỉnh Sửa'),
+                          label: const Text(
+                            'Chỉnh Sửa',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.iceOlive,
                             side: const BorderSide(color: AppColors.iceOlive),
                             padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppLayoutTokens.cardGap),
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () => _exportPdf(context),
                           icon: const Icon(Icons.print, size: 18),
-                          label: const Text('Xuất Bản PDF'),
+                          label: const Text(
+                            'Xuất Bản PDF',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.iceOlive,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ),
@@ -703,83 +860,53 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
     );
   }
 
-  Widget _buildSectionCard({
-    required String title,
-    required IconData icon,
-    required Widget child,
+  Widget _buildVitalTile({
+    required String label,
+    required String value,
+    required String unit,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.iceCardBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    final hasValue = value != '--';
+    return CleanCard(
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.iceTextMuted,
+            ),
+          ),
+          const SizedBox(height: 8),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              Icon(icon, size: 18, color: AppColors.iceOlive),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.iceTextNavy,
-                  ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: hasValue
+                      ? AppColors.iceTextNavy
+                      : AppColors.iceTextMuted,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                unit,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  color: AppColors.iceTextMuted,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          child,
         ],
-      ),
-    );
-  }
-
-  Widget _buildVitalPill(String label, String value, String unit, bool isNormal) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceWarm,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.iceCardBorder),
-        ),
-        child: Column(
-          children: [
-            Text(
-              label,
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.iceTextSlate),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              unit,
-              style: const TextStyle(fontSize: 9, color: AppColors.iceTextMuted),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -801,7 +928,6 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
         decoration: BoxDecoration(
           color: AppColors.surfaceWarm,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.iceCardBorder),
         ),
         child: Row(
           children: [
@@ -812,10 +938,23 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                 height: 48,
                 color: Colors.white,
                 child: isAsset
-                    ? Image.asset(imagePath, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_outlined))
+                    ? Image.asset(
+                        imagePath,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.image_outlined),
+                      )
                     : (file.existsSync()
-                        ? Image.file(file, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_outlined))
-                        : const Icon(Icons.image_outlined, color: AppColors.iceOlive)),
+                        ? Image.file(
+                            file,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(Icons.image_outlined),
+                          )
+                        : const Icon(
+                            Icons.image_outlined,
+                            color: AppColors.iceOlive,
+                          )),
               ),
             ),
             const SizedBox(width: 12),
@@ -825,14 +964,21 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.iceTextNavy),
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.iceTextNavy,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 11, color: AppColors.iceTextMuted),
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: AppColors.iceTextMuted,
+                    ),
                   ),
                 ],
               ),
@@ -854,31 +1000,37 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         CircleAvatar(
-          radius: 11,
-          backgroundColor: AppColors.iceOlive.withValues(alpha: 0.15),
+          radius: 12,
+          backgroundColor: AppColors.iceOlive.withValues(alpha: 0.14),
           child: Text(
             stt,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.iceOliveDark),
+            style: const TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: AppColors.iceOliveDark,
+            ),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 name,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.iceTextNavy),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.iceTextNavy,
+                ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 3),
               Text(
-                dosage,
-                style: const TextStyle(fontSize: 12, color: AppColors.iceTextSlate),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                duration,
-                style: const TextStyle(fontSize: 11, color: AppColors.iceOlive, fontWeight: FontWeight.w600),
+                '$dosage • $duration',
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: AppColors.iceTextSlate,
+                ),
               ),
             ],
           ),
