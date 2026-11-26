@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
-import '../../../../../core/theme/app_typography.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 import '../../viewmodel/profile_state.dart';
 
+/// Thẻ Bệnh nền & Phẫu thuật tinh gọn: hiển thị tối đa 3 mục tiêu biểu,
+/// chạm "Chi tiết" mở toàn bộ bệnh sử trong MedicalHistorySheet.
 class ProfileChronicConditionsCard extends StatelessWidget {
   const ProfileChronicConditionsCard({
     super.key,
@@ -16,108 +18,87 @@ class ProfileChronicConditionsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.iceCardBorder),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 4,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
+    final previewItems =
+        conditions.length > 3 ? conditions.sublist(0, 3) : conditions;
+
+    return CleanCard(
+      onTap: onDetailTap,
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    SvgPicture.asset(
+                      'assets/icons/ic_prof_chronic_history.svg',
+                      width: 17,
+                      height: 17,
+                      colorFilter: const ColorFilter.mode(
+                        AppColors.iceOlive,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Flexible(
+                      child: Text(
+                        'Bệnh nền & Phẫu thuật',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.iceTextNavy,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
+                  Text(
+                    conditions.length > 3
+                        ? 'Xem tất cả (${conditions.length})'
+                        : 'Chi tiết',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.iceOlive,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
                   SvgPicture.asset(
-                    'assets/icons/ic_prof_chronic_history.svg',
-                    width: 17,
-                    height: 17,
+                    'assets/icons/ic_prof_arrow_right.svg',
+                    width: 10,
+                    height: 10,
                     colorFilter: const ColorFilter.mode(
-                      Color(0xFF5C6254),
+                      AppColors.iceOlive,
                       BlendMode.srcIn,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Bệnh nền & Phẫu thuật',
-                    style: AppTypography.heading3.copyWith(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.iceTextNavy,
-                    ),
-                  ),
                 ],
-              ),
-              InkWell(
-                onTap: onDetailTap,
-                borderRadius: BorderRadius.circular(6),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 2,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Chi tiết',
-                        style: AppTypography.labelSemiBold.copyWith(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF5C6254),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      SvgPicture.asset(
-                        'assets/icons/ic_prof_arrow_right.svg',
-                        width: 11,
-                        height: 11,
-                        colorFilter: const ColorFilter.mode(
-                          Color(0xFF5C6254),
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           if (conditions.isEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceWarm,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.info_outline, size: 16, color: AppColors.iceOlive),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Chưa có ghi nhận bệnh nền mãn tính',
-                      style: TextStyle(fontSize: 12, color: AppColors.iceTextSlate),
-                    ),
-                  ),
-                ],
+            const Text(
+              'Chưa có ghi nhận bệnh nền mãn tính.',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.iceTextMuted,
               ),
             )
           else
-            for (int i = 0; i < conditions.length; i++) ...[
-              _ConditionRow(item: conditions[i]),
-              if (i < conditions.length - 1) const SizedBox(height: 8),
+            for (int i = 0; i < previewItems.length; i++) ...[
+              _ConditionCleanRow(item: previewItems[i]),
+              if (i < previewItems.length - 1) const SizedBox(height: 10),
             ],
         ],
       ),
@@ -125,8 +106,8 @@ class ProfileChronicConditionsCard extends StatelessWidget {
   }
 }
 
-class _ConditionRow extends StatelessWidget {
-  const _ConditionRow({required this.item});
+class _ConditionCleanRow extends StatelessWidget {
+  const _ConditionCleanRow({required this.item});
 
   final ChronicConditionItem item;
 
@@ -140,34 +121,23 @@ class _ConditionRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppColors.iceCardBorder.withValues(alpha: 0.60),
-              ),
-            ),
-            child: Center(
-              child: SvgPicture.asset(
-                item.iconAsset,
-                width: 15,
-                height: 15,
-                colorFilter: const ColorFilter.mode(
-                  Color(0xFF5C6254),
-                  BlendMode.srcIn,
-                ),
-              ),
+          SvgPicture.asset(
+            item.iconAsset,
+            width: 16,
+            height: 16,
+            colorFilter: const ColorFilter.mode(
+              AppColors.iceOlive,
+              BlendMode.srcIn,
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               item.title,
-              style: AppTypography.labelSemiBold.copyWith(
-                fontSize: 13,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13.5,
                 fontWeight: FontWeight.w600,
                 color: AppColors.iceTextNavy,
               ),
@@ -176,8 +146,8 @@ class _ConditionRow extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             item.statusText,
-            style: AppTypography.caption.copyWith(
-              fontSize: 11,
+            style: const TextStyle(
+              fontSize: 11.5,
               fontWeight: FontWeight.w600,
               color: AppColors.iceTextMuted,
             ),

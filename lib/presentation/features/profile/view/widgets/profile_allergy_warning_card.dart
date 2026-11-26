@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
-import '../../../../../core/theme/app_typography.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 import '../../viewmodel/profile_state.dart';
 
+/// Thẻ cảnh báo dị ứng tuân thủ 3-Point Rule:
+/// Mặt ngoài hiển thị gọn Tên dị nguyên + Mức độ + tóm tắt 1 dòng;
+/// Chạm vào mở BottomSheet xem chi tiết nhóm thuốc bao gồm và phản ứng lâm sàng.
 class ProfileAllergyWarningCard extends StatelessWidget {
   const ProfileAllergyWarningCard({
     super.key,
@@ -17,18 +20,18 @@ class ProfileAllergyWarningCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppLayoutTokens.cardRadius),
         border: Border.all(color: AppColors.iceCardBorder),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 6,
-            offset: Offset(0, 2),
+            color: AppColors.iceTextNavy.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(AppLayoutTokens.cardRadius - 1),
         child: Container(
           decoration: const BoxDecoration(
             border: Border(
@@ -38,60 +41,36 @@ class ProfileAllergyWarningCard extends StatelessWidget {
               ),
             ),
           ),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: AppColors.iceDangerBg.withValues(alpha: 0.70),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Center(
-                            child: SvgPicture.asset(
-                              'assets/icons/ic_prof_allergy_alert.svg',
-                              width: 17,
-                              height: 17,
-                              colorFilter: const ColorFilter.mode(
-                                AppColors.iceDangerText,
-                                BlendMode.srcIn,
-                              ),
-                            ),
+                        SvgPicture.asset(
+                          'assets/icons/ic_prof_allergy_alert.svg',
+                          width: 17,
+                          height: 17,
+                          colorFilter: const ColorFilter.mode(
+                            AppColors.iceDangerText,
+                            BlendMode.srcIn,
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Tiền sử Dị ứng nghiêm ngặt',
-                                style: AppTypography.labelSemiBold.copyWith(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.iceTextNavy,
-                                ),
-                              ),
-                              const SizedBox(height: 1),
-                              Text(
-                                'Cảnh báo đỏ trước điều trị',
-                                style: AppTypography.caption.copyWith(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.iceDangerText,
-                                ),
-                              ),
-                            ],
+                        const SizedBox(width: 8),
+                        const Flexible(
+                          child: Text(
+                            'Tiền sử Dị ứng',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.iceTextNavy,
+                            ),
                           ),
                         ),
                       ],
@@ -100,38 +79,29 @@ class ProfileAllergyWarningCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     '${allergies.length} dị nguyên',
-                    style: AppTypography.caption.copyWith(
-                      fontSize: 11,
+                    style: const TextStyle(
+                      fontSize: 11.5,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.iceTextMuted,
+                      color: AppColors.iceDangerText,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               if (allergies.isEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceWarm,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.check_circle_outline, size: 16, color: AppColors.iceOlive),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Chưa ghi nhận dị ứng thuốc hoặc thức ăn',
-                          style: TextStyle(fontSize: 12, color: AppColors.iceTextSlate),
-                        ),
-                      ),
-                    ],
+                const Text(
+                  'Chưa ghi nhận dị ứng thuốc hoặc thức ăn.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.iceTextMuted,
                   ),
                 )
               else
                 for (int i = 0; i < allergies.length; i++) ...[
-                  _AllergyTile(item: allergies[i]),
+                  _AllergyCompactRow(
+                    item: allergies[i],
+                    onTap: () => _showAllergyDetailSheet(context, allergies[i]),
+                  ),
                   if (i < allergies.length - 1) const SizedBox(height: 10),
                 ],
             ],
@@ -140,46 +110,149 @@ class ProfileAllergyWarningCard extends StatelessWidget {
       ),
     );
   }
+
+  void _showAllergyDetailSheet(BuildContext context, AllergyItem item) {
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.fromLTRB(
+          AppLayoutTokens.screenPadding,
+          12,
+          AppLayoutTokens.screenPadding,
+          bottomPadding + 24,
+        ),
+        decoration: const BoxDecoration(
+          color: AppColors.backgroundLight,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.iceCardBorder,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SectionHeader(
+              title: item.title,
+              subtitle: 'Cảnh báo dị ứng trước điều trị',
+              icon: Icons.warning_amber_rounded,
+              iconColor: AppColors.iceDangerText,
+              trailing: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: item.isHighRisk
+                      ? AppColors.iceDangerText
+                      : AppColors.iceAccentCream,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  item.severityLabel,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: item.isHighRisk
+                        ? Colors.white
+                        : AppColors.iceTextBrownDark,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            CleanCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (item.includes != null && item.includes!.isNotEmpty) ...[
+                    const Text(
+                      'NHÓM DỊ NGUYÊN BAO GỒM',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                        color: AppColors.iceTextMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      item.includes!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.iceTextNavy,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                  const Text(
+                    'PHẢN ỨNG GHI NHẬN',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.4,
+                      color: AppColors.iceTextMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    item.reaction,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: item.isHighRisk
+                          ? AppColors.iceDangerText
+                          : AppColors.iceTextSlate,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _AllergyTile extends StatelessWidget {
-  const _AllergyTile({required this.item});
+class _AllergyCompactRow extends StatelessWidget {
+  const _AllergyCompactRow({
+    required this.item,
+    required this.onTap,
+  });
 
   final AllergyItem item;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final bgColor = item.isHighRisk
-        ? AppColors.iceDangerBg.withValues(alpha: 0.40)
+        ? AppColors.iceDangerBg.withValues(alpha: 0.35)
         : AppColors.surfaceCream;
-    final borderColor = item.isHighRisk
-        ? AppColors.iceDangerBg
-        : AppColors.iceAccentCream.withValues(alpha: 0.40);
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: bgColor,
+    return Material(
+      color: bgColor,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: borderColor),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: item.isHighRisk
-                  ? AppColors.iceDangerBg
-                  : AppColors.iceAccentCream.withValues(alpha: 0.60),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: SvgPicture.asset(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              SvgPicture.asset(
                 item.iconAsset,
-                width: 15,
-                height: 15,
+                width: 16,
+                height: 16,
                 colorFilter: ColorFilter.mode(
                   item.isHighRisk
                       ? AppColors.iceDangerText
@@ -187,80 +260,59 @@ class _AllergyTile extends StatelessWidget {
                   BlendMode.srcIn,
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        item.title,
-                        style: AppTypography.labelSemiBold.copyWith(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: item.isHighRisk
-                              ? AppColors.iceDangerText
-                              : AppColors.iceTextNavy,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
+                    Text(
+                      item.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
                         color: item.isHighRisk
                             ? AppColors.iceDangerText
-                            : AppColors.iceAccentCream,
-                        borderRadius: BorderRadius.circular(6),
+                            : AppColors.iceTextNavy,
                       ),
-                      child: Text(
-                        item.severityLabel,
-                        style: AppTypography.caption.copyWith(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.w700,
-                          color: item.isHighRisk
-                              ? AppColors.surfaceLight
-                              : AppColors.iceTextBrownDark,
-                        ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      item.reaction,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.iceTextSlate,
                       ),
                     ),
                   ],
                 ),
-                if (item.includes != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    item.includes!,
-                    style: AppTypography.body.copyWith(
-                      fontSize: 12,
-                      color: AppColors.iceTextSlate,
-                      height: 1.35,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 3),
-                Text(
-                  item.reaction,
-                  style: AppTypography.body.copyWith(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: item.isHighRisk
+                      ? AppColors.iceDangerText
+                      : AppColors.iceAccentCream,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  item.severityLabel,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
                     color: item.isHighRisk
-                        ? const Color(0xFF93000A)
-                        : AppColors.iceTextSlate,
-                    height: 1.35,
+                        ? AppColors.surfaceLight
+                        : AppColors.iceTextBrownDark,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

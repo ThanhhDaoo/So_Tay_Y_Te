@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/safe_avatar_image.dart';
+import '../../../common_widgets/layout/app_layout.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
 import '../../main_shell/view/main_shell_screen.dart';
 import '../../../routes/app_routes.dart';
@@ -106,9 +107,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onProfileTap: () {
                     if (!isPrimary) {
                       _viewModel.selectMember('primary');
-                      _showSnack('Đã quay lại hồ sơ gốc: ${primaryMember.name}');
+                      _showSnack(
+                        'Đã quay lại hồ sơ gốc: ${primaryMember.name}',
+                      );
                     } else {
-                      _showSnack('Đang xem hồ sơ gốc: ${activeProfile.fullName}');
+                      _showSnack(
+                        'Đang xem hồ sơ gốc: ${activeProfile.fullName}',
+                      );
                     }
                   },
                 ),
@@ -129,7 +134,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           bloodType: blood,
                           dob: dob,
                         );
-                        _showSnack('Đã thêm hồ sơ: $name ($rel). Chạm "Hồ sơ gốc" để quay lại tài khoản của bạn.');
+                        _showSnack(
+                          'Đã thêm hồ sơ: $name ($rel). Chạm "Hồ sơ gốc" để quay lại tài khoản của bạn.',
+                        );
                       },
                     ),
                     onVaultProTap: () =>
@@ -139,13 +146,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               SliverPadding(
                 padding: EdgeInsets.fromLTRB(
-                  20,
-                  18,
-                  20,
-                  110 + bottomPadding,
+                  AppLayoutTokens.screenPadding,
+                  16,
+                  AppLayoutTokens.screenPadding,
+                  112 + bottomPadding,
                 ),
                 sliver: SliverList.list(
                   children: [
+                    // Cụm 1: Thẻ định danh bệnh nhân gọn ngang
                     ProfilePatientHeroCard(
                       profile: activeProfile,
                       isPrimary: isPrimary,
@@ -158,7 +166,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           : null,
                       onPickAvatar: () {
                         if (state.isEditLocked) {
-                          _showSnack('Hồ sơ đang bật khóa chỉnh sửa. Hãy bấm Mở khóa ở cuối trang để cập nhật.');
+                          _showSnack(
+                            'Hồ sơ đang bật khóa chỉnh sửa. Hãy bấm Mở khóa ở cuối trang để cập nhật.',
+                          );
                           return;
                         }
                         pickAndSaveAvatar(
@@ -178,7 +188,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       },
                       onEditTap: () {
                         if (state.isEditLocked) {
-                          _showSnack('Hồ sơ đang bật khóa chỉnh sửa. Hãy bấm Mở khóa ở cuối trang để cập nhật.');
+                          _showSnack(
+                            'Hồ sơ đang bật khóa chỉnh sửa. Hãy bấm Mở khóa ở cuối trang để cập nhật.',
+                          );
                           return;
                         }
                         EditPersonalProfileSheet.show(
@@ -190,10 +202,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           initialDob: activeProfile.dob,
                           initialGender: activeProfile.gender,
                           initialBloodType: activeProfile.bloodType,
-                          initialHeight: activeProfile.heightText.replaceAll(' cm', ''),
-                          initialWeight: activeProfile.weightText.replaceAll(' kg', ''),
+                          initialHeight:
+                              activeProfile.heightText.replaceAll(' cm', ''),
+                          initialWeight:
+                              activeProfile.weightText.replaceAll(' kg', ''),
                           initialEmergencyContact: activeProfile.contact,
-                          initialRegion: (activeProfile.region != 'Chưa cập nhật' && !activeProfile.region.contains('@')) ? activeProfile.region : '',
+                          initialRegion: (activeProfile.region !=
+                                      'Chưa cập nhật' &&
+                                  !activeProfile.region.contains('@'))
+                              ? activeProfile.region
+                              : '',
                           initialAvatarUrl: activeProfile.heroImageAsset,
                           onAvatarChanged: (newPath) async {
                             if (isPrimary) {
@@ -206,8 +224,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             }
                             _showSnack('Đã cập nhật ảnh đại diện thành công!');
                           },
-                          initialAllergies: activeProfile.allergies.map((a) => a.title).join(', '),
-                          initialChronicConditions: activeProfile.chronicConditions.map((c) => c.title).join(', '),
+                          initialAllergies: activeProfile.allergies
+                              .map((a) => a.title)
+                              .join(', '),
+                          initialChronicConditions: activeProfile
+                              .chronicConditions
+                              .map((c) => c.title)
+                              .join(', '),
                           onSave: ({
                             required fullName,
                             allergies,
@@ -256,42 +279,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         );
                       },
                     ),
-                    const SizedBox(height: 18),
-                    ProfileVaultProBanner(
-                      onTap: () =>
-                          Navigator.of(context).pushNamed(AppRoutes.paywall),
-                    ),
-                    const SizedBox(height: 18),
-                    ProfileDocumentsCard(
-                      onTap: () =>
-                          Navigator.of(context).pushNamed(AppRoutes.documents),
-                    ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: AppLayoutTokens.sectionGap),
+
+                    // Cụm 2: Thể chất nền (Bento 2x2)
                     ProfileVitalsBentoGrid(profile: activeProfile),
-                    const SizedBox(height: 18),
-                    ProfileAllergyWarningCard(
-                      allergies: activeProfile.allergies,
-                    ),
-                    const SizedBox(height: 18),
-                    ProfileChronicConditionsCard(
-                      conditions: activeProfile.chronicConditions,
-                      onDetailTap: () => MedicalHistorySheet.show(
-                        context,
-                        patientName: activeProfile.fullName,
-                        chronicConditions: activeProfile.chronicConditions.map((c) => c.title).toList(),
+                    const SizedBox(height: AppLayoutTokens.sectionGap),
+
+                    // Cụm 3: Tiền sử & Cảnh báo lâm sàng
+                    SectionContainer(
+                      title: 'Tiền sử & Cảnh báo lâm sàng',
+                      icon: Icons.assignment_ind_outlined,
+                      bottomSpacing: AppLayoutTokens.sectionGap,
+                      child: Column(
+                        children: [
+                          ProfileAllergyWarningCard(
+                            allergies: activeProfile.allergies,
+                          ),
+                          const SizedBox(height: AppLayoutTokens.cardGap),
+                          ProfileChronicConditionsCard(
+                            conditions: activeProfile.chronicConditions,
+                            onDetailTap: () => MedicalHistorySheet.show(
+                              context,
+                              patientName: activeProfile.fullName,
+                              chronicConditions: activeProfile.chronicConditions
+                                  .map((c) => c.title)
+                                  .toList(),
+                            ),
+                          ),
+                          const SizedBox(height: AppLayoutTokens.cardGap),
+                          ProfileImmunizationCard(
+                            immunizations: activeProfile.immunizations,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 18),
-                    ProfileImmunizationCard(
-                      immunizations: activeProfile.immunizations,
-                    ),
-                    const SizedBox(height: 18),
-                    ProfileSecurityActionsBar(
-                      isEditLocked: state.isEditLocked,
-                      onToggleLock: _viewModel.toggleEditLock,
-                      onExportPdf: () => Navigator.of(context).pushNamed(AppRoutes.vitalReports),
-                      onShareEmergency: () => _showSnack(
-                        'Đã tạo liên kết chia sẻ cấp cứu QR cho ${activeChip.name}',
+
+                    // Cụm 4: Lưu trữ, Nâng cấp & Bảo mật hồ sơ
+                    SectionContainer(
+                      title: 'Tài liệu & Tiện ích bảo mật',
+                      icon: Icons.folder_special_outlined,
+                      bottomSpacing: 0,
+                      child: Column(
+                        children: [
+                          ProfileDocumentsCard(
+                            onTap: () => Navigator.of(context)
+                                .pushNamed(AppRoutes.documents),
+                          ),
+                          const SizedBox(height: AppLayoutTokens.cardGap),
+                          ProfileVaultProBanner(
+                            onTap: () => Navigator.of(context)
+                                .pushNamed(AppRoutes.paywall),
+                          ),
+                          const SizedBox(height: AppLayoutTokens.cardGap),
+                          ProfileSecurityActionsBar(
+                            isEditLocked: state.isEditLocked,
+                            onToggleLock: _viewModel.toggleEditLock,
+                            onExportPdf: () => Navigator.of(context)
+                                .pushNamed(AppRoutes.vitalReports),
+                            onShareEmergency: () => _showSnack(
+                              'Đã tạo liên kết chia sẻ cấp cứu QR cho ${activeChip.name}',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -339,4 +388,3 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
-

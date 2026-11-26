@@ -123,7 +123,7 @@ class _AddFamilyMemberSheetState extends State<AddFamilyMemberSheet> {
                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.iceCardBorder)),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(

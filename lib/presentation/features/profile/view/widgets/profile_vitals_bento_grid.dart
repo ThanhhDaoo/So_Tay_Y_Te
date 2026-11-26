@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
-import '../../../../../core/theme/app_typography.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 import '../../viewmodel/profile_state.dart';
 
+/// Lưới Bento 2x2 hiển thị chỉ số thể chất nền theo chuẩn 3-Point Rule & 8pt Grid.
 class ProfileVitalsBentoGrid extends StatelessWidget {
   const ProfileVitalsBentoGrid({
     super.key,
@@ -14,83 +15,60 @@ class ProfileVitalsBentoGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                SvgPicture.asset(
-                  'assets/icons/ic_prof_biometrics.svg',
-                  width: 18,
-                  height: 18,
-                  colorFilter: const ColorFilter.mode(
-                    Color(0xFF5C6254),
-                    BlendMode.srcIn,
-                  ),
+    return SectionContainer(
+      title: 'Thể chất nền',
+      iconAsset: 'assets/icons/ic_prof_biometrics.svg',
+      iconColor: AppColors.iceOlive,
+      bottomSpacing: 0,
+      trailing: Text(
+        'Cập nhật: ${profile.vitalsUpdatedAt}',
+        style: const TextStyle(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w600,
+          color: AppColors.iceTextMuted,
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _BloodTypeTile(
+                  bloodType: profile.bloodType,
+                  note: profile.bloodNote,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Thể chất nền',
-                  style: AppTypography.heading3.copyWith(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.iceTextNavy,
-                  ),
+              ),
+              const SizedBox(width: AppLayoutTokens.cardGap),
+              Expanded(
+                child: _BmiTile(
+                  bmiValue: profile.bmiValue,
+                  statusLabel: profile.bmiStatusLabel,
                 ),
-              ],
-            ),
-            Text(
-              'Cập nhật: ${profile.vitalsUpdatedAt}',
-              style: AppTypography.caption.copyWith(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColors.iceTextMuted,
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _BloodTypeTile(
-                bloodType: profile.bloodType,
-                note: profile.bloodNote,
+            ],
+          ),
+          const SizedBox(height: AppLayoutTokens.cardGap),
+          Row(
+            children: [
+              Expanded(
+                child: _MeasurementTile(
+                  label: 'Chiều cao',
+                  value: profile.heightText,
+                  iconAsset: 'assets/icons/ic_prof_height.svg',
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _BmiTile(
-                bmiValue: profile.bmiValue,
-                statusLabel: profile.bmiStatusLabel,
+              const SizedBox(width: AppLayoutTokens.cardGap),
+              Expanded(
+                child: _MeasurementTile(
+                  label: 'Cân nặng',
+                  value: profile.weightText,
+                  iconAsset: 'assets/icons/ic_prof_weight.svg',
+                ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _MeasurementTile(
-                label: 'Chiều cao',
-                value: profile.heightText,
-                iconAsset: 'assets/icons/ic_prof_height.svg',
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _MeasurementTile(
-                label: 'Cân nặng',
-                value: profile.weightText,
-                iconAsset: 'assets/icons/ic_prof_weight.svg',
-              ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -106,38 +84,26 @@ class _BloodTypeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.iceCardBorder),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 4,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
+    return CleanCard(
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              const Text(
                 'Nhóm máu',
-                style: AppTypography.caption.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
                   color: AppColors.iceTextMuted,
                 ),
               ),
               SvgPicture.asset(
                 'assets/icons/ic_prof_blood_drop.svg',
-                width: 15,
-                height: 15,
+                width: 14,
+                height: 14,
                 colorFilter: const ColorFilter.mode(
                   AppColors.iceDangerText,
                   BlendMode.srcIn,
@@ -145,23 +111,23 @@ class _BloodTypeTile extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 10),
           Text(
             bloodType,
-            style: AppTypography.heading2.copyWith(
-              fontSize: 21,
+            style: const TextStyle(
+              fontSize: 24,
               fontWeight: FontWeight.w800,
               color: AppColors.iceDangerText,
               height: 1.1,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
             note,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.caption.copyWith(
-              fontSize: 10.5,
+            style: const TextStyle(
+              fontSize: 11.5,
               fontWeight: FontWeight.w500,
               color: AppColors.iceTextMuted,
             ),
@@ -183,110 +149,65 @@ class _BmiTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.iceCardBorder),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 4,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
+    return CleanCard(
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Chỉ số BMI',
-                style: AppTypography.caption.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.iceTextMuted,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.iceAccentCream,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  statusLabel,
-                  style: AppTypography.caption.copyWith(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.iceTextBrownDark,
+          const Text(
+            'Chỉ số BMI',
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              color: AppColors.iceTextMuted,
+            ),
+          ),
+          const SizedBox(height: 10),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  bmiValue,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.iceTextNavy,
+                    height: 1.1,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                bmiValue,
-                style: AppTypography.heading2.copyWith(
-                  fontSize: 21,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF5C6254),
-                  height: 1.1,
+                const SizedBox(width: 4),
+                const Text(
+                  'kg/m²',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.iceTextMuted,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'kg/m²',
-                style: AppTypography.caption.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.iceTextMuted,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD5D8CB),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+            decoration: BoxDecoration(
+              color: AppColors.iceAccentCream,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              statusLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                color: AppColors.iceTextBrownDark,
               ),
-              const SizedBox(width: 2),
-              Expanded(
-                flex: 2,
-                child: Container(
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF5C6254),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 2),
-              Expanded(
-                child: Container(
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: AppColors.iceAccentCream,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -307,51 +228,44 @@ class _MeasurementTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.iceCardBorder),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 4,
-            offset: Offset(0, 1),
-          ),
-        ],
-      ),
+    return CleanCard(
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: AppTypography.caption.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.iceTextMuted,
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.iceTextMuted,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                value,
-                style: AppTypography.heading3.copyWith(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.iceTextNavy,
+                const SizedBox(height: 6),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.iceTextNavy,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          const SizedBox(width: 8),
           SvgPicture.asset(
             iconAsset,
-            width: 20,
-            height: 20,
+            width: 18,
+            height: 18,
             colorFilter: const ColorFilter.mode(
-              Color(0xFF5C6254),
+              AppColors.iceOlive,
               BlendMode.srcIn,
             ),
           ),
