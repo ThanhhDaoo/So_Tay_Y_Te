@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../common_widgets/layout/app_layout.dart';
 import '../../../routes/app_routes.dart';
 import '../../main_shell/view/main_shell_screen.dart';
 import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
@@ -76,6 +76,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
       builder: (context, _) {
         final state = _viewModel.state;
         final records = state.filteredRecords;
+        final activeYear =
+            records.isNotEmpty ? records.first.year : DateTime.now().year;
 
         return Scaffold(
           backgroundColor: AppColors.iceBackground,
@@ -98,12 +100,13 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 },
                 child: ListView(
                   padding: EdgeInsets.only(
-                    top: topPadding + 74,
-                    bottom: bottomPadding + 148,
-                    left: 16,
-                    right: 16,
+                    top: topPadding + 78,
+                    bottom: bottomPadding + 152,
+                    left: AppLayoutTokens.screenPadding,
+                    right: AppLayoutTokens.screenPadding,
                   ),
                   children: [
+                    // Cụm 1: Tìm kiếm & Lọc nhanh
                     TimelineSearchFilterBar(
                       controller: _viewModel.searchController,
                       onSearchChanged: _viewModel.updateSearchQuery,
@@ -114,7 +117,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
                       selectedFilterId: state.selectedFilterId,
                       onSelectFilter: _viewModel.selectFilter,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppLayoutTokens.sectionGap),
+
+                    // Cụm 2: Sinh hiệu mới nhất (2x2 Bento thoáng đãng)
                     TimelineVitalsBento(
                       bloodPressure: state.latestBloodPressure,
                       heartRate: state.latestHeartRate,
@@ -123,14 +128,36 @@ class _TimelineScreenState extends State<TimelineScreen> {
                       onViewReports: () =>
                           Navigator.pushNamed(context, AppRoutes.vitalReports),
                     ),
-                    const SizedBox(height: 18),
-                    _buildTimelineSectionHeader(
-                      records.isNotEmpty ? records.first.year : DateTime.now().year,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildChronologicalSpine(
-                      records,
-                      hasUnfilteredRecords: state.records.isNotEmpty,
+                    const SizedBox(height: AppLayoutTokens.sectionGap),
+
+                    // Cụm 3: Trục thời gian bệnh án
+                    SectionContainer(
+                      title: 'Dòng thời gian bệnh án',
+                      iconAsset: 'assets/icons/ic_timeline_history.svg',
+                      bottomSpacing: 0,
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.iceAccentCream,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Năm $activeYear',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
+                            color: AppColors.timelineBadgeBrown,
+                          ),
+                        ),
+                      ),
+                      child: _buildChronologicalSpine(
+                        records,
+                        hasUnfilteredRecords: state.records.isNotEmpty,
+                      ),
                     ),
                   ],
                 ),
@@ -142,7 +169,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 child: TimelineHeader(),
               ),
               Positioned(
-                right: 16,
+                right: AppLayoutTokens.screenPadding,
                 bottom: bottomPadding + 76,
                 child: AnimatedSlide(
                   duration: const Duration(milliseconds: 250),
@@ -153,8 +180,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     opacity: _isFabVisible ? 1.0 : 0.0,
                     child: TimelineStickyFab(
                       onPressed: () async {
-                        final res =
-                            await Navigator.pushNamed(context, AppRoutes.addRecord);
+                        final res = await Navigator.pushNamed(
+                          context,
+                          AppRoutes.addRecord,
+                        );
                         if (res == true) {
                           _viewModel.loadRecords();
                         }
@@ -180,65 +209,14 @@ class _TimelineScreenState extends State<TimelineScreen> {
     );
   }
 
-  Widget _buildTimelineSectionHeader(int activeYear) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              SvgPicture.asset(
-                'assets/icons/ic_timeline_history.svg',
-                width: 15,
-                height: 16.67,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Dòng thời gian bệnh án',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.iceTextNavy,
-                ),
-              ),
-            ],
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: AppColors.iceAccentCream,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              'Năm $activeYear',
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.44,
-                color: AppColors.timelineBadgeBrown,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildChronologicalSpine(
     List<TimelineRecordItem> records, {
     bool hasUnfilteredRecords = false,
   }) {
     if (records.isEmpty) {
       if (hasUnfilteredRecords) {
-        return Container(
-          width: double.infinity,
+        return CleanCard(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.iceCardBorder),
-          ),
           child: Column(
             children: [
               Container(
@@ -253,7 +231,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   color: AppColors.iceOlive,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               const Text(
                 'Không tìm thấy bệnh án phù hợp',
                 style: TextStyle(
@@ -264,17 +242,26 @@ class _TimelineScreenState extends State<TimelineScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Không có đợt khám nào khớp với từ khóa hoặc bộ lọc hiện tại. Hãy thử từ khóa khác hoặc xóa bộ lọc.',
+                'Không có đợt khám nào khớp với từ khóa hoặc bộ lọc hiện tại.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: AppColors.iceTextSlate, height: 1.4),
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: AppColors.iceTextSlate,
+                  height: 1.45,
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.iceOlive,
                   side: const BorderSide(color: AppColors.iceOlive),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 11,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
                 label: const Text(
@@ -291,21 +278,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
           ),
         );
       }
-      return Container(
-        width: double.infinity,
+      return CleanCard(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.iceCardBorder),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
         child: Column(
           children: [
             Container(
@@ -316,7 +290,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
               ),
               child: const Icon(
                 Icons.medical_information_outlined,
-                size: 36,
+                size: 34,
                 color: AppColors.iceOlive,
               ),
             ),
@@ -331,22 +305,38 @@ class _TimelineScreenState extends State<TimelineScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Tài khoản của bạn chưa có hồ sơ bệnh án nào. Hãy bấm nút bên dưới để thêm đợt khám đầu tiên, toa thuốc và chụp ảnh kết quả xét nghiệm!',
+              'Hãy thêm đợt khám đầu tiên để lưu trữ chẩn đoán, đơn thuốc và kết quả xét nghiệm.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: AppColors.iceTextSlate, height: 1.4),
+              style: TextStyle(
+                fontSize: 13.5,
+                color: AppColors.iceTextSlate,
+                height: 1.45,
+              ),
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.iceOlive,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 13,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('Thêm Đợt Khám Đầu Tiên', style: TextStyle(fontWeight: FontWeight.w700)),
+              label: const Text(
+                'Thêm Đợt Khám Đầu Tiên',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
               onPressed: () async {
-                final res = await Navigator.pushNamed(context, AppRoutes.addRecord);
+                final res = await Navigator.pushNamed(
+                  context,
+                  AppRoutes.addRecord,
+                );
                 if (res == true) {
                   _viewModel.loadRecords();
                 }
@@ -361,8 +351,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
       children: [
         Positioned(
           left: 10,
-          top: 12,
-          bottom: 16,
+          top: 16,
+          bottom: 20,
           width: 2,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(999),
@@ -378,8 +368,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
             children: [
               for (int i = 0; i < records.length; i++) ...[
                 if (i > 0 && records[i].year != records[i - 1].year) ...[
+                  const SizedBox(height: 8),
                   _buildYearSeparator(records[i].year),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                 ],
                 TimelineRecordCard(
                   record: records[i],
@@ -413,26 +404,19 @@ class _TimelineScreenState extends State<TimelineScreen> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: AppColors.timelineChipBg,
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               'Năm $year',
               style: const TextStyle(
-                fontSize: 11,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w700,
-                letterSpacing: 0.44,
+                letterSpacing: 0.3,
                 color: AppColors.iceTextSlate,
               ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Container(
-              height: 1,
-              color: AppColors.timelineChipBg,
             ),
           ),
         ],

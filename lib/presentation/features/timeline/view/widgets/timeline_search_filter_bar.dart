@@ -27,26 +27,26 @@ class TimelineSearchFilterBar extends StatelessWidget {
     return Column(
       children: [
         Container(
-          height: 44,
+          height: 48,
           decoration: BoxDecoration(
-            color: AppColors.timelineInputBg,
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.surfaceLight,
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.iceCardBorder, width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 2,
-                offset: const Offset(0, 1),
+                color: AppColors.iceTextNavy.withValues(alpha: 0.03),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Row(
             children: [
-              const SizedBox(width: 14),
+              const SizedBox(width: 16),
               SvgPicture.asset(
                 'assets/icons/ic_search.svg',
-                width: 15,
-                height: 15,
+                width: 16,
+                height: 16,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -58,9 +58,9 @@ class TimelineSearchFilterBar extends StatelessWidget {
                     color: AppColors.iceTextNavy,
                   ),
                   decoration: const InputDecoration(
-                    hintText: 'Tìm theo bệnh, triệu chứng, bác sĩ...',
+                    hintText: 'Tìm bệnh án, bác sĩ, bệnh viện...',
                     hintStyle: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13.5,
                       color: AppColors.iceTextMuted,
                     ),
                     border: InputBorder.none,
@@ -72,29 +72,29 @@ class TimelineSearchFilterBar extends StatelessWidget {
               const SizedBox(width: 8),
               InkWell(
                 onTap: onFilterTap,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
                 child: Container(
-                  width: 32,
-                  height: 32,
-                  margin: const EdgeInsets.only(right: 6),
+                  width: 34,
+                  height: 34,
+                  margin: const EdgeInsets.only(right: 7),
                   decoration: BoxDecoration(
-                    color: AppColors.timelineChipBg,
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.timelineInputBg,
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   alignment: Alignment.center,
                   child: SvgPicture.asset(
                     'assets/icons/ic_filter_tune.svg',
-                    width: 13.5,
-                    height: 13.5,
+                    width: 14,
+                    height: 14,
                   ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         SizedBox(
-          height: 30,
+          height: 34,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: filters.length,
@@ -104,7 +104,7 @@ class TimelineSearchFilterBar extends StatelessWidget {
               final isSelected = item.id == selectedFilterId;
               final bgColor = isSelected
                   ? AppColors.timelineOlive
-                  : AppColors.timelineCardBg;
+                  : AppColors.surfaceLight;
               final textColor = isSelected
                   ? Colors.white
                   : (item.isDangerText
@@ -115,10 +115,11 @@ class TimelineSearchFilterBar extends StatelessWidget {
 
               return GestureDetector(
                 onTap: () => onSelectFilter(item.id),
-                child: Container(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
                   padding: EdgeInsets.symmetric(
-                    horizontal: isSelected ? 14 : 12,
-                    vertical: 6,
+                    horizontal: isSelected ? 15 : 13,
+                    vertical: 7,
                   ),
                   decoration: BoxDecoration(
                     color: bgColor,
@@ -126,13 +127,6 @@ class TimelineSearchFilterBar extends StatelessWidget {
                     border: isSelected
                         ? null
                         : Border.all(color: AppColors.iceCardBorder, width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 1,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -146,14 +140,13 @@ class TimelineSearchFilterBar extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                         ),
-                        const SizedBox(width: 5),
+                        const SizedBox(width: 6),
                       ],
                       Text(
                         item.label,
                         style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.44,
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                           color: textColor,
                         ),
                       ),
@@ -168,4 +161,3 @@ class TimelineSearchFilterBar extends StatelessWidget {
     );
   }
 }
-

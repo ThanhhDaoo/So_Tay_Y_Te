@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 
-/// Lưới Bento 2x2 hiển thị các chỉ số sinh hiệu mới nhất.
+/// Lưới Bento 2x2 hiển thị các chỉ số sinh hiệu mới nhất theo Quy tắc 3 điểm dữ liệu:
+/// (1) Nhãn chỉ số, (2) Giá trị chính + đơn vị, (3) Trạng thái ngắn gọn 1 dòng.
 class TimelineVitalsBento extends StatelessWidget {
   const TimelineVitalsBento({
     super.key,
@@ -23,431 +25,242 @@ class TimelineVitalsBento extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasBp = bloodPressure != null && bloodPressure!.trim().isNotEmpty;
     final bpText = hasBp ? bloodPressure! : '--/--';
-    final bpNote = hasBp ? 'Chỉ số đo gần nhất' : 'Chưa đo';
-    final bpDotColor = hasBp ? AppColors.timelineOlive : AppColors.iceCardBorder;
+    final bpNote = hasBp ? 'Đo gần nhất' : 'Chưa ghi nhận';
 
     final hasHr = heartRate != null && heartRate!.trim().isNotEmpty;
     final hrText = hasHr ? heartRate! : '--';
-    final hrNote = hasHr ? 'Nhịp tim gần nhất' : 'Chưa đo';
+    final hrNote = hasHr ? 'Nhịp tim nghỉ' : 'Chưa ghi nhận';
 
     final hasSpo2 = spo2 != null && spo2!.trim().isNotEmpty;
     final spo2Text = hasSpo2 ? spo2! : '--';
-    final spo2Value = hasSpo2 ? ((double.tryParse(spo2!) ?? 99) / 100).clamp(0.0, 1.0) : 0.0;
+    final spo2Note = hasSpo2 ? 'Oxy máu ổn định' : 'Chưa ghi nhận';
 
     final hasBs = bloodSugar != null && bloodSugar!.trim().isNotEmpty;
     final bsText = hasBs ? bloodSugar! : '--';
-    final bsNote = hasBs ? 'FPG Ổn định' : 'Chưa đo';
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  SvgPicture.asset(
-                    'assets/icons/ic_vitals_pulse.svg',
-                    width: 15,
-                    height: 13.5,
+    final bsNote = hasBs ? 'Đường huyết đói' : 'Chưa ghi nhận';
+
+    return SectionContainer(
+      title: 'Sinh hiệu mới nhất',
+      iconAsset: 'assets/icons/ic_vitals_pulse.svg',
+      bottomSpacing: 0,
+      trailing: onViewReports != null
+          ? Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onViewReports,
+                borderRadius: BorderRadius.circular(999),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
                   ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Sinh hiệu mới nhất',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.iceTextNavy,
-                    ),
-                  ),
-                ],
-              ),
-              if (onViewReports != null)
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: onViewReports,
+                  decoration: BoxDecoration(
+                    color: AppColors.iceAccentCream,
                     borderRadius: BorderRadius.circular(999),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.iceAccentCream,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Xem báo cáo',
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.timelineOlive,
-                            ),
-                          ),
-                          SizedBox(width: 2),
-                          Icon(
-                            Icons.chevron_right,
-                            size: 13,
-                            color: AppColors.timelineOlive,
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
-                )
-              else
-                const Text(
-                  'Hôm nay, 08:30',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.44,
-                    color: AppColors.iceTextMuted,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Xem báo cáo',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.timelineOlive,
+                        ),
+                      ),
+                      SizedBox(width: 2),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 14,
+                        color: AppColors.timelineOlive,
+                      ),
+                    ],
                   ),
                 ),
+              ),
+            )
+          : null,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _VitalMetricTile(
+                  label: 'Huyết áp',
+                  iconAsset: 'assets/icons/ic_blood_pressure.svg',
+                  value: bpText,
+                  unit: 'mmHg',
+                  statusText: bpNote,
+                  isRecorded: hasBp,
+                  onTap: onViewReports,
+                ),
+              ),
+              const SizedBox(width: AppLayoutTokens.cardGap),
+              Expanded(
+                child: _VitalMetricTile(
+                  label: 'Nhịp tim',
+                  iconAsset: 'assets/icons/ic_heart_rate.svg',
+                  value: hrText,
+                  unit: 'bpm',
+                  statusText: hrNote,
+                  isRecorded: hasHr,
+                  onTap: onViewReports,
+                ),
+              ),
             ],
           ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _VitalsCard(
-                height: 122,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Huyết áp',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.iceTextSlate,
-                          ),
-                        ),
-                        SvgPicture.asset(
-                          'assets/icons/ic_blood_pressure.svg',
-                          width: 15,
-                          height: 13.5,
-                        ),
-                      ],
-                    ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          bpText,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.7,
-                            color: AppColors.iceTextNavy,
-                            height: 1.1,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'mmHg',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.44,
-                            color: AppColors.iceTextMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: bpDotColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Expanded(
-                          child: Text(
-                            bpNote,
-                            maxLines: 2,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: bpDotColor == AppColors.timelineOlive ? AppColors.timelineOlive : AppColors.iceTextMuted,
-                              height: 1.25,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+          const SizedBox(height: AppLayoutTokens.cardGap),
+          Row(
+            children: [
+              Expanded(
+                child: _VitalMetricTile(
+                  label: 'SpO2',
+                  iconAsset: 'assets/icons/ic_spo2_lungs.svg',
+                  value: spo2Text,
+                  unit: '%',
+                  statusText: spo2Note,
+                  isRecorded: hasSpo2,
+                  onTap: onViewReports,
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _VitalsCard(
-                height: 122,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Nhịp tim',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.iceTextSlate,
-                          ),
-                        ),
-                        SvgPicture.asset(
-                          'assets/icons/ic_heart_rate.svg',
-                          width: 15,
-                          height: 13.76,
-                        ),
-                      ],
-                    ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          hrText,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.7,
-                            color: AppColors.iceTextNavy,
-                            height: 1.1,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'bpm',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.44,
-                            color: AppColors.iceTextMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            hrNote,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.timelineTextWarm,
-                            ),
-                          ),
-                        ),
-                        if (hasHr) ...[
-                          const SizedBox(width: 4),
-                          SvgPicture.asset(
-                            'assets/icons/ic_ecg_mini_wave.svg',
-                            width: 40,
-                            height: 12,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
+              const SizedBox(width: AppLayoutTokens.cardGap),
+              Expanded(
+                child: _VitalMetricTile(
+                  label: 'Đường huyết',
+                  iconAsset: 'assets/icons/ic_blood_glucose.svg',
+                  value: bsText,
+                  unit: 'mg/dL',
+                  statusText: bsNote,
+                  isRecorded: hasBs,
+                  onTap: onViewReports,
                 ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _VitalsCard(
-                height: 106,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Flexible(
-                          child: Text(
-                            'SpO2 (Oxy máu)',
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.iceTextSlate,
-                            ),
-                          ),
-                        ),
-                        SvgPicture.asset(
-                          'assets/icons/ic_spo2_lungs.svg',
-                          width: 15,
-                          height: 12.75,
-                        ),
-                      ],
-                    ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          spo2Text,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.7,
-                            color: AppColors.iceTextNavy,
-                            height: 1.1,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          '%',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.44,
-                            color: AppColors.iceTextMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(
-                        value: spo2Value,
-                        minHeight: 6,
-                        backgroundColor: AppColors.timelineChipBg,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          AppColors.timelineOlive,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _VitalsCard(
-                height: 106,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Flexible(
-                          child: Text(
-                            'Đường huyết đói',
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.iceTextSlate,
-                            ),
-                          ),
-                        ),
-                        SvgPicture.asset(
-                          'assets/icons/ic_blood_glucose.svg',
-                          width: 12,
-                          height: 15,
-                        ),
-                      ],
-                    ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          bsText,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.7,
-                            color: AppColors.iceTextNavy,
-                            height: 1.1,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'mg/dL',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.44,
-                            color: AppColors.iceTextMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      bsNote,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.44,
-                        color: AppColors.timelineTextWarm,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _VitalsCard extends StatelessWidget {
-  final double height;
-  final Widget child;
+class _VitalMetricTile extends StatelessWidget {
+  final String label;
+  final String iconAsset;
+  final String value;
+  final String unit;
+  final String statusText;
+  final bool isRecorded;
+  final VoidCallback? onTap;
 
-  const _VitalsCard({
-    required this.height,
-    required this.child,
+  const _VitalMetricTile({
+    required this.label,
+    required this.iconAsset,
+    required this.value,
+    required this.unit,
+    required this.statusText,
+    required this.isRecorded,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.iceCardBorder, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.iceTextNavy.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return CleanCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Điểm 1: Nhãn chỉ số + Icon nhẹ
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.iceTextMuted,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              SvgPicture.asset(
+                iconAsset,
+                width: 14,
+                height: 14,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Điểm 2: Giá trị chính (Visual Anchor) + Đơn vị
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.6,
+                    color: isRecorded
+                        ? AppColors.iceTextNavy
+                        : AppColors.iceTextMuted,
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  unit,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.iceTextMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Điểm 3: Trạng thái ngắn gọn 1 dòng
+          Row(
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: isRecorded
+                      ? AppColors.timelineOlive
+                      : AppColors.iceCardBorder,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  statusText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: isRecorded ? FontWeight.w600 : FontWeight.w400,
+                    color: isRecorded
+                        ? AppColors.timelineOlive
+                        : AppColors.iceTextMuted,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
-      child: child,
     );
   }
 }
-

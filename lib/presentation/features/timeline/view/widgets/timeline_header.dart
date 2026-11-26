@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/services/user_session_manager.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/widgets/safe_avatar_image.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 
 /// Thanh tiêu đề kính mờ cố định phía trên của màn hình Dòng Thời Gian Bệnh Án.
 class TimelineHeader extends StatelessWidget {
@@ -22,8 +23,8 @@ class TimelineHeader extends StatelessWidget {
           padding: EdgeInsets.only(
             top: topPadding + 10,
             bottom: 10,
-            left: 16,
-            right: 16,
+            left: AppLayoutTokens.screenPadding,
+            right: AppLayoutTokens.screenPadding,
           ),
           decoration: BoxDecoration(
             color: AppColors.iceGlassSurface,
@@ -46,7 +47,7 @@ class TimelineHeader extends StatelessWidget {
                     height: 32,
                     fit: BoxFit.contain,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -65,7 +66,7 @@ class TimelineHeader extends StatelessWidget {
                         'Dòng Thời Gian',
                         style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.iceTextNavy,
                           height: 1.2,
                         ),
@@ -121,4 +122,3 @@ class TimelineHeader extends StatelessWidget {
     );
   }
 }
-
