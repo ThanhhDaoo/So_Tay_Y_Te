@@ -10,6 +10,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/input_validators.dart';
 import '../../../../domain/entities/user_account.dart';
+import '../../../common_widgets/layout/app_layout.dart';
 import '../../../routes/app_routes.dart';
 import '../viewmodel/register_state.dart';
 import '../viewmodel/register_viewmodel.dart';
@@ -35,6 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   late final RegisterViewModel _viewModel;
   StreamSubscription<AuthState>? _authStateSubscription;
   bool _isProcessingOAuth = false;
+  bool _isMedicalInfoExpanded = false;
 
   @override
   void initState() {
@@ -150,10 +152,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               final state = _viewModel.state;
               return SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(
-                  20,
+                  AppLayoutTokens.screenPadding,
                   topPadding + 60 + 20,
-                  20,
-                  28,
+                  AppLayoutTokens.screenPadding,
+                  32,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,115 +164,127 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       delay: const Duration(milliseconds: 60),
                       child: _buildTopAssuranceBlock(),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppLayoutTokens.sectionGap),
                     Form(
                       key: _viewModel.formKey,
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           AuthAnimatedEntrance(
                             delay: const Duration(milliseconds: 140),
-                            child: AuthTextField(
-                              label: 'Họ và tên chủ hồ sơ',
-                              isRequired: true,
-                              hintText: 'Nguyễn Văn An',
-                              prefixIconAsset: 'assets/icons/ic_user_badge.svg',
-                              controller: _viewModel.fullNameController,
-                              validator: InputValidators.validateFullName,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          AuthAnimatedEntrance(
-                            delay: const Duration(milliseconds: 200),
-                            child: AuthTextField(
-                              label: 'Số điện thoại hoặc Email',
-                              isRequired: true,
-                              hintText: '0912345678 hoặc ten@gmail.com',
-                              hintColor: AppColors.textHintAlt,
-                              prefixIconAsset:
-                                  'assets/icons/ic_contact_mail.svg',
-                              prefixIconWidth: 20,
-                              prefixIconHeight: 15,
-                              controller: _viewModel.contactController,
-                              validator: InputValidators.validateEmailOrPhone,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          AuthAnimatedEntrance(
-                            delay: const Duration(milliseconds: 230),
-                            child: _buildDemographicsRow(state),
-                          ),
-                          const SizedBox(height: 14),
-                          AuthAnimatedEntrance(
-                            delay: const Duration(milliseconds: 245),
-                            child: _buildGenderSelector(state.gender),
-                          ),
-                          const SizedBox(height: 16),
-                          AuthAnimatedEntrance(
-                            delay: const Duration(milliseconds: 260),
-                            child: Column(
-                              children: [
-                                AuthTextField(
-                                  label: 'Mật khẩu bảo mật',
-                                  isRequired: true,
-                                  trailingLabel: state.passwordStrength.label,
-                                  trailingLabelColor: AppColors.textWarmBrown,
-                                  hintText: 'Nhập mật khẩu tối thiểu 6 ký tự',
-                                  hintColor: AppColors.textHintAlt,
-                                  prefixIconAsset:
-                                      'assets/icons/ic_password_shield.svg',
-                                  prefixIconWidth: 13.33,
-                                  prefixIconHeight: 16.67,
-                                  controller: _viewModel.passwordController,
-                                  obscureText: state.obscurePassword,
-                                  onToggleObscure:
-                                      _viewModel.togglePasswordVisibility,
-                                  suffixIconAsset:
-                                      'assets/icons/ic_eye_toggle.svg',
-                                  suffixIconWidth: 26.33,
-                                  suffixIconHeight: 26.5,
-                                  onChanged: _viewModel.onPasswordChanged,
-                                  validator: InputValidators.validatePassword,
+                            child: SectionContainer(
+                              title: 'Thông tin tài khoản',
+                              subtitle: 'Các trường bắt buộc để bảo vệ két hồ sơ',
+                              icon: Icons.verified_user_outlined,
+                              bottomSpacing: AppLayoutTokens.sectionGap,
+                              child: CleanCard(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    AuthTextField(
+                                      label: 'Họ và tên chủ hồ sơ',
+                                      isRequired: true,
+                                      hintText: 'Nguyễn Văn An',
+                                      prefixIconAsset:
+                                          'assets/icons/ic_user_badge.svg',
+                                      controller: _viewModel.fullNameController,
+                                      validator:
+                                          InputValidators.validateFullName,
+                                    ),
+                                    const SizedBox(
+                                      height: AppLayoutTokens.formFieldGap,
+                                    ),
+                                    AuthTextField(
+                                      label: 'Số điện thoại hoặc Email',
+                                      isRequired: true,
+                                      hintText: '0912345678 hoặc ten@gmail.com',
+                                      hintColor: AppColors.textHintAlt,
+                                      prefixIconAsset:
+                                          'assets/icons/ic_contact_mail.svg',
+                                      prefixIconWidth: 20,
+                                      prefixIconHeight: 15,
+                                      controller: _viewModel.contactController,
+                                      validator:
+                                          InputValidators.validateEmailOrPhone,
+                                    ),
+                                    const SizedBox(
+                                      height: AppLayoutTokens.formFieldGap,
+                                    ),
+                                    AuthTextField(
+                                      label: 'Mật khẩu bảo mật',
+                                      isRequired: true,
+                                      trailingLabel:
+                                          state.passwordStrength.label,
+                                      trailingLabelColor:
+                                          AppColors.textWarmBrown,
+                                      hintText: 'Nhập mật khẩu tối thiểu 6 ký tự',
+                                      hintColor: AppColors.textHintAlt,
+                                      prefixIconAsset:
+                                          'assets/icons/ic_password_shield.svg',
+                                      prefixIconWidth: 13.33,
+                                      prefixIconHeight: 16.67,
+                                      controller: _viewModel.passwordController,
+                                      obscureText: state.obscurePassword,
+                                      onToggleObscure:
+                                          _viewModel.togglePasswordVisibility,
+                                      suffixIconAsset:
+                                          'assets/icons/ic_eye_toggle.svg',
+                                      suffixIconWidth: 26.33,
+                                      suffixIconHeight: 26.5,
+                                      onChanged: _viewModel.onPasswordChanged,
+                                      validator:
+                                          InputValidators.validatePassword,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    PasswordStrengthMeter(
+                                      strength: state.passwordStrength,
+                                    ),
+                                    const SizedBox(
+                                      height: AppLayoutTokens.formFieldGap,
+                                    ),
+                                    AuthTextField(
+                                      label: 'Xác nhận lại mật khẩu',
+                                      isRequired: true,
+                                      hintText: 'Nhập lại mật khẩu bảo mật',
+                                      hintColor: AppColors.textHintAlt,
+                                      prefixIconAsset:
+                                          'assets/icons/ic_lock_reset.svg',
+                                      controller:
+                                          _viewModel.confirmPasswordController,
+                                      obscureText: state.obscureConfirmPassword,
+                                      onToggleObscure: _viewModel
+                                          .toggleConfirmPasswordVisibility,
+                                      suffixIconAsset:
+                                          'assets/icons/ic_eye_toggle.svg',
+                                      suffixIconWidth: 26.33,
+                                      suffixIconHeight: 26.5,
+                                      validator: (val) {
+                                        if (val == null || val.isEmpty) {
+                                          return 'Vui lòng xác nhận mật khẩu';
+                                        }
+                                        if (val !=
+                                            _viewModel
+                                                .passwordController.text) {
+                                          return 'Mật khẩu xác nhận không khớp';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 8),
-                                PasswordStrengthMeter(
-                                  strength: state.passwordStrength,
-                                ),
-                              ],
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 16),
                           AuthAnimatedEntrance(
-                            delay: const Duration(milliseconds: 320),
-                            child: AuthTextField(
-                              label: 'Xác nhận lại mật khẩu',
-                              isRequired: true,
-                              hintText: 'Nhập lại mật khẩu bảo mật',
-                              hintColor: AppColors.textHintAlt,
-                              prefixIconAsset: 'assets/icons/ic_lock_reset.svg',
-                              controller: _viewModel.confirmPasswordController,
-                              obscureText: state.obscureConfirmPassword,
-                              onToggleObscure:
-                                  _viewModel.toggleConfirmPasswordVisibility,
-                              suffixIconAsset: 'assets/icons/ic_eye_toggle.svg',
-                              suffixIconWidth: 26.33,
-                              suffixIconHeight: 26.5,
-                              validator: (val) {
-                                if (val == null || val.isEmpty) {
-                                  return 'Vui lòng xác nhận mật khẩu';
-                                }
-                                if (val != _viewModel.passwordController.text) {
-                                  return 'Mật khẩu xác nhận không khớp';
-                                }
-                                return null;
-                              },
-                            ),
+                            delay: const Duration(milliseconds: 240),
+                            child: _buildOptionalMedicalCard(state),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: AppLayoutTokens.cardGap),
                     AuthAnimatedEntrance(
-                      delay: const Duration(milliseconds: 380),
+                      delay: const Duration(milliseconds: 340),
                       child: _buildSecurityOptionsCard(
                         enableBiometric: state.enableBiometric,
                         acceptedTerms: state.acceptedTerms,
@@ -281,12 +295,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
+                          horizontal: 14,
+                          vertical: 12,
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.secondary.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(
+                            AppLayoutTokens.innerRadius,
+                          ),
                           border: Border.all(color: AppColors.iceOlive),
                         ),
                         child: Row(
@@ -320,10 +336,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (state.errorMessage != null) ...[
                       const SizedBox(height: 12),
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(
+                            AppLayoutTokens.innerRadius,
+                          ),
                           border: Border.all(color: const Color(0xFFFCA5A5)),
                         ),
                         child: Column(
@@ -387,14 +405,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 18),
+                    const SizedBox(height: AppLayoutTokens.sectionGap),
                     AuthAnimatedEntrance(
-                      delay: const Duration(milliseconds: 440),
+                      delay: const Duration(milliseconds: 420),
                       child: _buildPrimaryCtaButton(state.isLoading),
                     ),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: AppLayoutTokens.sectionGap),
                     const AuthAnimatedEntrance(
-                      delay: Duration(milliseconds: 500),
+                      delay: Duration(milliseconds: 480),
                       child: AuthDivider(
                         text: 'HOẶC ĐĂNG KÝ NHANH',
                         uppercase: true,
@@ -403,17 +421,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 16),
                     AuthAnimatedEntrance(
-                      delay: const Duration(milliseconds: 560),
+                      delay: const Duration(milliseconds: 540),
                       child: _buildSocialButtons(state.isLoading),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: AppLayoutTokens.sectionGap),
                     const AuthAnimatedEntrance(
-                      delay: Duration(milliseconds: 620),
+                      delay: Duration(milliseconds: 600),
                       child: GuestMigrationNoticeCard(),
                     ),
                     const SizedBox(height: 20),
                     AuthAnimatedEntrance(
-                      delay: const Duration(milliseconds: 680),
+                      delay: const Duration(milliseconds: 660),
                       child: _buildSignInRedirect(),
                     ),
                   ],
@@ -426,6 +444,100 @@ class _RegisterScreenState extends State<RegisterScreen> {
             left: 0,
             right: 0,
             child: AuthHeader(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOptionalMedicalCard(RegisterState state) {
+    final dobText = _viewModel.dobController.text.trim();
+    final summaryParts = <String>[
+      state.gender,
+      'Nhóm máu ${state.bloodType}',
+      if (dobText.isNotEmpty) dobText,
+    ];
+
+    return CleanCard(
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isMedicalInfoExpanded = !_isMedicalInfoExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(AppLayoutTokens.innerRadius),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withValues(alpha: 0.6),
+                    borderRadius:
+                        BorderRadius.circular(AppLayoutTokens.innerRadius),
+                  ),
+                  child: const Icon(
+                    Icons.medical_information_outlined,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Hồ sơ y tế ban đầu (Tùy chọn)',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.labelSemiBold.copyWith(
+                          color: AppColors.textPrimaryLight,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _isMedicalInfoExpanded
+                            ? 'Có thể cập nhật chi tiết sau trong trang Hồ sơ'
+                            : summaryParts.join(' • '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  _isMedicalInfoExpanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  color: AppColors.textMuted,
+                  size: 22,
+                ),
+              ],
+            ),
+          ),
+          Visibility(
+            visible: _isMedicalInfoExpanded,
+            maintainState: true,
+            child: Padding(
+              padding: const EdgeInsets.only(top: AppLayoutTokens.formFieldGap),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildDemographicsRow(state),
+                  const SizedBox(height: AppLayoutTokens.formFieldGap),
+                  _buildGenderSelector(state.gender),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -598,32 +710,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const CloudBackendStatusBadge(),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppColors.secondary,
-              borderRadius: BorderRadius.circular(9999),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SvgPicture.asset(
-                  'assets/icons/ic_shield_lock.svg',
-                  width: 10.67,
-                  height: 14,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  'BẢO MẬT CHUẨN Y KHOA TOÀN CẦU',
-                  style: AppTypography.badge.copyWith(
-                    color: AppColors.textWarmBrownMuted,
-                    letterSpacing: 0.275,
-                  ),
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 12),
           Text(
             'Tạo Tài Khoản Mới',
@@ -632,9 +718,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Khởi tạo két bảo mật y tế cá nhân & gia đình được mã hóa đầu cuối an toàn.',
+            'Khởi tạo két hồ sơ y tế cá nhân & gia đình mã hóa đầu cuối.',
             textAlign: TextAlign.center,
-            style: AppTypography.bodyLarge,
+            style: AppTypography.bodyLarge.copyWith(
+              color: AppColors.textSecondaryLight,
+            ),
           ),
         ],
       ),
@@ -645,12 +733,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     required bool enableBiometric,
     required bool acceptedTerms,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCream,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return CleanCard(
+      backgroundColor: AppColors.surfaceCream,
+      borderColor: AppColors.secCardBorder,
+      boxShadow: const [],
+      padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       child: Column(
         children: [
           InkWell(
@@ -667,9 +754,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            'Kích hoạt sinh trắc học',
-                            style: AppTypography.labelSmallSemiBold,
+                          Flexible(
+                            child: Text(
+                              'Kích hoạt sinh trắc học',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.labelSmallSemiBold,
+                            ),
                           ),
                           const SizedBox(width: 6),
                           SvgPicture.asset(
@@ -696,7 +787,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           InkWell(
             onTap: () => _viewModel.toggleAcceptedTerms(!acceptedTerms),
             borderRadius: BorderRadius.circular(8),

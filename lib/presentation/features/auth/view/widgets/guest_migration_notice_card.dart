@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
+import '../../../../common_widgets/layout/app_layout.dart';
 
 class GuestMigrationNoticeCard extends StatelessWidget {
   const GuestMigrationNoticeCard({super.key});
@@ -9,17 +10,20 @@ class GuestMigrationNoticeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppLayoutTokens.cardPadding,
+        vertical: 12,
+      ),
       decoration: BoxDecoration(
         color: const Color(0x66F3DCBF),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppLayoutTokens.cardRadius),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 30,
-            height: 30,
+            width: 32,
+            height: 32,
             decoration: const BoxDecoration(
               color: AppColors.primaryPeach,
               shape: BoxShape.circle,
@@ -32,20 +36,25 @@ class GuestMigrationNoticeCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'Tự động đồng bộ dữ liệu Chế độ Khách',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTypography.labelSmallSemiBold.copyWith(
                     color: AppColors.textWarmBrown,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Hồ sơ lưu ngoại tuyến trên máy sẽ được gộp an toàn vào tài khoản mới.',
+                  'Hồ sơ lưu ngoại tuyến trên máy sẽ gộp an toàn vào tài khoản mới.',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textSecondaryLight,
                   ),
