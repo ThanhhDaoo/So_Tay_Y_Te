@@ -196,9 +196,18 @@ class _MedicalDossierScreenState extends State<MedicalDossierScreen> {
         final records = tState.filteredRecords;
 
         return Scaffold(
-          backgroundColor: AppColors.backgroundLight,
+          backgroundColor: AppColors.iceBackground,
+          extendBodyBehindAppBar: true,
+          appBar: MedVaultGlassAppBar(
+            title: 'Hồ Sơ & Bệnh Án',
+            trailing: SeniorLabeledIconButton(
+              icon: Icons.folder_outlined,
+              label: 'Tài liệu',
+              onTap: () => Navigator.pushNamed(context, AppRoutes.documents),
+            ),
+          ),
           body: RefreshIndicator(
-            color: AppColors.primary,
+            color: AppColors.iceOlive,
             onRefresh: () async {
               await _profileVm.loadCurrentUserProfile();
               await _timelineVm.loadRecords();
@@ -207,48 +216,11 @@ class _MedicalDossierScreenState extends State<MedicalDossierScreen> {
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 AppLayoutTokens.screenPadding,
-                topPad + 14,
+                topPad + 78,
                 AppLayoutTokens.screenPadding,
                 bottomPad + 140,
               ),
               children: [
-                // Thanh tiêu đề trang + Tiện ích Kho tài liệu / Thêm đợt khám
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Hồ Sơ & Bệnh Án',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.iceTextNavy,
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Tổng quan, tiền sử bệnh & lịch sử khám chữa bệnh',
-                            style: TextStyle(
-                              fontSize: 15.5,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.iceTextSlate,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SeniorLabeledIconButton(
-                      icon: Icons.folder_copy_rounded,
-                      label: 'Tài liệu',
-                      onTap: () =>
-                          Navigator.pushNamed(context, AppRoutes.documents),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
                 // Chuyển đổi nhanh thành viên gia đình nếu có nhiều hồ sơ
                 if (pState.familyMembers.length > 1) ...[
                   ProfileFamilySwitcher(
@@ -293,8 +265,8 @@ class _MedicalDossierScreenState extends State<MedicalDossierScreen> {
                                 label: 'Huyết áp gần nhất',
                                 value: tState.latestBloodPressure ?? '--/--',
                                 unit: 'mmHg',
-                                icon: Icons.monitor_heart_rounded,
-                                accent: const Color(0xFFC62828),
+                                icon: Icons.monitor_heart_outlined,
+                                accent: AppColors.reportTeal,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -303,8 +275,8 @@ class _MedicalDossierScreenState extends State<MedicalDossierScreen> {
                                 label: 'Nhịp tim gần nhất',
                                 value: tState.latestHeartRate ?? '--',
                                 unit: 'nhịp/phút',
-                                icon: Icons.favorite_rounded,
-                                accent: AppColors.accent,
+                                icon: Icons.favorite_border_rounded,
+                                accent: AppColors.textWarmBrown,
                               ),
                             ),
                           ],
@@ -317,8 +289,8 @@ class _MedicalDossierScreenState extends State<MedicalDossierScreen> {
                                 label: 'Nhóm máu',
                                 value: activeProfile.bloodType,
                                 unit: 'Hệ ABO/Rh',
-                                icon: Icons.water_drop_rounded,
-                                accent: const Color(0xFF2B6CB0),
+                                icon: Icons.water_drop_outlined,
+                                accent: AppColors.iceCriticalBadge,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -328,7 +300,7 @@ class _MedicalDossierScreenState extends State<MedicalDossierScreen> {
                                 value: activeProfile.bmiValue,
                                 unit: activeProfile.bmiStatusLabel,
                                 icon: Icons.accessibility_new_rounded,
-                                accent: AppColors.primary,
+                                accent: AppColors.iceOlive,
                               ),
                             ),
                           ],
@@ -712,10 +684,12 @@ class _VitalMetricBox extends StatelessWidget {
             child: Text(
               value,
               style: const TextStyle(
-                fontSize: 27,
-                fontWeight: FontWeight.w900,
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.6,
+                fontFeatures: [FontFeature.tabularFigures()],
                 color: AppColors.iceTextNavy,
-                height: 1.1,
+                height: 1.15,
               ),
             ),
           ),

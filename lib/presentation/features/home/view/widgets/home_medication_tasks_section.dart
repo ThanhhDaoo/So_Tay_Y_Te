@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../domain/entities/daily_health_task.dart';
 import '../../../../../domain/entities/medication_popup_reminder.dart';
 import '../../../../common_widgets/senior_40plus/senior_ui_kit.dart';
 
-/// Khối 3 trên Trang chủ:
-/// - Hiển thị vòng tròn & thanh tiến độ uống thuốc hôm nay (cỡ 26px - 30px, VD: Đã uống 2/3 cữ).
-/// - Nút mở nhanh Popup nhắc uống thuốc trực quan.
-/// - Danh sách việc cần làm trong ngày dạng thẻ lớn bấm tick hoàn thành trực tiếp.
+/// Khối Tiến độ thuốc & Việc cần làm hằng ngày với thiết kế phẳng, tinh gọn chuẩn y tế.
 class HomeMedicationTasksSection extends StatelessWidget {
   final TodayMedicationProgress medicationProgress;
   final List<DailyHealthTask> tasks;
@@ -24,70 +22,53 @@ class HomeMedicationTasksSection extends StatelessWidget {
     required this.onAddCustomTask,
   });
 
-  IconData _taskIcon(HealthTaskCategory cat) {
-    switch (cat) {
-      case HealthTaskCategory.bloodPressure:
-        return Icons.monitor_heart_rounded;
-      case HealthTaskCategory.medication:
-        return Icons.medication_rounded;
-      case HealthTaskCategory.exercise:
-        return Icons.directions_walk_rounded;
-      case HealthTaskCategory.hydration:
-        return Icons.local_drink_rounded;
-      case HealthTaskCategory.custom:
-        return Icons.task_alt_rounded;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final nextSlot = medicationProgress.nextPendingSlot;
 
     return SeniorSectionBlock(
       title: 'Tiến độ thuốc & Việc cần làm',
-      subtitle: 'Chạm trực tiếp vào từng thẻ bên dưới để đánh dấu hoàn thành',
-      icon: Icons.fact_check_rounded,
-      iconColor: SeniorTokens.callActionGreen,
-      iconBgColor: SeniorTokens.callActionGreenSoft,
+      subtitle: 'Chạm vào từng mục bên dưới để đánh dấu hoàn thành',
+      iconAsset: 'assets/icons/ic_rx_clock_schedule.svg',
+      iconColor: AppColors.iceOlive,
       trailing: SeniorLabeledIconButton(
-        icon: Icons.add_task_rounded,
+        icon: Icons.add_rounded,
         label: 'Thêm việc',
         onTap: onAddCustomTask,
       ),
       child: Column(
         children: [
-          // 1. Thẻ Vòng tròn & Thanh tiến độ uống thuốc hôm nay
+          // 1. Thẻ Tiến độ uống thuốc hôm nay
           SeniorCard(
             padding: const EdgeInsets.all(20),
-            backgroundColor: Colors.white,
-            borderColor: AppColors.rxBorder,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     SizedBox(
-                      width: 84,
-                      height: 84,
+                      width: 72,
+                      height: 72,
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
                           SizedBox(
-                            width: 84,
-                            height: 84,
+                            width: 72,
+                            height: 72,
                             child: CircularProgressIndicator(
                               value: medicationProgress.ratio,
-                              strokeWidth: 9,
-                              backgroundColor: AppColors.rxProgressTrack,
-                              color: SeniorTokens.callActionGreen,
+                              strokeWidth: 6.5,
+                              backgroundColor: AppColors.iceSecondaryCard,
+                              color: AppColors.reportTeal,
                               strokeCap: StrokeCap.round,
                             ),
                           ),
                           Text(
                             '${medicationProgress.percent}%',
                             style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              fontFeatures: [FontFeature.tabularFigures()],
                               color: AppColors.iceTextNavy,
                             ),
                           ),
@@ -100,34 +81,37 @@ class HomeMedicationTasksSection extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Tiến độ uống thuốc hôm nay',
+                            'LỊCH THUỐC HÔM NAY',
                             style: TextStyle(
-                              fontSize: 16.5,
+                              fontSize: 11.5,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.iceTextSlate,
+                              letterSpacing: 0.55,
+                              color: AppColors.iceTextMuted,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Đã uống ${medicationProgress.fractionLabel}',
                             style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
+                              fontSize: 26,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.6,
+                              fontFeatures: [FontFeature.tabularFigures()],
                               color: AppColors.iceTextNavy,
                               height: 1.15,
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 5),
                           Text(
                             nextSlot != null
-                                ? 'Sắp tới: ${nextSlot.slotTitle} (${nextSlot.timeLabel})'
-                                : 'Đã hoàn thành đủ tất cả các cữ thuốc hôm nay!',
+                                ? 'Cữ kế tiếp: ${nextSlot.slotTitle} • ${nextSlot.timeLabel}'
+                                : 'Đã hoàn thành đủ các cữ thuốc trong ngày',
                             style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
                               color: nextSlot != null
-                                  ? AppColors.accent
-                                  : SeniorTokens.callActionGreen,
+                                  ? AppColors.textWarmBrown
+                                  : AppColors.reportTeal,
                             ),
                           ),
                         ],
@@ -136,21 +120,11 @@ class HomeMedicationTasksSection extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    value: medicationProgress.ratio,
-                    minHeight: 12,
-                    backgroundColor: AppColors.rxProgressTrack,
-                    color: SeniorTokens.callActionGreen,
-                  ),
-                ),
-                const SizedBox(height: 16),
                 SeniorActionButton(
                   label: nextSlot != null
                       ? 'Mở nhắc uống thuốc (${nextSlot.slotTitle})'
-                      : 'Xem lại đơn thuốc đã uống hôm nay',
-                  icon: Icons.notifications_active_rounded,
+                      : 'Xem lại đơn thuốc hôm nay',
+                  icon: Icons.notifications_none_rounded,
                   variant: nextSlot != null
                       ? SeniorButtonVariant.callNow
                       : SeniorButtonVariant.secondaryOutline,
@@ -159,31 +133,40 @@ class HomeMedicationTasksSection extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
-          // 2. Danh sách Việc cần làm trong ngày dạng thẻ lớn bấm tick trực tiếp
-          for (int i = 0; i < tasks.length; i++) ...[
-            _SeniorTaskCard(
-              task: tasks[i],
-              categoryIcon: _taskIcon(tasks[i].category),
-              onTap: () => onToggleTask(tasks[i]),
+          // 2. Danh sách checklist việc cần làm gộp gọn trong 1 thẻ sạch sẽ (chia bằng đường kẻ mảnh)
+          if (tasks.isNotEmpty)
+            SeniorCard(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Column(
+                children: [
+                  for (int i = 0; i < tasks.length; i++) ...[
+                    _CleanChecklistRow(
+                      task: tasks[i],
+                      onTap: () => onToggleTask(tasks[i]),
+                    ),
+                    if (i < tasks.length - 1)
+                      const Padding(
+                        padding: EdgeInsets.only(left: 60, right: 18),
+                        child: Divider(height: 1, color: AppColors.divider),
+                      ),
+                  ],
+                ],
+              ),
             ),
-            if (i < tasks.length - 1) const SizedBox(height: 12),
-          ],
         ],
       ),
     );
   }
 }
 
-class _SeniorTaskCard extends StatelessWidget {
+class _CleanChecklistRow extends StatelessWidget {
   final DailyHealthTask task;
-  final IconData categoryIcon;
   final VoidCallback onTap;
 
-  const _SeniorTaskCard({
+  const _CleanChecklistRow({
     required this.task,
-    required this.categoryIcon,
     required this.onTap,
   });
 
@@ -191,109 +174,97 @@ class _SeniorTaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final done = task.isCompleted;
 
-    return SeniorCard(
+    return InkWell(
       onTap: onTap,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      backgroundColor:
-          done ? SeniorTokens.callActionGreenSoft.withValues(alpha: 0.6) : Colors.white,
-      borderColor: done
-          ? SeniorTokens.callActionGreen.withValues(alpha: 0.5)
-          : AppColors.iceCardBorder,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Ô tick tròn lớn 34px dễ nhìn & dễ bấm cho người cao tuổi
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: done ? SeniorTokens.callActionGreen : Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: done
-                    ? SeniorTokens.callActionGreen
-                    : AppColors.checkboxBorder,
-                width: 2.2,
-              ),
-            ),
-            child: done
-                ? const Icon(Icons.check_rounded, size: 24, color: Colors.white)
-                : null,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      categoryIcon,
-                      size: 22,
-                      color: done
-                          ? SeniorTokens.callActionGreen
-                          : AppColors.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    if (task.timeLabel != null && task.timeLabel!.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceCream,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          task.timeLabel!,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.accent,
-                          ),
-                        ),
-                      ),
-                    const SizedBox(width: 8),
-                    Text(
-                      done ? 'Đã xong' : 'Cần làm',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: done
-                            ? SeniorTokens.callActionGreen
-                            : AppColors.iceTextSlate,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  task.title,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.iceTextNavy,
-                    decoration: done ? TextDecoration.lineThrough : null,
-                    height: 1.25,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: done ? AppColors.reportTeal : Colors.transparent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: done
+                        ? AppColors.reportTeal
+                        : const Color(0xFFB5B8AE),
+                    width: 1.8,
                   ),
                 ),
-                if (task.subtitle != null && task.subtitle!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                alignment: Alignment.center,
+                child: done
+                    ? SvgPicture.asset(
+                        'assets/icons/ic_check.svg',
+                        width: 13,
+                        height: 13,
+                        colorFilter: const ColorFilter.mode(
+                          Colors.white,
+                          BlendMode.srcIn,
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    task.subtitle!,
-                    style: const TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.iceTextSlate,
+                    task.title,
+                    style: TextStyle(
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.15,
+                      color: done
+                          ? AppColors.iceTextMuted
+                          : AppColors.iceTextNavy,
+                      decoration: done ? TextDecoration.lineThrough : null,
                       height: 1.3,
                     ),
                   ),
+                  if (task.subtitle != null && task.subtitle!.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      task.subtitle!,
+                      style: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.iceTextMuted,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+            if (task.timeLabel != null && task.timeLabel!.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.iceSecondaryCard,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  task.timeLabel!,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                    color: AppColors.iceOliveDark,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

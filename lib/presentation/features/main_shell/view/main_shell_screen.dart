@@ -93,8 +93,8 @@ class _FloatingAssistantButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 52),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+          constraints: const BoxConstraints(minHeight: 46),
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
@@ -107,12 +107,12 @@ class _FloatingAssistantButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: const Color(0xFFD8B278),
-              width: 1.3,
+              width: 1.1,
             ),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x3D1E241B),
-                blurRadius: 14,
+                color: Color(0x331E241B),
+                blurRadius: 12,
                 offset: Offset(0, 4),
               ),
             ],
@@ -121,18 +121,18 @@ class _FloatingAssistantButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.support_agent_rounded,
+                Icons.chat_bubble_outline_rounded,
                 color: Color(0xFFFFE0A3),
-                size: 26,
+                size: 19,
               ),
-              SizedBox(width: 8),
+              SizedBox(width: 7),
               Text(
-                'Hỏi Trợ lý Y tế',
+                'Trợ lý Y tế',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.2,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.1,
                 ),
               ),
             ],

@@ -178,6 +178,7 @@ class _BloodPressureScanScreenState extends State<BloodPressureScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topPad = MediaQuery.paddingOf(context).top;
     final bottomPad = MediaQuery.paddingOf(context).bottom;
     final eval = DailyVitalLog(
       id: 'preview',
@@ -190,32 +191,16 @@ class _BloodPressureScanScreenState extends State<BloodPressureScanScreen> {
     );
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
-      appBar: AppBar(
-        backgroundColor: AppColors.backgroundLight,
-        surfaceTintColor: Colors.transparent,
-        leadingWidth: 146,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
-          child: SeniorLabeledIconButton(
-            icon: Icons.arrow_back_rounded,
-            label: 'Quay lại',
-            onTap: () => Navigator.pop(context),
-          ),
-        ),
-        title: const Text(
-          'Chụp Quét Chỉ Số Y Tế',
-          style: TextStyle(
-            fontSize: 20.5,
-            fontWeight: FontWeight.w800,
-            color: AppColors.iceTextNavy,
-          ),
-        ),
+      backgroundColor: AppColors.iceBackground,
+      extendBodyBehindAppBar: true,
+      appBar: MedVaultGlassAppBar(
+        title: 'Chụp Quét Chỉ Số',
+        onBack: () => Navigator.pop(context),
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           AppLayoutTokens.screenPadding,
-          12,
+          topPad + 76,
           AppLayoutTokens.screenPadding,
           bottomPad + 40,
         ),
@@ -277,30 +262,28 @@ class _BloodPressureScanScreenState extends State<BloodPressureScanScreen> {
               // Minh họa trực quan màn hình máy đo huyết áp điện tử
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEAF2EC),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.4),
-                    width: 2,
-                  ),
+                  color: AppColors.iceMetricBox,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.iceCardBorder),
                 ),
                 child: const Column(
                   children: [
                     Icon(
-                      Icons.document_scanner_rounded,
-                      size: 48,
-                      color: AppColors.primary,
+                      Icons.document_scanner_outlined,
+                      size: 38,
+                      color: AppColors.iceOlive,
                     ),
                     SizedBox(height: 10),
                     Text(
                       'SYS 125  •  DIA 80  •  PUL 72',
                       style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: [FontFeature.tabularFigures()],
                         color: AppColors.iceTextNavy,
-                        letterSpacing: 0.6,
+                        letterSpacing: 0.2,
                       ),
                     ),
                     SizedBox(height: 6),
@@ -308,30 +291,30 @@ class _BloodPressureScanScreenState extends State<BloodPressureScanScreen> {
                       'Hướng camera thẳng vào màn hình máy đo huyết áp, tránh bóng đèn chói lóa.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 16.5,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w400,
                         color: AppColors.iceTextSlate,
-                        height: 1.35,
+                        height: 1.4,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
               SeniorActionButton(
                 label: 'Mở Camera chụp máy đo huyết áp',
-                icon: Icons.camera_alt_rounded,
-                variant: SeniorButtonVariant.callNow,
-                minHeight: 58,
+                icon: Icons.camera_alt_outlined,
+                variant: SeniorButtonVariant.primary,
+                minHeight: 54,
                 onPressed: () => _captureAndRecognize(ImageSource.camera),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
               SeniorActionButton(
                 label: 'Chọn ảnh máy đo từ Thư viện',
-                icon: Icons.photo_library_rounded,
-                variant: SeniorButtonVariant.primary,
-                minHeight: 56,
+                icon: Icons.photo_library_outlined,
+                variant: SeniorButtonVariant.secondaryOutline,
+                minHeight: 52,
                 onPressed: () => _captureAndRecognize(ImageSource.gallery),
               ),
             ],
@@ -449,27 +432,27 @@ class _BloodPressureScanScreenState extends State<BloodPressureScanScreen> {
                 value: _sys,
                 min: 70,
                 max: 250,
-                accentColor: const Color(0xFFB71C1C),
+                accentColor: AppColors.iceTextNavy,
                 onChanged: (v) => setState(() => _sys = v),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               SeniorNumberStepperField(
                 label: 'Tâm trương (Số dưới - DIA)',
                 unit: 'mmHg',
                 value: _dia,
                 min: 40,
                 max: 150,
-                accentColor: AppColors.primary,
+                accentColor: AppColors.iceOliveDark,
                 onChanged: (v) => setState(() => _dia = v),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               SeniorNumberStepperField(
                 label: 'Nhịp tim (Mạch - PULSE)',
                 unit: 'nhịp/phút',
                 value: _pulse,
                 min: 35,
                 max: 190,
-                accentColor: AppColors.accent,
+                accentColor: AppColors.textWarmBrown,
                 onChanged: (v) => setState(() => _pulse = v),
               ),
               const SizedBox(height: 16),

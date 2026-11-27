@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/health_video.dart';
@@ -6,9 +7,6 @@ import '../../../common_widgets/senior_40plus/senior_ui_kit.dart';
 import '../viewmodel/health_videos_viewmodel.dart';
 import 'video_player_detail_screen.dart';
 
-/// Trang Video sức khỏe chuẩn 40+:
-/// Hiển thị Thumbnail lớn, Tiêu đề to, Thời lượng, Phân loại bài tập.
-/// Bấm vào mở Trình phát video trực quan.
 class HealthVideosScreen extends StatefulWidget {
   final HealthVideosViewModel? viewModel;
 
@@ -53,6 +51,7 @@ class _HealthVideosScreenState extends State<HealthVideosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topPad = MediaQuery.paddingOf(context).top;
     final bottomPad = MediaQuery.paddingOf(context).bottom;
 
     return ListenableBuilder(
@@ -61,47 +60,22 @@ class _HealthVideosScreenState extends State<HealthVideosScreen> {
         final videos = _viewModel.videos;
 
         return Scaffold(
-          backgroundColor: AppColors.backgroundLight,
-          appBar: AppBar(
-            backgroundColor: AppColors.backgroundLight,
-            surfaceTintColor: Colors.transparent,
-            leadingWidth: 146,
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
-              child: SeniorLabeledIconButton(
-                icon: Icons.arrow_back_rounded,
-                label: 'Quay lại',
-                onTap: () => Navigator.pop(context),
-              ),
-            ),
-            title: const Text(
-              'Video Sức Khỏe',
-              style: TextStyle(
-                fontSize: 21,
-                fontWeight: FontWeight.w800,
-                color: AppColors.iceTextNavy,
-              ),
-            ),
+          backgroundColor: AppColors.iceBackground,
+          extendBodyBehindAppBar: true,
+          appBar: MedVaultGlassAppBar(
+            title: 'Video Sức Khỏe',
+            onBack: () => Navigator.pop(context),
           ),
           body: ListView(
             padding: EdgeInsets.fromLTRB(
               AppLayoutTokens.screenPadding,
-              12,
+              topPad + 76,
               AppLayoutTokens.screenPadding,
               bottomPad + 36,
             ),
             children: [
-              const Text(
-                'Chọn nhóm bài tập phù hợp:',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.iceTextNavy,
-                ),
-              ),
-              const SizedBox(height: 10),
               SizedBox(
-                height: 50,
+                height: 44,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: HealthVideosViewModel.categories.length,
@@ -111,18 +85,24 @@ class _HealthVideosScreenState extends State<HealthVideosScreen> {
                     final selected = cat == _viewModel.selectedCategory;
                     return ChoiceChip(
                       selected: selected,
-                      selectedColor: AppColors.primary,
+                      showCheckmark: false,
+                      selectedColor: AppColors.icePrimaryCall,
                       backgroundColor: Colors.white,
+                      side: BorderSide(
+                        color: selected
+                            ? AppColors.icePrimaryCall
+                            : AppColors.iceCardBorder,
+                      ),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
+                        horizontal: 13,
+                        vertical: 8,
                       ),
                       onSelected: (_) => _viewModel.selectCategory(cat),
                       label: Text(
                         cat,
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
                           color:
                               selected ? Colors.white : AppColors.iceTextNavy,
                         ),
@@ -131,21 +111,23 @@ class _HealthVideosScreenState extends State<HealthVideosScreen> {
                   },
                 ),
               ),
-              const SizedBox(height: SeniorTokens.sectionGap),
+              const SizedBox(height: 20),
 
               if (_viewModel.isLoading)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppColors.iceOlive),
+                  ),
                 )
               else
                 for (int i = 0; i < videos.length; i++) ...[
-                  _HealthVideoBigCard(
+                  _HealthVideoEditorialCard(
                     video: videos[i],
                     onPlay: () => _openVideoPlayer(videos[i]),
                     onToggleSave: () => _viewModel.toggleSave(videos[i]),
                   ),
-                  if (i < videos.length - 1) const SizedBox(height: 22),
+                  if (i < videos.length - 1) const SizedBox(height: 18),
                 ],
             ],
           ),
@@ -155,12 +137,12 @@ class _HealthVideosScreenState extends State<HealthVideosScreen> {
   }
 }
 
-class _HealthVideoBigCard extends StatelessWidget {
+class _HealthVideoEditorialCard extends StatelessWidget {
   final HealthVideo video;
   final VoidCallback onPlay;
   final VoidCallback onToggleSave;
 
-  const _HealthVideoBigCard({
+  const _HealthVideoEditorialCard({
     required this.video,
     required this.onPlay,
     required this.onToggleSave,
@@ -170,15 +152,14 @@ class _HealthVideoBigCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SeniorCard(
       onTap: onPlay,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Thumbnail lớn 196px kèm nút Play trực quan ở giữa & nhãn Thời lượng
           ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(13),
             child: SizedBox(
-              height: 196,
+              height: 188,
               width: double.infinity,
               child: Stack(
                 fit: StackFit.expand,
@@ -186,108 +167,100 @@ class _HealthVideoBigCard extends StatelessWidget {
                   if (video.thumbnailUrl.startsWith('assets/'))
                     Image.asset(video.thumbnailUrl, fit: BoxFit.cover)
                   else
-                    Container(color: const Color(0xFF2D3B32)),
+                    Container(color: AppColors.iceBannerEnd),
                   Container(
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Color(0x33000000),
-                          Color(0x99000000),
+                          Color(0x26000000),
+                          Color(0x99161A14),
                         ],
                       ),
                     ),
                   ),
-                  // Nhãn Phân loại bài tập góc trái trên
                   Positioned(
                     top: 12,
                     left: 12,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                        horizontal: 10,
+                        vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
+                        color: Colors.black.withValues(alpha: 0.55),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
                         video.category,
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w800,
+                          color: AppColors.iceAccentCream,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
-                  // Nhãn Thời lượng góc phải dưới
                   Positioned(
                     bottom: 12,
                     right: 12,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                        horizontal: 10,
+                        vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.78),
-                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.black.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.schedule_rounded,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            video.durationLabel,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        video.durationLabel,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                  // Nút Play lớn chính giữa luôn kèm chữ tiếng Việt
                   Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: SeniorTokens.callActionGreen.withValues(
-                          alpha: 0.94,
-                        ),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.play_circle_fill_rounded,
-                            color: Colors.white,
-                            size: 32,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 10,
                           ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Bấm phát video',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16.5,
-                              fontWeight: FontWeight.w800,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.22),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.5),
                             ),
                           ),
-                        ],
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.play_arrow_rounded,
+                                color: Colors.white,
+                                size: 26,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                'Xem hướng dẫn',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -295,66 +268,52 @@ class _HealthVideoBigCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-
-          // Tiêu đề to rõ
+          const SizedBox(height: 14),
           Text(
             video.title,
             style: const TextStyle(
-              fontSize: 19.5,
-              fontWeight: FontWeight.w800,
+              fontSize: 18.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.25,
               color: AppColors.iceTextNavy,
               height: 1.3,
             ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(
-                Icons.person_pin_rounded,
-                size: 22,
-                color: AppColors.primary,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  video.instructorName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.iceTextSlate,
-                  ),
-                ),
-              ),
-            ],
+          const SizedBox(height: 6),
+          Text(
+            video.instructorName,
+            style: const TextStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textWarmBrown,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             video.description,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 15.5,
               color: AppColors.iceTextSlate,
-              height: 1.35,
+              height: 1.4,
             ),
           ),
-          const SizedBox(height: 16),
-
+          const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
                 child: SeniorActionButton(
                   label: 'Mở bài tập này',
-                  icon: Icons.play_arrow_rounded,
-                  variant: SeniorButtonVariant.callNow,
+                  icon: Icons.play_circle_outline_rounded,
+                  variant: SeniorButtonVariant.primary,
                   onPressed: onPlay,
                 ),
               ),
               const SizedBox(width: 10),
               SeniorLabeledIconButton(
                 icon: video.isSaved
-                    ? Icons.bookmark_added_rounded
+                    ? Icons.bookmark_rounded
                     : Icons.bookmark_border_rounded,
                 label: video.isSaved ? 'Đã lưu' : 'Lưu lại',
                 onTap: onToggleSave,

@@ -104,6 +104,7 @@ class _VideoPlayerDetailScreenState extends State<VideoPlayerDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topPad = MediaQuery.paddingOf(context).top;
     final bottomPad = MediaQuery.paddingOf(context).bottom;
     final v = widget.video;
     final ratio = (_elapsedSeconds / _totalSeconds).clamp(0.0, 1.0);
@@ -112,32 +113,16 @@ class _VideoPlayerDetailScreenState extends State<VideoPlayerDetailScreen> {
         : v.description;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
-      appBar: AppBar(
-        backgroundColor: AppColors.backgroundLight,
-        surfaceTintColor: Colors.transparent,
-        leadingWidth: 146,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
-          child: SeniorLabeledIconButton(
-            icon: Icons.arrow_back_rounded,
-            label: 'Quay lại',
-            onTap: () => Navigator.pop(context),
-          ),
-        ),
-        title: const Text(
-          'Trình Phát Bài Tập',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: AppColors.iceTextNavy,
-          ),
-        ),
+      backgroundColor: AppColors.iceBackground,
+      extendBodyBehindAppBar: true,
+      appBar: MedVaultGlassAppBar(
+        title: 'Trình Phát Bài Tập',
+        onBack: () => Navigator.pop(context),
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           AppLayoutTokens.screenPadding,
-          12,
+          topPad + 76,
           AppLayoutTokens.screenPadding,
           bottomPad + 36,
         ),

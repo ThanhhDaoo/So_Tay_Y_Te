@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../common_widgets/layout/app_layout_tokens.dart';
+import '../../../common_widgets/layout/app_layout.dart';
 import '../../../common_widgets/senior_40plus/senior_ui_kit.dart';
 import '../../../routes/app_routes.dart';
 import '../viewmodel/home_state.dart';
@@ -11,13 +12,6 @@ import 'widgets/home_user_time_header.dart';
 import 'widgets/manual_blood_pressure_sheet.dart';
 import 'widgets/medication_reminder_popup.dart';
 
-/// Trang Chủ mới (Home Screen) chuẩn người trung niên & cao tuổi (40+):
-/// Sắp xếp đúng 5 khối từ trên xuống:
-/// 1. Header thông tin & thời gian (Ngày, thứ, giờ + Họ tên, Tuổi, Giới tính + ảnh/icon giới tính).
-/// 2. Khối Huyết áp hằng ngày (Ưu tiên số 1: Hôm qua vs Hôm nay + Cập nhật + Chụp Scan).
-/// 3. Khối Việc cần làm & Tiến độ uống thuốc + Popup nhắc uống thuốc trực quan.
-/// 4. Khối Tổng quan sức khỏe.
-/// 5. Lưới Tiện ích sức khỏe (Big Action Cards: Hồ sơ bệnh án, Bác sĩ của tôi, Video sức khỏe, Dinh dưỡng & TPCN).
 class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onSelectMainTab;
   final HomeViewModel? viewModel;
@@ -69,8 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content: Text(msg, style: const TextStyle(fontSize: 16)),
-            backgroundColor: AppColors.primary,
+            content: Text(msg, style: const TextStyle(fontSize: 15.5)),
+            backgroundColor: AppColors.iceOlive,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -117,10 +111,15 @@ class _HomeScreenState extends State<HomeScreen> {
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.iceBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: const Text(
-          'Thêm Việc Cần Làm Hôm Nay',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          'Thêm Việc Cần Làm',
+          style: TextStyle(
+            fontSize: 19,
+            fontWeight: FontWeight.w700,
+            color: AppColors.iceTextNavy,
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -128,22 +127,26 @@ class _HomeScreenState extends State<HomeScreen> {
             TextField(
               controller: titleCtrl,
               autofocus: true,
-              style: const TextStyle(fontSize: 17),
+              style: const TextStyle(fontSize: 16.5),
               decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white,
                 labelText: 'Tên công việc (VD: Đo đường huyết)',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: timeCtrl,
-              style: const TextStyle(fontSize: 17),
+              style: const TextStyle(fontSize: 16.5),
               decoration: InputDecoration(
-                labelText: 'Khung giờ nhắc (VD: 09:00)',
+                filled: true,
+                fillColor: Colors.white,
+                labelText: 'Giờ nhắc (VD: 09:00)',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
@@ -152,13 +155,19 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy', style: TextStyle(fontSize: 17)),
+            child: const Text(
+              'Hủy',
+              style: TextStyle(fontSize: 16, color: AppColors.iceTextSlate),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: AppColors.icePrimaryCall,
               foregroundColor: Colors.white,
-              minimumSize: const Size(110, 50),
+              minimumSize: const Size(104, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(11),
+              ),
             ),
             onPressed: () {
               final title = titleCtrl.text.trim();
@@ -168,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             child: const Text(
               'Thêm việc',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -187,19 +196,23 @@ class _HomeScreenState extends State<HomeScreen> {
         final state = _viewModel.state;
 
         return Scaffold(
-          backgroundColor: AppColors.backgroundLight,
+          backgroundColor: AppColors.iceBackground,
+          extendBodyBehindAppBar: true,
+          appBar: const MedVaultGlassAppBar(
+            title: 'Trang Chủ Sức Khỏe',
+          ),
           body: RefreshIndicator(
-            color: AppColors.primary,
+            color: AppColors.iceOlive,
             onRefresh: _viewModel.loadDashboard,
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 AppLayoutTokens.screenPadding,
-                topPad + 14,
+                topPad + 78,
                 AppLayoutTokens.screenPadding,
-                bottomPad + 128,
+                bottomPad + 132,
               ),
               children: [
-                // KHỐI 1: Header thông tin & thời gian
+                // KHỐI 1: Header thông tin bệnh nhân & thời gian thực
                 HomeUserTimeHeader(
                   fullName: state.fullName,
                   ageLabel: state.ageLabel,
@@ -254,12 +267,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 // KHỐI 4: Tổng quan sức khỏe chung
                 _buildHealthOverviewBlock(state.healthOverview),
 
-                // KHỐI 5: Lưới Tiện ích sức khỏe (Big Action Cards 2x2)
+                // KHỐI 5: Lưới Tiện ích sức khỏe (Big Action Cards đồng bộ tông Olive-Cream)
                 SeniorSectionBlock(
-                  title: 'Tiện ích chăm sóc sức khỏe',
-                  subtitle: 'Chạm vào thẻ lớn để mở từng chuyên mục',
-                  icon: Icons.grid_view_rounded,
-                  iconColor: AppColors.primary,
+                  title: 'Danh mục chuyên sâu',
+                  subtitle: 'Chạm vào từng mục để tra cứu và theo dõi',
+                  icon: Icons.auto_awesome_mosaic_outlined,
+                  iconAsset: 'assets/icons/ic_doctor_bag.svg',
+                  iconColor: AppColors.iceOlive,
                   bottomSpacing: 0,
                   child: Column(
                     children: [
@@ -270,25 +284,30 @@ class _HomeScreenState extends State<HomeScreen> {
                             Expanded(
                               child: SeniorBigGridCard(
                                 title: 'Hồ sơ bệnh án',
-                                subtitle: 'Tiền sử, lưu ý đặc biệt & lịch sử khám',
-                                icon: Icons.assignment_rounded,
-                                accentColor: const Color(0xFF2B6CB0),
+                                subtitle: 'Tiền sử, lưu ý đặc biệt & đợt khám',
+                                icon: Icons.assignment_outlined,
+                                svgAsset: 'assets/icons/ic_timeline_history.svg',
+                                accentColor: AppColors.iceOliveDark,
                                 onTap: () {
                                   if (widget.onSelectMainTab != null) {
                                     widget.onSelectMainTab!(1);
                                   } else {
-                                    Navigator.pushNamed(context, AppRoutes.timeline);
+                                    Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.timeline,
+                                    );
                                   }
                                 },
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: SeniorBigGridCard(
                                 title: 'Bác sĩ của tôi',
-                                subtitle: 'Danh bạ bác sĩ từng khám & gọi ngay',
-                                icon: Icons.medical_services_rounded,
-                                accentColor: SeniorTokens.callActionGreen,
+                                subtitle: 'Danh bạ bác sĩ khám & gọi trực tiếp',
+                                icon: Icons.medical_services_outlined,
+                                svgAsset: 'assets/icons/ic_doctor_bag.svg',
+                                accentColor: AppColors.reportTeal,
                                 onTap: () => Navigator.pushNamed(
                                   context,
                                   AppRoutes.myDoctors,
@@ -298,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       IntrinsicHeight(
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -306,22 +325,22 @@ class _HomeScreenState extends State<HomeScreen> {
                             Expanded(
                               child: SeniorBigGridCard(
                                 title: 'Video sức khỏe',
-                                subtitle: 'Bài tập dưỡng sinh, khớp gối & hơi thở',
-                                icon: Icons.ondemand_video_rounded,
-                                accentColor: const Color(0xFFC05621),
+                                subtitle: 'Bài tập dưỡng sinh, khớp gối & thở',
+                                icon: Icons.play_circle_outline_rounded,
+                                accentColor: AppColors.textWarmBrown,
                                 onTap: () => Navigator.pushNamed(
                                   context,
                                   AppRoutes.healthVideos,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: SeniorBigGridCard(
                                 title: 'Dinh dưỡng & Thực phẩm chức năng',
-                                subtitle: 'Món nên ăn, nên kiêng & thuốc bổ',
-                                icon: Icons.restaurant_rounded,
-                                accentColor: const Color(0xFF6B46C1),
+                                subtitle: 'Thực đơn nên ăn, nên kiêng & thuốc bổ',
+                                icon: Icons.spa_outlined,
+                                accentColor: AppColors.iceOlive,
                                 onTap: () => Navigator.pushNamed(
                                   context,
                                   AppRoutes.nutritionSupplements,
@@ -345,11 +364,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHealthOverviewBlock(HomeHealthOverviewSummary summary) {
     return SeniorSectionBlock(
       title: 'Tổng quan sức khỏe',
-      subtitle: 'Tóm tắt thể trạng & bệnh lý nền đang theo dõi',
-      icon: Icons.favorite_border_rounded,
-      iconColor: AppColors.accent,
+      subtitle: 'Hồ sơ sinh trắc & bệnh lý đang theo dõi',
+      iconAsset: 'assets/icons/ic_vitals_pulse.svg',
+      iconColor: AppColors.iceOlive,
       trailing: SeniorLabeledIconButton(
-        icon: Icons.bar_chart_rounded,
+        icon: Icons.insights_rounded,
         label: 'Biểu đồ',
         onTap: () => Navigator.pushNamed(context, AppRoutes.vitalReports),
       ),
@@ -361,163 +380,125 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               children: [
                 Expanded(
-                  child: _OverviewMetricTile(
-                    icon: Icons.water_drop_rounded,
-                    iconColor: const Color(0xFFC62828),
-                    label: 'Nhóm máu',
-                    value: summary.bloodType,
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.iceMetricBox,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'NHÓM MÁU',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                            color: AppColors.iceTextMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          summary.bloodType,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.iceTextNavy,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _OverviewMetricTile(
-                    icon: Icons.accessibility_new_rounded,
-                    iconColor: AppColors.primary,
-                    label: 'Chỉ số thể trạng',
-                    value: summary.bmiStatusText,
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.iceMetricBox,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'THỂ TRẠNG',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                            color: AppColors.iceTextMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          summary.bmiStatusText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.iceTextNavy,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 14),
-            _OverviewTextRow(
-              icon: Icons.straighten_rounded,
-              title: 'Chiều cao & Cân nặng:',
-              content: summary.heightWeightText,
+            KeyValueRow(
+              label: 'Chiều cao • Cân nặng',
+              value: summary.heightWeightText,
             ),
-            const SizedBox(height: 10),
-            _OverviewTextRow(
-              icon: Icons.healing_rounded,
-              title: 'Bệnh nền theo dõi:',
-              content: summary.chronicConditions.isNotEmpty
+            KeyValueRow(
+              label: 'Bệnh nền theo dõi',
+              value: summary.chronicConditions.isNotEmpty
                   ? summary.chronicConditions.join(', ')
-                  : 'Ổn định • Chưa ghi nhận bệnh lý nền mạn tính',
+                  : 'Ổn định • Chưa ghi nhận',
+            ),
+            if (summary.allergies.isNotEmpty)
+              KeyValueRow(
+                label: 'Cảnh báo dị ứng',
+                value: summary.allergies.join(', '),
+                valueColor: AppColors.iceDangerText,
+                valueWeight: FontWeight.w700,
+              ),
+            KeyValueRow(
+              label: 'Khám gần nhất',
+              value: summary.latestCheckupSummary,
             ),
             if (summary.allergies.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              _OverviewTextRow(
-                icon: Icons.warning_amber_rounded,
-                iconColor: AppColors.iceDangerText,
-                title: 'Cảnh báo dị ứng:',
-                content: summary.allergies.join(', '),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  SvgPicture.asset(
+                    'assets/icons/ic_prof_allergy_alert.svg',
+                    width: 15,
+                    height: 15,
+                    colorFilter: const ColorFilter.mode(
+                      AppColors.iceCriticalBadge,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Expanded(
+                    child: Text(
+                      'Luôn thông báo tiền sử dị ứng cho bác sĩ trước khi nhận đơn.',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        color: AppColors.iceCriticalBadge,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
-            const SizedBox(height: 10),
-            _OverviewTextRow(
-              icon: Icons.event_note_rounded,
-              title: 'Lần khám gần nhất:',
-              content: summary.latestCheckupSummary,
-            ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _OverviewMetricTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final String value;
-
-  const _OverviewMetricTile({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCream,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 22, color: iconColor),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.iceTextSlate,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.iceTextNavy,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OverviewTextRow extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String content;
-
-  const _OverviewTextRow({
-    required this.icon,
-    this.iconColor = AppColors.primary,
-    required this.title,
-    required this.content,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Icon(icon, size: 22, color: iconColor),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: RichText(
-            text: TextSpan(
-              style: const TextStyle(
-                fontSize: 16.5,
-                color: AppColors.iceTextNavy,
-                height: 1.35,
-              ),
-              children: [
-                TextSpan(
-                  text: '$title ',
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-                TextSpan(
-                  text: content,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.iceTextSlate,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

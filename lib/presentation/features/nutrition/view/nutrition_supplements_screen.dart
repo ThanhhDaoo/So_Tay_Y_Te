@@ -413,64 +413,58 @@ class _NutritionSupplementsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final topPad = MediaQuery.paddingOf(context).top;
     final bottomPad = MediaQuery.paddingOf(context).bottom;
 
     return ListenableBuilder(
       listenable: _viewModel,
       builder: (context, _) {
         return Scaffold(
-          backgroundColor: AppColors.backgroundLight,
-          appBar: AppBar(
-            backgroundColor: AppColors.backgroundLight,
-            surfaceTintColor: Colors.transparent,
-            leadingWidth: 146,
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
-              child: SeniorLabeledIconButton(
-                icon: Icons.arrow_back_rounded,
-                label: 'Quay lại',
-                onTap: () => Navigator.pop(context),
-              ),
-            ),
-            title: const Text(
-              'Dinh Dưỡng & Thuốc Bổ',
-              style: TextStyle(
-                fontSize: 20.5,
-                fontWeight: FontWeight.w800,
-                color: AppColors.iceTextNavy,
-              ),
-            ),
+          backgroundColor: AppColors.iceBackground,
+          extendBodyBehindAppBar: true,
+          appBar: MedVaultGlassAppBar(
+            title: 'Dinh Dưỡng & Thuốc Bổ',
+            onBack: () => Navigator.pop(context),
           ),
           body: Column(
             children: [
-              // 2 TAB LỚN RÕ RÀNG CHUẨN 40+
+              SizedBox(height: topPad + 72),
+              // Segmented Control 2 Tab sang trọng đồng bộ VitalReportsScreen
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppLayoutTokens.screenPadding,
-                  8,
+                  4,
                   AppLayoutTokens.screenPadding,
                   12,
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _BigTabButton(
-                        icon: Icons.restaurant_menu_rounded,
-                        label: 'Chế độ Ăn uống',
-                        isSelected: _activeTab == 0,
-                        onTap: () => setState(() => _activeTab = 0),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.iceSecondaryCard,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.iceCardBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _BigTabButton(
+                          icon: Icons.restaurant_menu_rounded,
+                          label: 'Chế độ Ăn uống',
+                          isSelected: _activeTab == 0,
+                          onTap: () => setState(() => _activeTab = 0),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _BigTabButton(
-                        icon: Icons.vaccines_rounded,
-                        label: 'Thực phẩm chức năng',
-                        isSelected: _activeTab == 1,
-                        onTap: () => setState(() => _activeTab = 1),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: _BigTabButton(
+                          icon: Icons.medication_outlined,
+                          label: 'Thực phẩm chức năng',
+                          isSelected: _activeTab == 1,
+                          onTap: () => setState(() => _activeTab = 1),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
@@ -634,37 +628,50 @@ class _BigTabButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: isSelected ? AppColors.primary : Colors.white,
-      borderRadius: BorderRadius.circular(16),
+      color: isSelected ? Colors.white : Colors.transparent,
+      borderRadius: BorderRadius.circular(11),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(11),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 62),
+          constraints: const BoxConstraints(minHeight: 50),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSelected ? AppColors.primary : AppColors.iceCardBorder,
-              width: 1.5,
-            ),
+            borderRadius: BorderRadius.circular(11),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.iceTextNavy.withValues(alpha: 0.06),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
-          child: Column(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
-                size: 28,
-                color: isSelected ? Colors.white : AppColors.primary,
+                size: 19,
+                color: isSelected
+                    ? AppColors.iceOliveDark
+                    : AppColors.iceTextMuted,
               ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.w800,
-                  color: isSelected ? Colors.white : AppColors.iceTextNavy,
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight:
+                        isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected
+                        ? AppColors.iceTextNavy
+                        : AppColors.iceTextMuted,
+                  ),
                 ),
               ),
             ],
@@ -687,85 +694,85 @@ class _NutritionRuleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent =
-        isPositive ? SeniorTokens.callActionGreen : SeniorTokens.highBpRedText;
-    final softBg =
-        isPositive ? SeniorTokens.callActionGreenSoft : SeniorTokens.highBpRedBg;
+        isPositive ? AppColors.reportTeal : AppColors.iceCriticalBadge;
 
-    return SeniorCard(
-      padding: const EdgeInsets.all(18),
-      borderColor: accent.withValues(alpha: 0.4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: AppColors.iceCardBorder),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(left: BorderSide(color: accent, width: 4)),
+          ),
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: softBg,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  isPositive ? 'NÊN ĂN' : 'NÊN KIÊNG',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: accent,
+              Row(
+                children: [
+                  Text(
+                    isPositive ? 'NÊN ĂN' : 'NÊN KIÊNG',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.55,
+                      color: accent,
+                    ),
                   ),
+                  const SizedBox(width: 8),
+                  const Text('•', style: TextStyle(color: AppColors.dotMuted)),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      item.healthTag,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.iceTextMuted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                item.foodName,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                  color: AppColors.iceTextNavy,
+                  height: 1.3,
                 ),
               ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  item.healthTag,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.iceTextSlate,
-                  ),
+              const SizedBox(height: 6),
+              Text(
+                'Khuyến nghị: ${item.recommendedAmount}',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: accent,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                item.benefitOrRisk,
+                style: const TextStyle(
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.iceTextSlate,
+                  height: 1.42,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            item.foodName,
-            style: const TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.w800,
-              color: AppColors.iceTextNavy,
-              height: 1.3,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.scale_rounded, size: 20, color: accent),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'Khuyến nghị: ${item.recommendedAmount}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: accent,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            item.benefitOrRisk,
-            style: const TextStyle(
-              fontSize: 16.5,
-              fontWeight: FontWeight.w500,
-              color: AppColors.iceTextSlate,
-              height: 1.4,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -818,11 +825,10 @@ class _SupplementBigCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final usingNow = item.isUsingNow;
     final statusColor =
-        usingNow ? SeniorTokens.callActionGreen : const Color(0xFF2B6CB0);
+        usingNow ? AppColors.reportTeal : AppColors.textWarmBrown;
 
     return SeniorCard(
       padding: const EdgeInsets.all(20),
-      borderColor: statusColor.withValues(alpha: 0.45),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -835,41 +841,33 @@ class _SupplementBigCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        usingNow ? 'ĐANG SỬ DỤNG' : 'ĐANG THAM KHẢO',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w900,
-                          color: statusColor,
-                        ),
+                    Text(
+                      usingNow ? 'ĐANG SỬ DỤNG' : 'ĐANG THAM KHẢO',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.55,
+                        color: statusColor,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 5),
                     Text(
                       item.productName,
                       style: const TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
                         color: AppColors.iceTextNavy,
-                        height: 1.25,
+                        height: 1.28,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Nhóm: ${item.category}',
+                      item.category,
                       style: const TextStyle(
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.accent,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.iceTextMuted,
                       ),
                     ),
                   ],
@@ -879,43 +877,30 @@ class _SupplementBigCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            'Công dụng: ${item.benefits}',
+            item.benefits,
             style: const TextStyle(
-              fontSize: 16.5,
-              fontWeight: FontWeight.w500,
-              color: AppColors.iceTextNavy,
-              height: 1.4,
+              fontSize: 15.5,
+              fontWeight: FontWeight.w400,
+              color: AppColors.iceTextSlate,
+              height: 1.42,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.surfaceCream,
-              borderRadius: BorderRadius.circular(14),
+              color: AppColors.iceMetricBox,
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.schedule_rounded,
-                  size: 24,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Liều dùng: ${item.dosageGuide}',
-                    style: const TextStyle(
-                      fontSize: 16.5,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.iceTextNavy,
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ],
+            child: Text(
+              'Liều dùng: ${item.dosageGuide}',
+              style: const TextStyle(
+                fontSize: 15.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.iceTextNavy,
+                height: 1.38,
+              ),
             ),
           ),
           if (item.cautionNote != null &&
@@ -925,19 +910,16 @@ class _SupplementBigCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: SeniorTokens.warningAmberBg,
+                color: AppColors.iceAllergyBg,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: SeniorTokens.warningAmberBorder.withValues(alpha: 0.5),
-                ),
               ),
               child: Text(
-                '⚠️ Lưu ý: ${item.cautionNote!}',
+                'Lưu ý: ${item.cautionNote!}',
                 style: const TextStyle(
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.w700,
-                  color: SeniorTokens.warningAmberText,
-                  height: 1.35,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.iceCriticalBadge,
+                  height: 1.4,
                 ),
               ),
             ),
@@ -956,7 +938,7 @@ class _SupplementBigCard extends StatelessWidget {
             children: [
               Expanded(
                 child: SeniorLabeledIconButton(
-                  icon: Icons.edit_rounded,
+                  icon: Icons.edit_outlined,
                   label: 'Chỉnh sửa',
                   onTap: onEdit,
                 ),
@@ -965,7 +947,7 @@ class _SupplementBigCard extends StatelessWidget {
               SeniorLabeledIconButton(
                 icon: Icons.delete_outline_rounded,
                 label: 'Xóa',
-                color: AppColors.error,
+                color: AppColors.iceDangerText,
                 backgroundColor: AppColors.iceDangerBg.withValues(alpha: 0.45),
                 onTap: onDelete,
               ),

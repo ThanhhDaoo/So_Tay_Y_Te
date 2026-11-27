@@ -79,8 +79,8 @@ class _ManualBloodPressureSheetState extends State<ManualBloodPressureSheet> {
         maxHeight: MediaQuery.sizeOf(context).height * 0.9,
       ),
       decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+        color: AppColors.iceBackground,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(20, 18, 20, 20 + bottomInset + bottomPad),
       child: SingleChildScrollView(
@@ -89,18 +89,13 @@ class _ManualBloodPressureSheetState extends State<ManualBloodPressureSheet> {
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.favorite_rounded,
-                  color: Color(0xFFC62828),
-                  size: 30,
-                ),
-                const SizedBox(width: 10),
                 const Expanded(
                   child: Text(
                     'Cập Nhật Huyết Áp Hôm Nay',
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 19.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
                       color: AppColors.iceTextNavy,
                     ),
                   ),
@@ -120,27 +115,27 @@ class _ManualBloodPressureSheetState extends State<ManualBloodPressureSheet> {
               value: _sys,
               min: 70,
               max: 250,
-              accentColor: const Color(0xFFB71C1C),
+              accentColor: AppColors.iceTextNavy,
               onChanged: (v) => setState(() => _sys = v),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             SeniorNumberStepperField(
               label: 'Số dưới • Tâm trương (DIA)',
               unit: 'mmHg',
               value: _dia,
               min: 40,
               max: 150,
-              accentColor: AppColors.primary,
+              accentColor: AppColors.iceOliveDark,
               onChanged: (v) => setState(() => _dia = v),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             SeniorNumberStepperField(
               label: 'Nhịp tim (PULSE)',
               unit: 'nhịp/phút',
               value: _pulse,
               min: 35,
               max: 190,
-              accentColor: AppColors.accent,
+              accentColor: AppColors.textWarmBrown,
               onChanged: (v) => setState(() => _pulse = v),
             ),
             const SizedBox(height: 14),

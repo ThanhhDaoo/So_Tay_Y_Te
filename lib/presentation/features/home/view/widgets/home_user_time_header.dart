@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
-import '../../../../common_widgets/senior_40plus/senior_ui_kit.dart';
 
-/// Khối 1 trên Trang chủ: Hiển thị rõ Thứ, Ngày/Tháng/Năm, Giờ hiện tại
-/// và Họ tên, Tuổi, Giới tính kèm Ảnh đại diện / Icon trực quan theo giới tính.
+/// Khối định danh & thời gian thực trên Trang chủ theo đúng ngôn ngữ thiết kế
+/// Horizontal Identity Card của Figma gốc (tông Kem Cát ấm, watermark khiên y tế mờ, chữ thanh thoát).
 class HomeUserTimeHeader extends StatefulWidget {
   final String fullName;
   final String ageLabel;
@@ -69,25 +69,21 @@ class _HomeUserTimeHeaderState extends State<HomeUserTimeHeader> {
     }
   }
 
-  String _greetingByHour(int hour) {
-    if (hour < 11) return 'Chào buổi sáng';
-    if (hour < 14) return 'Chào buổi trưa';
-    if (hour < 18) return 'Chào buổi chiều';
-    return 'Chào buổi tối';
+  String _normalizeGender(String raw) {
+    final g = raw.toLowerCase();
+    if (g.contains('nữ') || g.contains('female')) return 'Nữ';
+    if (g.contains('nam') || g.contains('male')) return 'Nam';
+    return 'Chưa cập nhật giới tính';
   }
 
-  (IconData, Color, String) _genderVisual(String rawGender) {
-    final g = rawGender.toLowerCase();
-    if (g.contains('nữ') || g.contains('female')) {
-      return (Icons.face_3_rounded, const Color(0xFFB84B6E), 'Nữ');
-    }
-    if (g.contains('nam') || g.contains('male')) {
-      return (Icons.face_6_rounded, const Color(0xFF285E8E), 'Nam');
-    }
-    return (Icons.person_rounded, AppColors.primary, 'Chưa rõ giới tính');
+  IconData _genderFallbackIcon(String raw) {
+    final g = raw.toLowerCase();
+    if (g.contains('nữ') || g.contains('female')) return Icons.face_3_outlined;
+    if (g.contains('nam') || g.contains('male')) return Icons.face_6_outlined;
+    return Icons.person_outline_rounded;
   }
 
-  Widget _buildAvatar(IconData genderIcon, Color genderColor) {
+  Widget _buildPortrait() {
     final path = widget.avatarPath;
     ImageProvider? provider;
     if (path != null && path.isNotEmpty) {
@@ -99,18 +95,29 @@ class _HomeUserTimeHeaderState extends State<HomeUserTimeHeader> {
     }
 
     return Container(
-      width: 68,
-      height: 68,
+      width: 62,
+      height: 62,
       decoration: BoxDecoration(
-        color: genderColor.withValues(alpha: 0.12),
+        color: AppColors.surfaceLight,
         shape: BoxShape.circle,
-        border: Border.all(color: genderColor.withValues(alpha: 0.45), width: 2.2),
+        border: Border.all(color: AppColors.iceBorderCream, width: 1.8),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120B1C30),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
         image: provider != null
             ? DecorationImage(image: provider, fit: BoxFit.cover)
             : null,
       ),
       child: provider == null
-          ? Icon(genderIcon, size: 38, color: genderColor)
+          ? Icon(
+              _genderFallbackIcon(widget.genderLabel),
+              size: 30,
+              color: AppColors.iceOlive,
+            )
           : null,
     );
   }
@@ -118,166 +125,192 @@ class _HomeUserTimeHeaderState extends State<HomeUserTimeHeader> {
   @override
   Widget build(BuildContext context) {
     final dateText =
-        '${_weekdayVi(_now.weekday)}, ngày ${_now.day.toString().padLeft(2, '0')}/${_now.month.toString().padLeft(2, '0')}/${_now.year}';
+        '${_weekdayVi(_now.weekday)}, ${_now.day.toString().padLeft(2, '0')}/${_now.month.toString().padLeft(2, '0')}/${_now.year}';
     final timeText =
         '${_now.hour.toString().padLeft(2, '0')}:${_now.minute.toString().padLeft(2, '0')}';
-    final (genderIcon, genderColor, normalizedGender) =
-        _genderVisual(widget.genderLabel);
+    final genderText = _normalizeGender(widget.genderLabel);
 
-    return SeniorCard(
-      backgroundColor: Colors.white,
-      borderColor: AppColors.iceBorderCream,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Hàng Thời gian thực & Nút Thẻ Cấp Cứu
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceCream,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.iceCardBorder),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.calendar_month_rounded,
-                      size: 24,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        '$dateText • $timeText',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.iceTextNavy,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SeniorLabeledIconButton(
-                icon: Icons.emergency_rounded,
-                label: 'Cấp cứu',
-                color: AppColors.iceDangerText,
-                backgroundColor: AppColors.iceDangerBg.withValues(alpha: 0.65),
-                onTap: widget.onOpenEmergencyCard,
-              ),
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFFAF7F2),
+            Color(0xFFF1E5D3),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.iceBorderCream.withValues(alpha: 0.75),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A0B1C30),
+            blurRadius: 14,
+            offset: Offset(0, 4),
           ),
-          const SizedBox(height: 16),
-          const Divider(height: 1, color: AppColors.divider),
-          const SizedBox(height: 16),
-
-          // Hàng Thông tin Bệnh nhân (Họ tên, Tuổi, Giới tính + Ảnh/Icon giới tính)
-          InkWell(
-            onTap: widget.onTapProfile,
-            borderRadius: BorderRadius.circular(14),
-            child: Row(
-              children: [
-                _buildAvatar(genderIcon, genderColor),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -14,
+              bottom: -16,
+              child: Opacity(
+                opacity: 0.06,
+                child: SvgPicture.asset(
+                  'assets/icons/ic_prof_shield_watermark.svg',
+                  width: 108,
+                  height: 108,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Dòng trên: Ngày, Thứ, Giờ hiện tại + Nút Thẻ Cấp Cứu ICE
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        _greetingByHour(_now.hour),
-                        style: const TextStyle(
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.iceTextSlate,
+                      Flexible(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: AppColors.reportTeal,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                '$dateText  •  $timeText',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: -0.1,
+                                  fontFeatures: [FontFeature.tabularFigures()],
+                                  color: AppColors.iceOliveDark,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        widget.fullName,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.iceTextNavy,
-                          height: 1.2,
+                      const SizedBox(width: 8),
+                      Material(
+                        color: AppColors.icePrimaryCall,
+                        borderRadius: BorderRadius.circular(999),
+                        child: InkWell(
+                          onTap: widget.onOpenEmergencyCard,
+                          borderRadius: BorderRadius.circular(999),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 7,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SvgPicture.asset(
+                                  'assets/icons/ic_nav_ice.svg',
+                                  width: 14,
+                                  height: 14,
+                                ),
+                                const SizedBox(width: 6),
+                                const Text(
+                                  'Thẻ ICE',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.iceAccentCream,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        children: [
-                          _InfoPill(
-                            icon: Icons.cake_rounded,
-                            label: widget.ageLabel,
-                            tint: AppColors.accent,
-                          ),
-                          _InfoPill(
-                            icon: genderIcon,
-                            label: 'Giới tính: $normalizedGender',
-                            tint: genderColor,
-                          ),
-                        ],
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+                  const SizedBox(height: 16),
+                  Container(
+                    height: 1,
+                    color: AppColors.iceBorderCream.withValues(alpha: 0.5),
+                  ),
+                  const SizedBox(height: 16),
 
-class _InfoPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color tint;
-
-  const _InfoPill({
-    required this.icon,
-    required this.label,
-    required this.tint,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: tint.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 19, color: tint),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: tint,
+                  // Dòng dưới: Chân dung + Họ tên, Tuổi, Giới tính
+                  InkWell(
+                    onTap: widget.onTapProfile,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Row(
+                      children: [
+                        _buildPortrait(),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'HỒ SƠ THEO DÕI HẰNG NGÀY',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.6,
+                                  color: AppColors.textWarmBrown,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                widget.fullName,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 21,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.4,
+                                  color: AppColors.iceTextNavy,
+                                  height: 1.2,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '${widget.ageLabel}  •  Giới tính: $genderText',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.iceTextSlate,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 22,
+                          color: AppColors.textWarmBrown,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

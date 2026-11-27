@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
-import 'app_typography.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
@@ -8,13 +7,20 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
+        seedColor: AppColors.iceOlive,
         brightness: Brightness.light,
-        surface: AppColors.backgroundLight,
+        primary: AppColors.iceOlive,
+        surface: AppColors.iceBackground,
       ),
-      scaffoldBackgroundColor: AppColors.backgroundLight,
-      fontFamily: AppTypography.fontFamily,
-      fontFamilyFallback: AppTypography.fontFallback,
+      scaffoldBackgroundColor: AppColors.iceBackground,
+      // Sử dụng trực tiếp font gốc của HĐH (SF Pro trên iOS / Roboto trên Android)
+      // để hiển thị dấu tiếng Việt thanh thoát, sắc nét tuyệt đối chuẩn Apple Health.
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.iceBackground,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
+      ),
     );
   }
 
@@ -23,12 +29,10 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primary,
+        seedColor: AppColors.iceOlive,
         brightness: Brightness.dark,
       ),
       scaffoldBackgroundColor: AppColors.backgroundDark,
-      fontFamily: AppTypography.fontFamily,
-      fontFamilyFallback: AppTypography.fontFallback,
     );
   }
 }
