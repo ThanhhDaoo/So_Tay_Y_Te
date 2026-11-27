@@ -141,18 +141,16 @@ class _RxDoseSlotCardState extends State<RxDoseSlotCard> {
                   Text(
                     slot.title,
                     style: const TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 18.5,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.iceTextNavy,
                     ),
                   ),
                   Text(
                     slot.timeLabel,
                     style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: slot.status == DoseSlotStatus.dueSoon
-                          ? FontWeight.w700
-                          : FontWeight.w500,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
                       color: timeColor,
                     ),
                   ),
@@ -237,15 +235,15 @@ class _RxDoseSlotCardState extends State<RxDoseSlotCard> {
       children: [
         Expanded(
           child: SizedBox(
-            height: 44,
+            height: 52,
             child: TextButton(
               onPressed: widget.onSnooze,
               style: TextButton.styleFrom(
                 backgroundColor: AppColors.rxBlueSoft,
                 foregroundColor: AppColors.iceTextNavy,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: Row(
@@ -253,18 +251,18 @@ class _RxDoseSlotCardState extends State<RxDoseSlotCard> {
                 children: [
                   SvgPicture.asset(
                     'assets/icons/ic_rx_snooze_alarm.svg',
-                    width: 15,
-                    height: 14,
+                    width: 20,
+                    height: 20,
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   const Flexible(
                     child: Text(
                       'Nhắc lại 15p',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.iceTextNavy,
                       ),
                     ),
@@ -274,19 +272,19 @@ class _RxDoseSlotCardState extends State<RxDoseSlotCard> {
             ),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
         Expanded(
           child: SizedBox(
-            height: 44,
+            height: 52,
             child: ElevatedButton(
               onPressed: widget.onMarkTaken,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.rxOlive,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: Row(
@@ -294,18 +292,18 @@ class _RxDoseSlotCardState extends State<RxDoseSlotCard> {
                 children: [
                   SvgPicture.asset(
                     'assets/icons/ic_rx_check_white.svg',
-                    width: 12,
-                    height: 9,
+                    width: 16,
+                    height: 14,
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   const Flexible(
                     child: Text(
                       'Đã uống',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
@@ -353,11 +351,11 @@ class _MedicationCleanRow extends StatelessWidget {
                     Expanded(
                       child: Text(
                         item.name,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
                           color: AppColors.iceTextNavy,
                         ),
                       ),
@@ -367,7 +365,7 @@ class _MedicationCleanRow extends StatelessWidget {
                       Text(
                         item.quantityBadge!,
                         style: const TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: AppColors.iceDangerText,
                         ),
@@ -375,13 +373,13 @@ class _MedicationCleanRow extends StatelessWidget {
                     ],
                   ],
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Text(
                   item.instruction,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 12.5,
+                    fontSize: 15.5,
                     color: AppColors.iceTextSlate,
                     height: 1.35,
                   ),

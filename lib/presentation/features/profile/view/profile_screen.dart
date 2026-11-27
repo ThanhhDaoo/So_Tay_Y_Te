@@ -336,8 +336,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onToggleLock: _viewModel.toggleEditLock,
                             onExportPdf: () => Navigator.of(context)
                                 .pushNamed(AppRoutes.vitalReports),
-                            onShareEmergency: () => _showSnack(
-                              'Đã tạo liên kết chia sẻ cấp cứu QR cho ${activeChip.name}',
+                            onShareEmergency: () => Navigator.of(context)
+                                .pushNamed(AppRoutes.emergencyCard),
+                          ),
+                          const SizedBox(height: AppLayoutTokens.cardGap),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.iceTextNavy,
+                                side: const BorderSide(
+                                  color: AppColors.primary,
+                                  width: 1.5,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              onPressed: () => Navigator.of(context)
+                                  .pushNamed(AppRoutes.securitySettings),
+                              icon: const Icon(
+                                Icons.security_rounded,
+                                size: 28,
+                                color: AppColors.primary,
+                              ),
+                              label: const Text(
+                                'Cài đặt Bảo mật, Khóa PIN & Sao lưu',
+                                style: TextStyle(
+                                  fontSize: 16.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
                           ),
                         ],
