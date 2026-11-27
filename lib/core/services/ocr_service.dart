@@ -59,6 +59,204 @@ class ParsedPrescriptionResult {
   });
 }
 
+class ParsedBloodPressureResult {
+  final int systolic;
+  final int diastolic;
+  final int? pulse;
+  final String rawText;
+  final String? imagePath;
+  final bool isAutoDetected;
+
+  const ParsedBloodPressureResult({
+    required this.systolic,
+    required this.diastolic,
+    this.pulse,
+    required this.rawText,
+    this.imagePath,
+    this.isAutoDetected = false,
+  });
+
+  ParsedBloodPressureResult copyWith({
+    int? systolic,
+    int? diastolic,
+    int? pulse,
+    String? rawText,
+    String? imagePath,
+    bool? isAutoDetected,
+  }) {
+    return ParsedBloodPressureResult(
+      systolic: systolic ?? this.systolic,
+      diastolic: diastolic ?? this.diastolic,
+      pulse: pulse ?? this.pulse,
+      rawText: rawText ?? this.rawText,
+      imagePath: imagePath ?? this.imagePath,
+      isAutoDetected: isAutoDetected ?? this.isAutoDetected,
+    );
+  }
+}
+
+/// Bộ nhận diện chuyên biệt cho màn hình máy đo huyết áp điện tử (Omron, Microlife, Yuwell, Beurer...).
+class BloodPressureOcrParser {
+  static ParsedBloodPressureResult parse(String rawText, {String? imagePath}) {
+    if (rawText.trim().isEmpty) {
+      return ParsedBloodPressureResult(
+        systolic: 120,
+        diastolic: 80,
+        pulse: 72,
+        rawText: rawText,
+        imagePath: imagePath,
+        isAutoDetected: false,
+      );
+    }
+
+    // 1. Trường hợp ghi dạng phân số "128/82" hoặc "HA: 130 / 85 mmHg"
+    final slashMatch = RegExp(r'\b(9\d|[12]\d{2})\s*[\/\\]\s*([4-9]\d|1[0-4]\d)\b')
+        .firstMatch(rawText);
+    int? detectedSys;
+    int? detectedDia;
+    int? detectedPulse;
+
+    if (slashMatch != null) {
+      final s = int.tryParse(slashMatch.group(1)!);
+      final d = int.tryParse(slashMatch.group(2)!);
+      if (s != null && d != null && s > d) {
+        detectedSys = s;
+        detectedDia = d;
+      }
+    }
+
+    // 2. Chuẩn hóa các ký tự màn hình LCD 7-đoạn dễ bị đọc nhầm trên dòng chứa số
+    final lines = rawText
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+
+    for (final line in lines) {
+      final lower = line.toLowerCase();
+      // Bỏ qua dòng ngày giờ trên máy đo (VD: 11/27 08:30 hoặc 2026)
+      if (RegExp(r'\b\d{1,2}:\d{2}\b').hasMatch(line) ||
+          RegExp(r'\b202\d\b').hasMatch(line)) {
+        continue;
+      }
+
+      if (detectedSys == null &&
+          (lower.contains('sys') || lower.contains('tâm thu'))) {
+        final m = RegExp(r'\b(8\d|9\d|[12]\d{2})\b').firstMatch(_normalizeLcdDigits(line));
+        if (m != null) detectedSys = int.tryParse(m.group(1)!);
+      } else if (detectedDia == null &&
+          (lower.contains('dia') || lower.contains('tâm trương'))) {
+        final m = RegExp(r'\b([4-9]\d|1[0-4]\d)\b').firstMatch(_normalizeLcdDigits(line));
+        if (m != null) detectedDia = int.tryParse(m.group(1)!);
+      } else if (detectedPulse == null &&
+          (lower.contains('pul') ||
+              lower.contains('nhịp') ||
+              lower.contains('mạch') ||
+              lower.contains('bpm') ||
+              lower.contains('/min'))) {
+        final m = RegExp(r'\b([4-9]\d|1[0-8]\d)\b').firstMatch(_normalizeLcdDigits(line));
+        if (m != null) detectedPulse = int.tryParse(m.group(1)!);
+      }
+    }
+
+    // 3. Nếu màn hình LCD chỉ bóc tách được 2–3 con số xếp dọc từ trên xuống (SYS -> DIA -> PUL)
+    if (detectedSys == null || detectedDia == null || detectedPulse == null) {
+      final candidateNumbers = <int>[];
+      for (final line in lines) {
+        if (RegExp(r'\b\d{1,2}:\d{2}\b').hasMatch(line) ||
+            RegExp(r'\b202\d\b').hasMatch(line)) {
+          continue;
+        }
+        final normalized = _normalizeLcdDigits(line);
+        for (final match in RegExp(r'\b(\d{2,3})\b').allMatches(normalized)) {
+          final val = int.tryParse(match.group(1)!);
+          if (val != null && val >= 38 && val <= 250) {
+            candidateNumbers.add(val);
+          }
+        }
+      }
+
+      if (detectedSys == null || detectedDia == null) {
+        for (int i = 0; i < candidateNumbers.length - 1; i++) {
+          final first = candidateNumbers[i];
+          final second = candidateNumbers[i + 1];
+          if (first >= 85 &&
+              first <= 245 &&
+              second >= 45 &&
+              second <= 145 &&
+              first > second + 15) {
+            detectedSys ??= first;
+            detectedDia ??= second;
+            if (detectedPulse == null && i + 2 < candidateNumbers.length) {
+              final third = candidateNumbers[i + 2];
+              if (third >= 40 && third <= 185) {
+                detectedPulse = third;
+              }
+            }
+            break;
+          }
+        }
+      } else if (detectedPulse == null) {
+        for (final n in candidateNumbers) {
+          if (n != detectedSys && n != detectedDia && n >= 40 && n <= 185) {
+            detectedPulse = n;
+            break;
+          }
+        }
+      }
+    }
+
+    final foundValidPair =
+        detectedSys != null && detectedDia != null && detectedSys > detectedDia;
+
+    return ParsedBloodPressureResult(
+      systolic: foundValidPair ? detectedSys : 120,
+      diastolic: foundValidPair ? detectedDia : 80,
+      pulse: detectedPulse ?? 72,
+      rawText: rawText,
+      imagePath: imagePath,
+      isAutoDetected: foundValidPair,
+    );
+  }
+
+  static String _normalizeLcdDigits(String input) {
+    // Chỉ chuẩn hóa các token đứng riêng trông giống cụm chữ số màn hình LED 7-đoạn
+    return input.replaceAllMapped(
+      RegExp(r'(?<![a-zA-ZÀ-ỹ])[0-9OIlSB]{2,3}(?![a-zA-ZÀ-ỹ])'),
+      (m) {
+        final token = m.group(0)!;
+        if (!RegExp(r'\d').hasMatch(token)) return token;
+        return token
+            .replaceAll('O', '0')
+            .replaceAll('I', '1')
+            .replaceAll('l', '1')
+            .replaceAll('S', '5')
+            .replaceAll('B', '8');
+      },
+    );
+  }
+}
+
+extension BloodPressureOcrExtension on OcrService {
+  Future<ParsedBloodPressureResult> processBloodPressureImage(String imagePath) async {
+    if (this is OcrServiceImpl) {
+      return (this as OcrServiceImpl).recognizeBloodPressureFromImage(imagePath);
+    }
+    final rxResult = await processPrescriptionImage(imagePath);
+    return BloodPressureOcrParser.parse(
+      rxResult?.rawText ?? '',
+      imagePath: imagePath,
+    );
+  }
+
+  ParsedBloodPressureResult parseBloodPressureText(
+    String text, {
+    String? imagePath,
+  }) {
+    return BloodPressureOcrParser.parse(text, imagePath: imagePath);
+  }
+}
+
 abstract class OcrService {
   Future<String?> pickImage({required ImageSource source});
   Future<ParsedPrescriptionResult?> processPrescriptionImage(String imagePath);
@@ -139,6 +337,32 @@ class OcrServiceImpl implements OcrService {
         rawText: '',
         medicines: const [],
         imagePath: imagePath,
+      );
+    }
+  }
+
+  Future<ParsedBloodPressureResult> recognizeBloodPressureFromImage(String imagePath) async {
+    try {
+      if (!kIsWeb && Platform.isIOS) {
+        final recognized = await _nativeOcrChannel.invokeMethod<String>(
+          'recognizeText',
+          {'imagePath': imagePath},
+        );
+        return BloodPressureOcrParser.parse(recognized ?? '', imagePath: imagePath);
+      }
+
+      final inputImage = InputImage.fromFile(File(imagePath));
+      final recognizedText = await _recognizer.processImage(inputImage);
+      return BloodPressureOcrParser.parse(recognizedText.text, imagePath: imagePath);
+    } catch (e) {
+      debugPrint('OcrServiceImpl.recognizeBloodPressureFromImage error: $e');
+      return ParsedBloodPressureResult(
+        systolic: 120,
+        diastolic: 80,
+        pulse: 72,
+        rawText: '',
+        imagePath: imagePath,
+        isAutoDetected: false,
       );
     }
   }

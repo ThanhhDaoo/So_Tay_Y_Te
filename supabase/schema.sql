@@ -262,3 +262,98 @@ ON CONFLICT (id) DO NOTHING;
 CREATE POLICY "Bảo vệ file y tế riêng tư cho từng người dùng"
 ON storage.objects FOR ALL
 USING (bucket_id = 'medical-documents' AND auth.uid()::TEXT = (storage.foldername(name))[1]);
+
+
+-- ==============================================================================
+-- MỞ RỘNG V4 CHO NGƯỜI LỚN TUỔI (40+): HUYẾT ÁP HẰNG NGÀY, BÁC SĨ, VIDEO, DINH DƯỠNG
+-- ==============================================================================
+
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS special_history_note TEXT;
+ALTER TABLE public.family_members ADD COLUMN IF NOT EXISTS special_history_note TEXT;
+
+CREATE TABLE IF NOT EXISTS public.daily_vitals_logs (
+    id TEXT PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    member_id TEXT NOT NULL DEFAULT 'primary',
+    date_key TEXT NOT NULL,
+    measured_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    systolic INTEGER NOT NULL,
+    diastolic INTEGER NOT NULL,
+    heart_rate INTEGER,
+    status_level TEXT NOT NULL,
+    source TEXT NOT NULL DEFAULT 'manual',
+    image_path TEXT,
+    note TEXT
+);
+
+CREATE TABLE IF NOT EXISTS public.daily_health_tasks (
+    id TEXT PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    member_id TEXT NOT NULL DEFAULT 'primary',
+    date_key TEXT NOT NULL,
+    title TEXT NOT NULL,
+    subtitle TEXT,
+    category TEXT NOT NULL,
+    time_label TEXT,
+    linked_slot_id TEXT,
+    is_completed BOOLEAN NOT NULL DEFAULT FALSE,
+    completed_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS public.my_doctors (
+    id TEXT PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    member_id TEXT NOT NULL DEFAULT 'primary',
+    full_name TEXT NOT NULL,
+    specialty TEXT NOT NULL,
+    hospital_name TEXT NOT NULL,
+    phone_number TEXT NOT NULL,
+    avatar_path TEXT,
+    last_visit_date TEXT,
+    last_visit_note TEXT,
+    is_primary_doctor BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.health_videos (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL,
+    duration_label TEXT NOT NULL,
+    thumbnail_url TEXT NOT NULL,
+    video_url TEXT NOT NULL,
+    instructor_name TEXT,
+    description TEXT,
+    key_steps_json JSONB DEFAULT '[]'::JSONB,
+    is_saved BOOLEAN NOT NULL DEFAULT FALSE,
+    last_watched_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.nutrition_guidelines (
+    id TEXT PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    member_id TEXT NOT NULL DEFAULT 'primary',
+    type TEXT NOT NULL,
+    health_tag TEXT NOT NULL,
+    food_name TEXT NOT NULL,
+    recommended_amount TEXT,
+    benefit_or_risk TEXT NOT NULL,
+    icon_name TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.dietary_supplements (
+    id TEXT PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    member_id TEXT NOT NULL DEFAULT 'primary',
+    product_name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    image_path TEXT,
+    benefits TEXT NOT NULL,
+    dosage_guide TEXT NOT NULL,
+    usage_status TEXT NOT NULL DEFAULT 'using',
+    caution_note TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);

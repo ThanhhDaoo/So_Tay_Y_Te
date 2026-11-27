@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../data/datasources/local/app_preferences_datasource.dart';
 import '../../data/datasources/local/auth_local_datasource.dart';
+import '../../data/datasources/local/elder_care_local_datasource.dart';
 import '../../data/datasources/local/medical_local_datasource.dart';
 import '../../data/datasources/remote/auth_remote_datasource.dart';
 import '../../data/datasources/remote/firebase_auth_datasource.dart';
@@ -11,9 +12,11 @@ import '../../data/datasources/remote/medical_sync_remote_datasource.dart';
 import '../../data/datasources/remote/subscription_remote_datasource.dart';
 import '../../data/datasources/remote/supabase_auth_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
+import '../../data/repositories/elder_care_repository_impl.dart';
 import '../../data/repositories/medical_record_repository_impl.dart';
 import '../../data/repositories/sync_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/repositories/elder_care_repository.dart';
 import '../../domain/repositories/medical_record_repository.dart';
 import '../../domain/repositories/sync_repository.dart';
 import '../../domain/usecases/medical/delete_medical_event_usecase.dart';
@@ -145,6 +148,12 @@ class InjectionContainer {
       );
     }
 
+    if (!sl.isRegistered<ElderCareLocalDataSource>()) {
+      sl.registerLazySingleton<ElderCareLocalDataSource>(
+        () => ElderCareLocalDataSourceImpl(databaseHelper: sl<DatabaseHelper>()),
+      );
+    }
+
     if (!sl.isRegistered<MedicalSyncRemoteDataSource>()) {
       sl.registerLazySingleton<MedicalSyncRemoteDataSource>(
         () => MedicalSyncRemoteDataSourceImpl(client: SupabaseConfig.client),
@@ -185,6 +194,17 @@ class InjectionContainer {
         () => MedicalRecordRepositoryImpl(
           localDataSource: sl<MedicalLocalDataSource>(),
           syncRepository: sl<SyncRepository>(),
+        ),
+      );
+    }
+
+    if (!sl.isRegistered<ElderCareRepository>()) {
+      sl.registerLazySingleton<ElderCareRepository>(
+        () => ElderCareRepositoryImpl(
+          localDataSource: sl<ElderCareLocalDataSource>(),
+          medicalRecordRepository: sl<MedicalRecordRepository>(),
+          preferencesDataSource: sl<AppPreferencesDataSource>(),
+          notificationService: sl<NotificationService>(),
         ),
       );
     }
