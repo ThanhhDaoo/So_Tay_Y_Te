@@ -149,9 +149,9 @@ class MedicalAssistantService {
 
   static const List<String> supportedModels = [
     'gemini-3.6-flash',
-    'gemini-3.5-flash',
-    'gemini-3.5-flash-lite',
     'gemini-3.8-flash',
+    'gemini-3.5-flash',
+    'gemini-2.5-flash',
   ];
 
   static const String medicalSystemInstruction = '''
@@ -479,8 +479,15 @@ NGUYÊN TẮC AN TOÀN Y KHOA BẮT BUỘC:
       'nhức đầu',
       'chóng mặt',
       'đau bụng',
+      'đau dạ dày',
+      'đau bao tử',
       'đau quặn',
       'tiêu chảy',
+      'đi cầu lỏng',
+      'đi ngoài',
+      'táo bón',
+      'đầy hơi',
+      'khó tiêu',
       'buồn nôn',
       'ói',
       'nôn mửa',
@@ -802,9 +809,9 @@ Câu hỏi của người dùng: $userQuery
     final modelsToTry = <String>{
       preferredModel,
       'gemini-3.6-flash',
-      'gemini-3.5-flash',
-      'gemini-3.5-flash-lite',
       'gemini-3.8-flash',
+      'gemini-3.5-flash',
+      'gemini-2.5-flash',
     }.toList();
 
     Object? lastError;
@@ -915,10 +922,23 @@ Câu hỏi của người dùng: $userQuery
       buf.writeln('• **Nhóm nguyên nhân thường gặp (tham khảo):** Nhiễm siêu vi đường hô hấp trên (cảm lạnh, cúm), viêm họng/amidan, sốt xuất huyết (nếu sốt cao đột ngột) hoặc kích ứng thời tiết.');
       buf.writeln('• **Theo dõi tại nhà:** Nghỉ ngơi, uống đủ nước/oresol, đo thân nhiệt định kỳ, không tự ý dùng kháng sinh khi chưa có chỉ định bác sĩ.');
       buf.writeln('• **⚠️ Cần đi khám ngay nếu:** Sốt cao > 39°C không hạ, sốt kéo dài quá 48–72 giờ, khó thở, lừ đừ, xuất huyết dưới da hoặc đau đầu dữ dội.');
-    } else if (_matchesAny(q, const ['đau bụng', 'đau quặn', 'tiêu chảy', 'buồn nôn', 'ói', 'nôn'])) {
-      buf.writeln('• **Nhóm nguyên nhân thường gặp (tham khảo):** Rối loạn tiêu hóa, ngộ độc thực phẩm, viêm dạ dày - ruột cấp, cơn đau quặn mật/thận hoặc viêm ruột thừa (nếu đau khu trú tăng dần).');
-      buf.writeln('• **Theo dõi tại nhà:** Bù nước và điện giải từng ngụm nhỏ, nghỉ ngơi, không tự ý uống thuốc giảm đau mạnh làm che lấp triệu chứng bụng ngoại khoa.');
-      buf.writeln('• **⚠️ Cần đi khám ngay nếu:** Đau quặn bụng dữ dội hoặc đau khu trú hố chậu phải, bụng cứng, nôn/ói liên tục không ăn uống được, đi ngoài phân đen/có máu hoặc sốt cao.');
+    } else if (_matchesAny(q, const [
+      'đau bụng',
+      'đau dạ dày',
+      'đau bao tử',
+      'đau quặn',
+      'tiêu chảy',
+      'đi cầu lỏng',
+      'đi ngoài',
+      'đầy hơi',
+      'khó tiêu',
+      'buồn nôn',
+      'ói',
+      'nôn',
+    ])) {
+      buf.writeln('• **Nhóm nguyên nhân thường gặp (tham khảo):** Rối loạn tiêu hóa, nhiễm khuẩn/siêu vi đường ruột, ngộ độc thực phẩm, viêm dạ dày - đại tràng hoặc viêm ruột thừa (nếu đau khu trú tăng dần).');
+      buf.writeln('• **Theo dõi tại nhà:** Bù nước và điện giải (Oresol) từng ngụm nhỏ, ăn thức ăn mềm dễ tiêu, nghỉ ngơi; không tự ý uống thuốc cầm tiêu chảy hoặc giảm đau mạnh làm che lấp triệu chứng bụng ngoại khoa.');
+      buf.writeln('• **⚠️ Cần đi khám ngay nếu:** Đau quặn bụng dữ dội hoặc đau khu trú hố chậu phải, bụng cứng, đi ngoài phân có máu/nhầy mủ hoặc phân đen, nôn liên tục không bù được nước, sốt cao > 38.5°C.');
     } else if (_matchesAny(q, const ['đau đầu', 'nhức đầu', 'chóng mặt', 'mất ngủ'])) {
       buf.writeln('• **Nhóm nguyên nhân thường gặp (tham khảo):** Đau đầu căng cơ (stress, thiếu ngủ), đau nửa đầu (Migraine), thay đổi huyết áp, thiếu nước hoặc viêm xoang.');
       buf.writeln('• **Theo dõi tại nhà:** Nghỉ ngơi nơi yên tĩnh, đo kiểm tra huyết áp, hạn chế màn hình và thức uống chứa caffeine.');
@@ -965,9 +985,45 @@ Câu hỏi của người dùng: $userQuery
     return msg.length > 90 ? '${msg.substring(0, 90)}...' : msg;
   }
 
+  static String _normalizeVietnamese(String input) {
+    var str = input.toLowerCase();
+    const vietnameseMap = <String, String>{
+      'à': 'a', 'á': 'a', 'ạ': 'a', 'ả': 'a', 'ã': 'a',
+      'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ậ': 'a', 'ẩ': 'a', 'ẫ': 'a',
+      'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ặ': 'a', 'ẳ': 'a', 'ẵ': 'a',
+      'è': 'e', 'é': 'e', 'ẹ': 'e', 'ẻ': 'e', 'ẽ': 'e',
+      'ê': 'e', 'ề': 'e', 'ế': 'e', 'ệ': 'e', 'ể': 'e', 'ễ': 'e',
+      'ì': 'i', 'í': 'i', 'ị': 'i', 'ỉ': 'i', 'ĩ': 'i',
+      'ò': 'o', 'ó': 'o', 'ọ': 'o', 'ỏ': 'o', 'õ': 'o',
+      'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ộ': 'o', 'ổ': 'o', 'ỗ': 'o',
+      'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ợ': 'o', 'ở': 'o', 'ỡ': 'o',
+      'ù': 'u', 'ú': 'u', 'ụ': 'u', 'ủ': 'u', 'ũ': 'u',
+      'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ự': 'u', 'ử': 'u', 'ữ': 'u',
+      'ỳ': 'y', 'ý': 'y', 'ỵ': 'y', 'ỷ': 'y', 'ỹ': 'y',
+      'đ': 'd',
+    };
+    final buffer = StringBuffer();
+    for (final rune in str.runes) {
+      final ch = String.fromCharCode(rune);
+      buffer.write(vietnameseMap[ch] ?? ch);
+    }
+    return buffer
+        .toString()
+        .replaceAll(RegExp(r'[^a-z0-9\s]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
   static bool _matchesAny(String text, List<String> keywords) {
+    final lower = text.toLowerCase();
+    final normalizedText = ' ${_normalizeVietnamese(lower)} ';
     for (final kw in keywords) {
-      if (text.contains(kw)) return true;
+      if (lower.contains(kw)) return true;
+      final normalizedKw = _normalizeVietnamese(kw);
+      if (normalizedKw.isNotEmpty &&
+          normalizedText.contains(' $normalizedKw ')) {
+        return true;
+      }
     }
     return false;
   }

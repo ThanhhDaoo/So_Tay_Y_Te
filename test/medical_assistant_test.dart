@@ -183,6 +183,21 @@ void main() {
       expect(reply.text, contains('Không phải chẩn đoán xác định'));
       expect(reply.text, contains('Cần đi khám ngay nếu'));
     });
+
+    test('Matches unaccented Vietnamese with punctuation like Android emulator typing', () async {
+      final service = MedicalAssistantService(secureStorage: secureStorage);
+      final giReply = await service.answerUserQuery(
+        'Minh bi dau bung, .di cau .long',
+      );
+      expect(giReply.source, equals(AssistantReplySource.localSymptomFallback));
+      expect(giReply.text, contains('Rối loạn tiêu hóa'));
+
+      final rxReply = await service.answerUserQuery(
+        'don thuoc dang uong cua toi',
+      );
+      expect(rxReply.source, equals(AssistantReplySource.localDatabase));
+      expect(rxReply.text, contains('Loratadine'));
+    });
   });
 
   group('MedicalAssistantSheet Widget Tests', () {

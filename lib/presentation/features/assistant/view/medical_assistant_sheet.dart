@@ -143,6 +143,105 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
     }
   }
 
+  Future<void> _showGeminiConfigDialog(MedicalAssistantState state) async {
+    final currentKey = await _viewModel.getSavedApiKey();
+    if (!mounted) return;
+    final keyCtrl = TextEditingController(text: currentKey);
+    String selectedModel = MedicalAssistantService.supportedModels
+            .contains(state.selectedModel)
+        ? state.selectedModel
+        : MedicalAssistantService.supportedModels.first;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppLayoutTokens.cardRadius),
+          ),
+          title: const Text(
+            'Cấu hình Trợ lý Gemini AI',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.iceTextNavy,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Nhập Gemini API Key để phân tích triệu chứng bằng AI (ẩn danh thông tin định danh cá nhân).',
+                style: TextStyle(fontSize: 12.5, color: AppColors.iceTextSlate),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: keyCtrl,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Gemini API Key',
+                  hintText: 'Dán API Key vào đây...',
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius:
+                        BorderRadius.circular(AppLayoutTokens.innerRadius),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                initialValue: selectedModel,
+                decoration: InputDecoration(
+                  labelText: 'Mô hình AI',
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius:
+                        BorderRadius.circular(AppLayoutTokens.innerRadius),
+                  ),
+                ),
+                items: MedicalAssistantService.supportedModels
+                    .map(
+                      (m) => DropdownMenuItem(
+                        value: m,
+                        child: Text(m, style: const TextStyle(fontSize: 13)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    setDialogState(() => selectedModel = val);
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                await _viewModel.updateGeminiConfig(
+                  apiKey: keyCtrl.text,
+                  model: selectedModel,
+                );
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
+              child: const Text('Lưu cấu hình'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
@@ -238,7 +337,9 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                                       const SizedBox(width: 6),
                                       Flexible(
                                         child: Text(
-                                          'Hồ sơ: ${state.activeMemberName}',
+                                          state.hasGeminiKey
+                                              ? 'Hồ sơ: ${state.activeMemberName} • Gemini AI'
+                                              : 'Hồ sơ: ${state.activeMemberName} • Offline',
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
                                             fontSize: 11.5,
@@ -250,6 +351,18 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                                   ),
                                 ],
                               ),
+                            ),
+                            IconButton(
+                              tooltip: 'Cấu hình Gemini AI',
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(
+                                Icons.vpn_key_outlined,
+                                size: 19,
+                                color: state.hasGeminiKey
+                                    ? const Color(0xFF2E7D32)
+                                    : AppColors.iceTextSlate,
+                              ),
+                              onPressed: () => _showGeminiConfigDialog(state),
                             ),
                             IconButton(
                               tooltip: 'Làm mới hội thoại',
