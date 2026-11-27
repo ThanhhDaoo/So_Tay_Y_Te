@@ -174,8 +174,8 @@ class _HealthVideoEditorialCard extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Color(0x26000000),
-                          Color(0x99161A14),
+                          Color(0x220F172A),
+                          Color(0x990F172A),
                         ],
                       ),
                     ),
@@ -195,7 +195,7 @@ class _HealthVideoEditorialCard extends StatelessWidget {
                       child: Text(
                         video.category,
                         style: const TextStyle(
-                          color: AppColors.iceAccentCream,
+                          color: Colors.white,
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
                         ),

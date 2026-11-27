@@ -3,9 +3,9 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../domain/entities/daily_vital_log.dart';
 import '../../../../common_widgets/senior_40plus/senior_ui_kit.dart';
 
-/// Khối Huyết áp hằng ngày (Ưu tiên số 1) theo thẩm mỹ phẳng thoáng Apple Health:
-/// So sánh cạnh nhau "Hôm qua" vs "Hôm nay" bằng đường chia mảnh tinh tế (không lồng nhiều hộp viền dày),
-/// chữ số 30px tabular sắc nét kèm 2 nút lớn đồng bộ tông Olive & Kem Cát.
+/// Khối Huyết áp hằng ngày (Ưu tiên số 1):
+/// Thẻ nền trắng tinh khiết, so sánh cạnh nhau "Hôm qua" và "Hôm nay",
+/// chữ số 30px rõ nét kèm 2 nút lớn "Cập nhật huyết áp" và "Chụp ảnh máy đo (Scan)".
 class HomeBloodPressureCard extends StatelessWidget {
   final YesterdayTodayBpComparison comparison;
   final VoidCallback onUpdateManual;
@@ -18,18 +18,20 @@ class HomeBloodPressureCard extends StatelessWidget {
     required this.onScanMachine,
   });
 
-  Color _statusDotColor(BloodPressureLevel? level) {
-    if (level == null) return AppColors.dotMuted;
+  (Color fg, Color bg) _statusBadgeColors(BloodPressureLevel? level) {
+    if (level == null) {
+      return (AppColors.iceTextMuted, AppColors.timelineInputBg);
+    }
     switch (level) {
       case BloodPressureLevel.normal:
-        return AppColors.reportTeal;
+        return (AppColors.reportTeal, AppColors.reportTealSoft);
       case BloodPressureLevel.elevated:
-        return const Color(0xFFB86B11);
+        return (const Color(0xFFB45309), const Color(0xFFFFFBEB));
       case BloodPressureLevel.highStage1:
       case BloodPressureLevel.highStage2:
-        return AppColors.iceDangerText;
+        return (AppColors.iceDangerText, AppColors.iceDangerBg);
       case BloodPressureLevel.low:
-        return const Color(0xFF3A6EA5);
+        return (AppColors.primary, AppColors.iceAccentCream);
     }
   }
 
@@ -40,25 +42,24 @@ class HomeBloodPressureCard extends StatelessWidget {
 
     return SeniorSectionBlock(
       title: 'Huyết áp hằng ngày',
-      subtitle: 'So sánh trực quan chỉ số hôm qua và hôm nay',
+      subtitle: 'So sánh chỉ số hôm qua và cập nhật hôm nay',
       iconAsset: 'assets/icons/ic_blood_pressure.svg',
-      iconColor: AppColors.iceOlive,
+      iconColor: AppColors.primary,
       child: SeniorCard(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bảng so sánh 2 cột phẳng, phân tách bằng đường kẻ dọc 1px thanh lịch
             IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
                     child: _BpCleanMetricColumn(
-                      kicker: 'HÔM QUA',
+                      titleLabel: 'Hôm qua',
                       log: yesterday,
                       emptyHint: 'Chưa ghi nhận',
-                      dotColor: _statusDotColor(yesterday?.statusLevel),
+                      badgeColors: _statusBadgeColors(yesterday?.statusLevel),
                       isToday: false,
                     ),
                   ),
@@ -66,16 +67,16 @@ class HomeBloodPressureCard extends StatelessWidget {
                     width: 1,
                     margin: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 4,
+                      vertical: 2,
                     ),
                     color: AppColors.divider,
                   ),
                   Expanded(
                     child: _BpCleanMetricColumn(
-                      kicker: 'HÔM NAY',
+                      titleLabel: 'Hôm nay',
                       log: today,
                       emptyHint: 'Chưa đo hôm nay',
-                      dotColor: _statusDotColor(today?.statusLevel),
+                      badgeColors: _statusBadgeColors(today?.statusLevel),
                       isToday: true,
                     ),
                   ),
@@ -84,27 +85,42 @@ class HomeBloodPressureCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Dải nhận xét y tế nền kem dịu nhẹ, không viền thô
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.iceMetricBox,
+                color: AppColors.iceBackground,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.iceCardBorder),
               ),
-              child: Text(
-                comparison.comparisonSummaryVi,
-                style: const TextStyle(
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.iceTextSlate,
-                  height: 1.4,
-                ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Icon(
+                      Icons.info_outline_rounded,
+                      size: 18,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      comparison.comparisonSummaryVi,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.iceTextSlate,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
 
-            // 2 nút thao tác lớn >= 52px đồng bộ bảng màu MedVault
             SeniorActionButton(
               label: 'Cập nhật huyết áp',
               icon: Icons.edit_outlined,
@@ -126,34 +142,54 @@ class HomeBloodPressureCard extends StatelessWidget {
 }
 
 class _BpCleanMetricColumn extends StatelessWidget {
-  final String kicker;
+  final String titleLabel;
   final DailyVitalLog? log;
   final String emptyHint;
-  final Color dotColor;
+  final (Color fg, Color bg) badgeColors;
   final bool isToday;
 
   const _BpCleanMetricColumn({
-    required this.kicker,
+    required this.titleLabel,
     required this.log,
     required this.emptyHint,
-    required this.dotColor,
+    required this.badgeColors,
     required this.isToday,
   });
 
   @override
   Widget build(BuildContext context) {
+    final (fg, bg) = badgeColors;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          kicker,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.6,
-            color: isToday ? AppColors.reportTeal : AppColors.iceTextMuted,
-          ),
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                titleLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isToday ? FontWeight.w600 : FontWeight.w500,
+                  color: isToday ? AppColors.primary : AppColors.iceTextMuted,
+                ),
+              ),
+            ),
+            if (isToday) ...[
+              const SizedBox(width: 6),
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 8),
         if (log != null) ...[
@@ -167,21 +203,21 @@ class _BpCleanMetricColumn extends StatelessWidget {
                 Text(
                   log!.formattedBp,
                   style: TextStyle(
-                    fontSize: 30,
+                    fontSize: 29,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: -0.9,
+                    letterSpacing: -0.6,
                     fontFeatures: const [FontFeature.tabularFigures()],
                     color: isToday
                         ? AppColors.iceTextNavy
                         : AppColors.iceTextSlate,
-                    height: 1.1,
+                    height: 1.12,
                   ),
                 ),
                 const SizedBox(width: 4),
                 const Text(
                   'mmHg',
                   style: TextStyle(
-                    fontSize: 13.5,
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: AppColors.iceTextMuted,
                   ),
@@ -194,37 +230,29 @@ class _BpCleanMetricColumn extends StatelessWidget {
             Text(
               'Nhịp tim: ${log!.heartRate} l/phút',
               style: const TextStyle(
-                fontSize: 14.5,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
                 fontFeatures: [FontFeature.tabularFigures()],
-                color: AppColors.iceTextSlate,
+                color: AppColors.iceTextMuted,
               ),
             ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: dotColor,
-                  shape: BoxShape.circle,
-                ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              log!.statusLabelVi,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: fg,
               ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  log!.statusLabelVi,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: dotColor,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ] else ...[
           const Text(
@@ -232,17 +260,25 @@ class _BpCleanMetricColumn extends StatelessWidget {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w600,
-              letterSpacing: -0.5,
               color: AppColors.dotMuted,
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            emptyHint,
-            style: const TextStyle(
-              fontSize: 14.5,
-              fontWeight: FontWeight.w500,
-              color: AppColors.iceTextMuted,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.timelineInputBg,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              emptyHint,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.iceTextMuted,
+              ),
             ),
           ),
         ],

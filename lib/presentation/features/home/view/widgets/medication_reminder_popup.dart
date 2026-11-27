@@ -4,8 +4,8 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../domain/entities/medication_popup_reminder.dart';
 import '../../../../common_widgets/senior_40plus/senior_ui_kit.dart';
 
-/// Popup nhắc uống thuốc thiết kế theo chuẩn y khoa MedVault (Olive trầm + Kem ấm):
-/// Tinh tế, rõ nét, dùng icon SVG y tế gốc thay vì hộp màu sặc sỡ.
+/// Popup nhắc uống thuốc thiết kế sáng sạch, trực quan với Header Xanh Y Tế
+/// và 2 nút hành động lớn: "Đã uống xong cữ này" & "Nhắc lại sau (15 phút)".
 class MedicationReminderPopup extends StatelessWidget {
   final MedicationPopupReminder reminder;
   final VoidCallback onMarkTaken;
@@ -30,7 +30,7 @@ class MedicationReminderPopup extends StatelessWidget {
       builder: (ctx) => Dialog(
         insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        backgroundColor: AppColors.iceBackground,
+        backgroundColor: AppColors.surfaceLight,
         clipBehavior: Clip.antiAlias,
         child: MedicationReminderPopup(
           reminder: reminder,
@@ -57,7 +57,6 @@ class MedicationReminderPopup extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Olive trầm đồng bộ với IceEmergencyBanner
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
@@ -74,7 +73,7 @@ class MedicationReminderPopup extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: AppColors.iceAccentCream.withValues(alpha: 0.18),
+                    color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   alignment: Alignment.center,
@@ -83,7 +82,7 @@ class MedicationReminderPopup extends StatelessWidget {
                     width: 24,
                     height: 24,
                     colorFilter: const ColorFilter.mode(
-                      AppColors.iceAccentCream,
+                      Colors.white,
                       BlendMode.srcIn,
                     ),
                   ),
@@ -94,12 +93,11 @@ class MedicationReminderPopup extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'NHẮC UỐNG THUỐC ĐÚNG GIỜ',
+                        'Đến giờ uống thuốc theo đơn',
                         style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.65,
-                          color: AppColors.iceAccentCream,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFDCE8FF),
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -108,17 +106,17 @@ class MedicationReminderPopup extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: -0.3,
+                          letterSpacing: -0.25,
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
                           const Icon(
                             Icons.schedule_rounded,
                             size: 16,
-                            color: AppColors.iceAccentCream,
+                            color: Color(0xFFDCE8FF),
                           ),
                           const SizedBox(width: 5),
                           Flexible(
@@ -129,7 +127,7 @@ class MedicationReminderPopup extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFFE5E2DA),
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -149,7 +147,7 @@ class MedicationReminderPopup extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   for (int i = 0; i < reminder.medicines.length; i++) ...[
-                    _MedEditorialRow(medicine: reminder.medicines[i]),
+                    _MedCleanRow(medicine: reminder.medicines[i]),
                     if (i < reminder.medicines.length - 1)
                       const SizedBox(height: 12),
                   ],
@@ -186,10 +184,10 @@ class MedicationReminderPopup extends StatelessWidget {
   }
 }
 
-class _MedEditorialRow extends StatelessWidget {
+class _MedCleanRow extends StatelessWidget {
   final PopupMedicineDetail medicine;
 
-  const _MedEditorialRow({required this.medicine});
+  const _MedCleanRow({required this.medicine});
 
   String _formLabel(PillVisualType type) {
     switch (type) {
@@ -209,7 +207,7 @@ class _MedEditorialRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.iceBackground,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.iceCardBorder),
       ),
@@ -217,10 +215,10 @@ class _MedEditorialRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 56,
+            width: 58,
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
             decoration: BoxDecoration(
-              color: AppColors.iceSecondaryCard,
+              color: AppColors.iceAccentCream,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -230,7 +228,7 @@ class _MedEditorialRow extends StatelessWidget {
                   width: 22,
                   height: 22,
                   colorFilter: const ColorFilter.mode(
-                    AppColors.iceOlive,
+                    AppColors.primary,
                     BlendMode.srcIn,
                   ),
                 ),
@@ -239,9 +237,9 @@ class _MedEditorialRow extends StatelessWidget {
                   _formLabel(medicine.visualType),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.iceOliveDark,
+                    color: AppColors.primary,
                   ),
                 ),
               ],
@@ -257,7 +255,6 @@ class _MedEditorialRow extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 17.5,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: -0.2,
                     color: AppColors.iceTextNavy,
                     height: 1.25,
                   ),

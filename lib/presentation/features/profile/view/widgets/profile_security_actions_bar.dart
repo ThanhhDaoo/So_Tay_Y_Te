@@ -45,7 +45,7 @@ class ProfileSecurityActionsBar extends StatelessWidget {
                     width: 15,
                     height: 15,
                     colorFilter: const ColorFilter.mode(
-                      Color(0xFF5C6254),
+                      AppColors.primary,
                       BlendMode.srcIn,
                     ),
                   ),
@@ -100,9 +100,7 @@ class ProfileSecurityActionsBar extends StatelessWidget {
                       style: AppTypography.caption.copyWith(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: isEditLocked
-                            ? const Color(0xFF5C6254)
-                            : AppColors.iceTextBrownDark,
+                        color: AppColors.primary,
                       ),
                     ),
                   ),
@@ -118,7 +116,7 @@ class ProfileSecurityActionsBar extends StatelessWidget {
               child: _ActionButton(
                 label: 'Xuất tóm tắt (PDF)',
                 iconAsset: 'assets/icons/ic_prof_export_pdf.svg',
-                backgroundColor: const Color(0xFF5C6254),
+                backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.surfaceLight,
                 onTap: onExportPdf,
               ),

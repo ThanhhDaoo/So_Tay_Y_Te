@@ -1,16 +1,15 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/theme/app_colors.dart';
 import '../layout/app_layout_tokens.dart';
 
-/// Hệ chuẩn giao diện Y khoa Cao cấp (MedVault Clinical Editorial cho lứa tuổi 40+):
-/// Kết hợp ngôn ngữ thiết kế Olive - Kem Cát của Figma gốc với kích thước chữ to rõ,
-/// phẳng thoáng, tinh tế chuẩn Apple Health (không hộp chồng hộp, không màu neon lòe loẹt).
+/// Bộ UI Kit Sổ Tay Y Tế chuẩn người lớn tuổi (40+):
+/// Thẩm mỹ Y tế số hiện đại — nền sáng sạch (#F8FAFC / #FFFFFF), viền mảnh #EAECF0,
+/// xanh Sapphire (#1E56A0) & xanh Ngọc lục bảo (#0E9F6E), chữ tiếng Việt thanh thoát, dễ đọc.
 class SeniorTokens {
   SeniorTokens._();
 
-  static const double sectionGap = 26.0;
+  static const double sectionGap = 24.0;
   static const double cardPadding = 20.0;
   static const double cardRadius = 16.0;
   static const double minButtonHeight = 52.0;
@@ -22,17 +21,16 @@ class SeniorTokens {
   static const double sectionTitleFontSize = 19.0;
   static const double vitalMetricFontSize = 30.0;
 
-  // Bảng màu Lâm sàng Trầm Ấm đồng bộ 100% với Figma MedVault (AppColors)
-  static const Color callActionGreen = AppColors.reportTeal; // #00685F
-  static const Color callActionGreenSoft = Color(0xFFE6F2F0);
-  static const Color warningAmberBg = AppColors.iceAllergyBg; // #F7EFE4
-  static const Color warningAmberBorder = AppColors.iceBorderCream; // #D8C2A3
-  static const Color warningAmberText = AppColors.iceCriticalBadge; // #8C4736
-  static const Color highBpRedBg = AppColors.iceDangerBg; // #FFDAD6
-  static const Color highBpRedText = AppColors.iceDangerText; // #BB0112
+  static const Color callActionGreen = AppColors.reportTeal; // #0E9F6E
+  static const Color callActionGreenSoft = AppColors.reportTealSoft; // #ECFDF3
+  static const Color warningAmberBg = AppColors.iceAllergyBg; // #FFFBEB
+  static const Color warningAmberBorder = AppColors.iceAllergyBorder; // #FDE68A
+  static const Color warningAmberText = AppColors.iceCriticalBadge; // #B45309
+  static const Color highBpRedBg = AppColors.iceDangerBg; // #FEF2F2
+  static const Color highBpRedText = AppColors.iceDangerText; // #DC2626
 }
 
-/// Thanh tiêu đề kính mờ (Frosted Glass) đồng bộ ngôn ngữ thiết kế với IceHeader / TimelineHeader.
+/// Thanh tiêu đề nền trắng tinh khiết, đường viền đáy mảnh #EAECF0 chuyên nghiệp.
 class MedVaultGlassAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final String eyebrow;
@@ -42,133 +40,116 @@ class MedVaultGlassAppBar extends StatelessWidget implements PreferredSizeWidget
   const MedVaultGlassAppBar({
     super.key,
     required this.title,
-    this.eyebrow = 'SỔ TAY Y TẾ',
+    this.eyebrow = 'Sổ Tay Y Tế',
     this.onBack,
     this.trailing,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(66);
+  Size get preferredSize => const Size.fromHeight(64);
 
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.paddingOf(context).top;
 
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: EdgeInsets.fromLTRB(
-            AppLayoutTokens.screenPadding,
-            topPadding + 8,
-            AppLayoutTokens.screenPadding,
-            10,
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        AppLayoutTokens.screenPadding,
+        topPadding + 8,
+        AppLayoutTokens.screenPadding,
+        10,
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceLight,
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.iceCardBorder,
+            width: 1,
           ),
-          decoration: BoxDecoration(
-            color: AppColors.iceBackground.withValues(alpha: 0.9),
-            border: Border(
-              bottom: BorderSide(
-                color: AppColors.iceCardBorder.withValues(alpha: 0.8),
-                width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          if (onBack != null) ...[
+            Material(
+              color: AppColors.iceBackground,
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                onTap: onBack,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.iceCardBorder),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.arrow_back_rounded,
+                        size: 19,
+                        color: AppColors.iceTextNavy,
+                      ),
+                      SizedBox(width: 5),
+                      Text(
+                        'Quay lại',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.iceTextNavy,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ] else ...[
+            Container(
+              width: 36,
+              height: 36,
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: AppColors.iceAccentCream,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Image.asset(
+                'assets/images/img_sotayyte_logo.png',
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(width: 10),
+          ],
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.25,
+                color: AppColors.iceTextNavy,
+                height: 1.25,
               ),
             ),
           ),
-          child: Row(
-            children: [
-              if (onBack != null) ...[
-                Material(
-                  color: AppColors.surfaceCream,
-                  borderRadius: BorderRadius.circular(999),
-                  child: InkWell(
-                    onTap: onBack,
-                    borderRadius: BorderRadius.circular(999),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 13,
-                        vertical: 9,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SvgPicture.asset(
-                            'assets/icons/ic_arrow_back.svg',
-                            width: 15,
-                            height: 15,
-                            colorFilter: const ColorFilter.mode(
-                              AppColors.iceTextNavy,
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'Quay lại',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.iceTextNavy,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-              ] else ...[
-                Image.asset(
-                  'assets/images/img_sotayyte_logo.png',
-                  width: 32,
-                  height: 32,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(width: 10),
-              ],
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      eyebrow,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.65,
-                        color: AppColors.iceOlive,
-                        height: 1.15,
-                      ),
-                    ),
-                    const SizedBox(height: 1),
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.35,
-                        color: AppColors.iceTextNavy,
-                        height: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (trailing != null) ...[
-                const SizedBox(width: 8),
-                trailing!,
-              ],
-            ],
-          ),
-        ),
+          if (trailing != null) ...[
+            const SizedBox(width: 8),
+            trailing!,
+          ],
+        ],
       ),
     );
   }
 }
 
-/// Khối chức năng (Section) thanh lịch: tiêu đề gọn sắc, không đóng hộp icon lòe loẹt.
+/// Khối chức năng (Section) thoáng đãng, chữ tiêu đề rõ nét (#101828) & phụ đề xám dịu (#667085).
 class SeniorSectionBlock extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -187,7 +168,7 @@ class SeniorSectionBlock extends StatelessWidget {
     this.iconAsset,
     required this.child,
     this.subtitle,
-    this.iconColor = AppColors.iceOlive,
+    this.iconColor = AppColors.primary,
     this.iconBgColor,
     this.trailing,
     this.bottomSpacing = SeniorTokens.sectionGap,
@@ -197,14 +178,32 @@ class SeniorSectionBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget? leading;
     if (iconAsset != null) {
-      leading = SvgPicture.asset(
-        iconAsset!,
-        width: 22,
-        height: 22,
-        colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+      leading = Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: iconBgColor ?? AppColors.iceAccentCream,
+          borderRadius: BorderRadius.circular(9),
+        ),
+        alignment: Alignment.center,
+        child: SvgPicture.asset(
+          iconAsset!,
+          width: 18,
+          height: 18,
+          colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+        ),
       );
     } else if (icon != null) {
-      leading = Icon(icon, size: 23, color: iconColor);
+      leading = Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: iconBgColor ?? AppColors.iceAccentCream,
+          borderRadius: BorderRadius.circular(9),
+        ),
+        alignment: Alignment.center,
+        child: Icon(icon, size: 19, color: iconColor),
+      );
     }
 
     return Padding(
@@ -223,7 +222,7 @@ class SeniorSectionBlock extends StatelessWidget {
                       children: [
                         if (leading != null) ...[
                           leading,
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 9),
                         ],
                         Flexible(
                           child: Text(
@@ -231,7 +230,7 @@ class SeniorSectionBlock extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: SeniorTokens.sectionTitleFontSize,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: -0.35,
+                              letterSpacing: -0.25,
                               color: AppColors.iceTextNavy,
                               height: 1.25,
                             ),
@@ -240,7 +239,7 @@ class SeniorSectionBlock extends StatelessWidget {
                       ],
                     ),
                     if (subtitle != null && subtitle!.isNotEmpty) ...[
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 4),
                       Text(
                         subtitle!,
                         style: const TextStyle(
@@ -268,7 +267,7 @@ class SeniorSectionBlock extends StatelessWidget {
   }
 }
 
-/// Thẻ phẳng thanh lịch chuẩn Figma MedVault: nền trắng ấm, viền mảnh 1px `#E5DFD4`, bóng mờ nhẹ.
+/// Thẻ nền trắng tinh khiết (#FFFFFF), bo góc 16px, viền mảnh 1px #EAECF0, đổ bóng cực nhẹ.
 class SeniorCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -302,11 +301,11 @@ class SeniorCard extends StatelessWidget {
           color: borderColor ?? AppColors.iceCardBorder,
           width: borderWidth,
         ),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: AppColors.iceTextNavy.withValues(alpha: 0.035),
-            blurRadius: 14,
-            offset: const Offset(0, 3),
+            color: Color(0x08101828),
+            blurRadius: 12,
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -332,7 +331,8 @@ enum SeniorButtonVariant {
   amberHighlight,
 }
 
-/// Nút bấm chuẩn 40+ (cao >= 52px) theo đúng thẩm mỹ Olive & Warm Cream của Sổ Tay Y Tế.
+/// Nút bấm lớn chuẩn 40+ (chiều cao >= 52px): Xanh y tế chủ đạo, Xanh lá xác nhận/gọi điện,
+/// Xanh nhạt hỗ trợ và Trắng viền xám thanh lịch.
 class SeniorActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -355,27 +355,27 @@ class SeniorActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final (bg, fg, iconTint, border) = switch (variant) {
       SeniorButtonVariant.primary => (
-          AppColors.icePrimaryCall, // #3D4336 Olive đậm sang trọng
+          AppColors.primary,
           Colors.white,
-          AppColors.iceAccentCream,
+          Colors.white,
           BorderSide.none,
         ),
       SeniorButtonVariant.callNow => (
-          AppColors.reportTeal, // #00685F Teal y tế chuẩn mực
+          AppColors.reportTeal,
           Colors.white,
           Colors.white,
           BorderSide.none,
         ),
       SeniorButtonVariant.amberHighlight => (
-          AppColors.iceAccentCream, // #E8D2B5 Kem cát ấm
-          AppColors.iceTextBrownDark,
-          AppColors.iceTextBrownDark,
+          AppColors.iceAccentCream,
+          AppColors.primary,
+          AppColors.primary,
           const BorderSide(color: AppColors.iceBorderCream, width: 1),
         ),
       SeniorButtonVariant.secondaryOutline => (
-          AppColors.iceMetricBox, // #F7F4EE
+          AppColors.surfaceLight,
           AppColors.iceTextNavy,
-          AppColors.iceOlive,
+          AppColors.primary,
           const BorderSide(color: AppColors.iceCardBorder, width: 1.2),
         ),
     };
@@ -390,7 +390,7 @@ class SeniorActionButton extends StatelessWidget {
         minimumSize: Size(expand ? double.infinity : 112, minHeight),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(13),
+          borderRadius: BorderRadius.circular(14),
           side: border,
         ),
       ),
@@ -409,7 +409,7 @@ class SeniorActionButton extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                letterSpacing: -0.15,
+                letterSpacing: -0.1,
                 color: fg,
                 height: 1.22,
               ),
@@ -423,7 +423,7 @@ class SeniorActionButton extends StatelessWidget {
   }
 }
 
-/// Chip thao tác phụ dạng viên thuốc (Pill) thanh lịch kèm icon & chữ tiếng Việt.
+/// Nút phụ dạng Pill kèm icon & nhãn tiếng Việt rõ ràng.
 class SeniorLabeledIconButton extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -436,14 +436,14 @@ class SeniorLabeledIconButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.color = AppColors.iceOliveDark,
+    this.color = AppColors.primary,
     this.backgroundColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: backgroundColor ?? AppColors.iceSecondaryCard,
+      color: backgroundColor ?? AppColors.iceAccentCream,
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
@@ -465,7 +465,6 @@ class SeniorLabeledIconButton extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      letterSpacing: -0.1,
                       color: color,
                     ),
                   ),
@@ -479,7 +478,7 @@ class SeniorLabeledIconButton extends StatelessWidget {
   }
 }
 
-/// Thẻ Bento Tiện ích Sức khỏe (2x2) phong cách Editorial đồng bộ tông Olive - Kem Cát.
+/// Thẻ lưới Tiện ích sức khỏe (2x2) nền trắng sạch, ô icon màu dịu 46x46 tinh tế.
 class SeniorBigGridCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -495,7 +494,7 @@ class SeniorBigGridCard extends StatelessWidget {
     required this.subtitle,
     required this.icon,
     this.svgAsset,
-    this.accentColor = AppColors.iceOlive,
+    this.accentColor = AppColors.primary,
     this.cardTint,
     required this.onTap,
   });
@@ -518,7 +517,7 @@ class SeniorBigGridCard extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: AppColors.iceSecondaryCard,
+                  color: accentColor.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(13),
                 ),
                 alignment: Alignment.center,
@@ -535,13 +534,13 @@ class SeniorBigGridCard extends StatelessWidget {
                     : Icon(icon, size: 24, color: accentColor),
               ),
               const Icon(
-                Icons.north_east_rounded,
-                size: 18,
-                color: AppColors.iceTextMuted,
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: AppColors.dotMuted,
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Text(
             title,
             maxLines: 2,
@@ -549,12 +548,12 @@ class SeniorBigGridCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w700,
-              letterSpacing: -0.25,
+              letterSpacing: -0.2,
               color: AppColors.iceTextNavy,
               height: 1.25,
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 4),
           Text(
             subtitle,
             maxLines: 2,
@@ -572,7 +571,7 @@ class SeniorBigGridCard extends StatelessWidget {
   }
 }
 
-/// Ô tinh chỉnh chỉ số y tế (30px tabular figures) chuẩn Apple Health.
+/// Ô tinh chỉnh chỉ số y tế (30px tabular figures) sáng rõ, dễ bấm tăng/giảm.
 class SeniorNumberStepperField extends StatelessWidget {
   final String label;
   final String unit;
@@ -600,7 +599,7 @@ class SeniorNumberStepperField extends StatelessWidget {
     final typed = await showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.iceBackground,
+        backgroundColor: AppColors.surfaceLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(
           '$label ($unit)',
@@ -621,7 +620,7 @@ class SeniorNumberStepperField extends StatelessWidget {
           ),
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppColors.iceBackground,
             suffixText: unit,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
@@ -639,11 +638,11 @@ class SeniorNumberStepperField extends StatelessWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.icePrimaryCall,
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               minimumSize: const Size(96, 48),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(11),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
             onPressed: () {
@@ -668,7 +667,7 @@ class SeniorNumberStepperField extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.iceMetricBox,
+        color: AppColors.iceBackground,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.iceCardBorder),
       ),
@@ -684,9 +683,9 @@ class SeniorNumberStepperField extends StatelessWidget {
                   Text(
                     label,
                     style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.iceTextSlate,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.iceTextMuted,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -699,7 +698,7 @@ class SeniorNumberStepperField extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: -0.8,
+                          letterSpacing: -0.6,
                           fontFeatures: const [FontFeature.tabularFigures()],
                           color: accentColor,
                           height: 1.1,
@@ -709,7 +708,7 @@ class SeniorNumberStepperField extends StatelessWidget {
                       Text(
                         unit,
                         style: const TextStyle(
-                          fontSize: 14.5,
+                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                           color: AppColors.iceTextMuted,
                         ),
@@ -755,7 +754,7 @@ class _StepIconBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: AppColors.surfaceLight,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -770,12 +769,12 @@ class _StepIconBtn extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 22, color: AppColors.iceTextNavy),
+              Icon(icon, size: 22, color: AppColors.primary),
               Text(
                 semanticLabel,
                 style: const TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                   color: AppColors.iceTextMuted,
                 ),
               ),
@@ -787,7 +786,7 @@ class _StepIconBtn extends StatelessWidget {
   }
 }
 
-/// Thanh điều hướng kính mờ 4 mục đồng bộ hoàn toàn với IceBottomNavBar của Figma gốc.
+/// Thanh điều hướng đáy 4 mục nền trắng tinh khiết, tab đang chọn nổi bật màu xanh y tế (#1E56A0).
 class SeniorBottomNavBar extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelectTab;
@@ -830,110 +829,99 @@ class SeniorBottomNavBar extends StatelessWidget {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final activeIdx = selectedIndex.clamp(0, _items.length - 1);
 
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: EdgeInsets.only(bottom: bottomPadding),
-          decoration: BoxDecoration(
-            color: AppColors.iceBackground.withValues(alpha: 0.92),
-            border: Border(
-              top: BorderSide(
-                color: AppColors.iceCardBorder.withValues(alpha: 0.85),
-                width: 1,
-              ),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 12,
-                offset: const Offset(0, -2),
-              ),
-            ],
+    return Container(
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceLight,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.iceCardBorder,
+            width: 1,
           ),
-          child: SizedBox(
-            height: 68,
-            child: Row(
-              children: List.generate(_items.length, (i) {
-                final item = _items[i];
-                final isSelected = i == activeIdx;
-                final iconColor = isSelected
-                    ? AppColors.iceOliveDark
-                    : const Color(0xFF7D8682);
-                final labelColor = isSelected
-                    ? AppColors.iceOliveDark
-                    : const Color(0xFF7D8682);
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0A101828),
+            blurRadius: 12,
+            offset: Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SizedBox(
+        height: 68,
+        child: Row(
+          children: List.generate(_items.length, (i) {
+            final item = _items[i];
+            final isSelected = i == activeIdx;
+            final iconColor =
+                isSelected ? AppColors.primary : AppColors.iceTextMuted;
+            final labelColor =
+                isSelected ? AppColors.primary : AppColors.iceTextMuted;
 
-                return Expanded(
-                  child: InkWell(
-                    onTap: () => onSelectTab(i),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        if (isSelected)
-                          Positioned(
-                            top: 0,
-                            child: Container(
-                              width: 28,
-                              height: 3,
-                              decoration: const BoxDecoration(
-                                color: AppColors.iceOlive,
-                                borderRadius: BorderRadius.vertical(
-                                  bottom: Radius.circular(3),
-                                ),
-                              ),
+            return Expanded(
+              child: InkWell(
+                onTap: () => onSelectTab(i),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (isSelected)
+                      Positioned(
+                        top: 0,
+                        child: Container(
+                          width: 30,
+                          height: 3,
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.vertical(
+                              bottom: Radius.circular(3),
                             ),
                           ),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SizedBox(
-                              width: 26,
-                              height: 26,
-                              child: Center(
-                                child: item.svg != null
-                                    ? SvgPicture.asset(
-                                        item.svg!,
-                                        width: 22,
-                                        height: 22,
-                                        colorFilter: ColorFilter.mode(
-                                          iconColor,
-                                          BlendMode.srcIn,
-                                        ),
-                                      )
-                                    : Icon(
-                                        isSelected
-                                            ? item.activeIcon
-                                            : item.icon,
-                                        size: 25,
-                                        color: iconColor,
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              item.label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: isSelected
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                                letterSpacing: -0.1,
-                                color: labelColor,
-                                height: 1.1,
-                              ),
-                            ),
-                          ],
+                        ),
+                      ),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 26,
+                          height: 26,
+                          child: Center(
+                            child: item.svg != null
+                                ? SvgPicture.asset(
+                                    item.svg!,
+                                    width: 22,
+                                    height: 22,
+                                    colorFilter: ColorFilter.mode(
+                                      iconColor,
+                                      BlendMode.srcIn,
+                                    ),
+                                  )
+                                : Icon(
+                                    isSelected ? item.activeIcon : item.icon,
+                                    size: 25,
+                                    color: iconColor,
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: labelColor,
+                            height: 1.15,
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                );
-              }),
-            ),
-          ),
+                  ],
+                ),
+              ),
+            );
+          }),
         ),
       ),
     );

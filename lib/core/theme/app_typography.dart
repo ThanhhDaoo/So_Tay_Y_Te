@@ -1,26 +1,25 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-/// Hệ thống Typography chuẩn Apple Health / MedVault:
-/// Dùng font hệ thống gốc (SF Pro trên iOS, Roboto trên Android) để dấu tiếng Việt
-/// thanh thoát, tỷ lệ khoảng cách chữ (letterSpacing) và chiều cao dòng cân đối chuyên nghiệp.
+/// Hệ thống Typography chuẩn Y tế số hiện đại (SF Pro trên iOS / Roboto trên Android):
+/// Sắc nét, thanh thoát, phân cấp rõ giữa tiêu đề đậm vừa (w600-w700) và nhãn xám dịu (#667085).
 class AppTypography {
   static const List<FontFeature> tabularNums = [FontFeature.tabularFigures()];
 
   static const TextStyle vitalDisplay = TextStyle(
     fontSize: 30,
     fontWeight: FontWeight.w700,
-    height: 1.12,
-    letterSpacing: -0.8,
+    height: 1.15,
+    letterSpacing: -0.6,
     fontFeatures: tabularNums,
     color: AppColors.iceTextNavy,
   );
 
   static const TextStyle heading1 = TextStyle(
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: FontWeight.w700,
     height: 1.25,
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
     color: AppColors.iceTextNavy,
   );
 
@@ -28,31 +27,31 @@ class AppTypography {
     fontSize: 19,
     fontWeight: FontWeight.w700,
     height: 1.25,
-    letterSpacing: -0.3,
+    letterSpacing: -0.25,
     color: AppColors.iceTextNavy,
   );
 
   static const TextStyle ctaLarge = TextStyle(
-    fontSize: 17,
+    fontSize: 16.5,
     fontWeight: FontWeight.w600,
     height: 1.3,
     letterSpacing: -0.1,
-    color: AppColors.primaryPeach,
+    color: Colors.white,
   );
 
   static const TextStyle heading2 = TextStyle(
-    fontSize: 19,
+    fontSize: 18.5,
     fontWeight: FontWeight.w700,
     height: 1.3,
-    letterSpacing: -0.3,
+    letterSpacing: -0.25,
     color: AppColors.iceTextNavy,
   );
 
   static const TextStyle heading3 = TextStyle(
-    fontSize: 17.5,
+    fontSize: 17,
     fontWeight: FontWeight.w600,
     height: 1.3,
-    letterSpacing: -0.2,
+    letterSpacing: -0.15,
     color: AppColors.iceTextNavy,
   );
 
@@ -74,7 +73,6 @@ class AppTypography {
     fontSize: 15,
     fontWeight: FontWeight.w600,
     height: 1.35,
-    letterSpacing: -0.05,
     color: AppColors.iceTextNavy,
   );
 
@@ -82,7 +80,6 @@ class AppTypography {
     fontSize: 13,
     fontWeight: FontWeight.w600,
     height: 1.3,
-    letterSpacing: 0.2,
     color: AppColors.iceTextNavy,
   );
 
@@ -94,10 +91,9 @@ class AppTypography {
   );
 
   static const TextStyle badge = TextStyle(
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: FontWeight.w600,
     height: 1.25,
-    letterSpacing: 0.5,
-    color: AppColors.textWarmBrown,
+    color: AppColors.primary,
   );
 }

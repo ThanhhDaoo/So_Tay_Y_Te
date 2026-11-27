@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
 
-/// Khối định danh & thời gian thực trên Trang chủ theo đúng ngôn ngữ thiết kế
-/// Horizontal Identity Card của Figma gốc (tông Kem Cát ấm, watermark khiên y tế mờ, chữ thanh thoát).
+/// Khối định danh bệnh nhân & thời gian thực trên Trang chủ Sổ Tay Y Tế:
+/// Kết hợp hàng chào hỏi sáng thoáng (Avatar + Họ tên, Tuổi, Giới tính + Nút Thẻ ICE)
+/// và thẻ Banner Xanh Y Tế hiển thị Thứ, Ngày & Giờ hiện tại rõ nét cho người lớn tuổi.
 class HomeUserTimeHeader extends StatefulWidget {
   final String fullName;
   final String ageLabel;
@@ -73,7 +74,7 @@ class _HomeUserTimeHeaderState extends State<HomeUserTimeHeader> {
     final g = raw.toLowerCase();
     if (g.contains('nữ') || g.contains('female')) return 'Nữ';
     if (g.contains('nam') || g.contains('male')) return 'Nam';
-    return 'Chưa cập nhật giới tính';
+    return 'Chưa cập nhật';
   }
 
   IconData _genderFallbackIcon(String raw) {
@@ -95,19 +96,12 @@ class _HomeUserTimeHeaderState extends State<HomeUserTimeHeader> {
     }
 
     return Container(
-      width: 62,
-      height: 62,
+      width: 56,
+      height: 56,
       decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
+        color: AppColors.iceAccentCream,
         shape: BoxShape.circle,
-        border: Border.all(color: AppColors.iceBorderCream, width: 1.8),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x120B1C30),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: AppColors.iceBorderCream, width: 1.5),
         image: provider != null
             ? DecorationImage(image: provider, fit: BoxFit.cover)
             : null,
@@ -115,8 +109,8 @@ class _HomeUserTimeHeaderState extends State<HomeUserTimeHeader> {
       child: provider == null
           ? Icon(
               _genderFallbackIcon(widget.genderLabel),
-              size: 30,
-              color: AppColors.iceOlive,
+              size: 28,
+              color: AppColors.primary,
             )
           : null,
     );
@@ -130,188 +124,242 @@ class _HomeUserTimeHeaderState extends State<HomeUserTimeHeader> {
         '${_now.hour.toString().padLeft(2, '0')}:${_now.minute.toString().padLeft(2, '0')}';
     final genderText = _normalizeGender(widget.genderLabel);
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFAF7F2),
-            Color(0xFFF1E5D3),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppColors.iceBorderCream.withValues(alpha: 0.75),
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A0B1C30),
-            blurRadius: 14,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -14,
-              bottom: -16,
-              child: Opacity(
-                opacity: 0.06,
-                child: SvgPicture.asset(
-                  'assets/icons/ic_prof_shield_watermark.svg',
-                  width: 108,
-                  height: 108,
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 1. Hàng định danh bệnh nhân sáng thoáng trên nền trắng/sáng
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceLight,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.iceCardBorder),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x06101828),
+                blurRadius: 10,
+                offset: Offset(0, 2),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Dòng trên: Ngày, Thứ, Giờ hiện tại + Nút Thẻ Cấp Cứu ICE
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: widget.onTapProfile,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Row(
                     children: [
-                      Flexible(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                      _buildPortrait(),
+                      const SizedBox(width: 13),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              width: 7,
-                              height: 7,
-                              decoration: const BoxDecoration(
-                                color: AppColors.reportTeal,
-                                shape: BoxShape.circle,
+                            const Text(
+                              'Xin chào,',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.iceTextMuted,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                '$dateText  •  $timeText',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: -0.1,
-                                  fontFeatures: [FontFeature.tabularFigures()],
-                                  color: AppColors.iceOliveDark,
-                                ),
+                            const SizedBox(height: 2),
+                            Text(
+                              widget.fullName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.3,
+                                color: AppColors.iceTextNavy,
+                                height: 1.22,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${widget.ageLabel} • Giới tính: $genderText',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.iceTextSlate,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Material(
-                        color: AppColors.icePrimaryCall,
-                        borderRadius: BorderRadius.circular(999),
-                        child: InkWell(
-                          onTap: widget.onOpenEmergencyCard,
-                          borderRadius: BorderRadius.circular(999),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 7,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/icons/ic_nav_ice.svg',
-                                  width: 14,
-                                  height: 14,
-                                ),
-                                const SizedBox(width: 6),
-                                const Text(
-                                  'Thẻ ICE',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.iceAccentCream,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Container(
-                    height: 1,
-                    color: AppColors.iceBorderCream.withValues(alpha: 0.5),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Dòng dưới: Chân dung + Họ tên, Tuổi, Giới tính
-                  InkWell(
-                    onTap: widget.onTapProfile,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Row(
+                ),
+              ),
+              const SizedBox(width: 10),
+              Material(
+                color: AppColors.iceDangerBg,
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: widget.onOpenEmergencyCard,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.iceDangerText.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildPortrait(),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'HỒ SƠ THEO DÕI HẰNG NGÀY',
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.6,
-                                  color: AppColors.textWarmBrown,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                widget.fullName,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 21,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: -0.4,
-                                  color: AppColors.iceTextNavy,
-                                  height: 1.2,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                '${widget.ageLabel}  •  Giới tính: $genderText',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 15.5,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.iceTextSlate,
-                                ),
-                              ),
-                            ],
+                        SvgPicture.asset(
+                          'assets/icons/ic_nav_ice.svg',
+                          width: 18,
+                          height: 18,
+                          colorFilter: const ColorFilter.mode(
+                            AppColors.iceDangerText,
+                            BlendMode.srcIn,
                           ),
                         ),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          size: 22,
-                          color: AppColors.textWarmBrown,
+                        const SizedBox(height: 3),
+                        const Text(
+                          'Thẻ ICE',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.iceDangerText,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+        const SizedBox(height: 14),
+
+        // 2. Banner Xanh Y Tế hiển thị Thời gian thực & Nhật ký sức khỏe trong ngày
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                Color(0xFF1E56A0),
+                Color(0xFF4277C6),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x221E56A0),
+                blurRadius: 16,
+                offset: Offset(0, 6),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -8,
+                  bottom: -14,
+                  child: Opacity(
+                    opacity: 0.16,
+                    child: SvgPicture.asset(
+                      'assets/icons/ic_prof_shield_watermark.svg',
+                      width: 104,
+                      height: 104,
+                      colorFilter: const ColorFilter.mode(
+                        Colors.white,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 18,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 11,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Text(
+                          'Sổ Tay Y Tế • Nhật ký hôm nay',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 11),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            timeText,
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.5,
+                              fontFeatures: [FontFeature.tabularFigures()],
+                              color: Colors.white,
+                              height: 1.1,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Flexible(
+                            child: Text(
+                              dateText,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFFEAF2FF),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Đo huyết áp và uống thuốc đúng cữ để ổn định sức khỏe mỗi ngày',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFFDCE8FF),
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

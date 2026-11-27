@@ -26,9 +26,9 @@ class RxHeader extends StatelessWidget {
             left: AppLayoutTokens.screenPadding,
             right: AppLayoutTokens.screenPadding,
           ),
-          decoration: BoxDecoration(
-            color: AppColors.rxBackground.withValues(alpha: 0.88),
-            border: const Border(
+          decoration: const BoxDecoration(
+            color: AppColors.surfaceLight,
+            border: Border(
               bottom: BorderSide(color: AppColors.rxBorder, width: 1),
             ),
           ),

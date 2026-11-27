@@ -29,11 +29,11 @@ class ProfileHeader extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           padding: EdgeInsets.fromLTRB(20, topPadding + 14, 20, 14),
-          decoration: BoxDecoration(
-            color: AppColors.backgroundLight.withValues(alpha: 0.90),
-            border: const Border(
+          decoration: const BoxDecoration(
+            color: AppColors.surfaceLight,
+            border: Border(
               bottom: BorderSide(
-                color: Color(0x80E5DFD4),
+                color: AppColors.iceCardBorder,
                 width: 1,
               ),
             ),

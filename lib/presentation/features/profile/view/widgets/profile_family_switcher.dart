@@ -73,28 +73,21 @@ class ProfileFamilySwitcher extends StatelessWidget {
                           gradient: LinearGradient(
                             colors: isPro
                                 ? const [
-                                    Color(0xFF2C2418),
-                                    Color(0xFF4A3B28),
+                                    AppColors.iceBannerStart,
+                                    AppColors.iceBannerEnd,
                                   ]
                                 : const [
-                                    Color(0xFFF3ECE0),
-                                    Color(0xFFE5D5BF),
+                                    AppColors.iceAccentCream,
+                                    Color(0xFFE0ECFF),
                                   ],
                           ),
                           borderRadius: BorderRadius.circular(999),
                           border: Border.all(
                             color: isPro
-                                ? const Color(0xFFD8B278)
-                                : const Color(0xFFC7A87E),
-                            width: 1.2,
+                                ? AppColors.primaryLight
+                                : AppColors.iceBorderCream,
+                            width: 1.1,
                           ),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x24433624),
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -103,7 +96,7 @@ class ProfileFamilySwitcher extends StatelessWidget {
                               const Icon(
                                 Icons.verified_rounded,
                                 size: 13,
-                                color: Color(0xFFFFE0A3),
+                                color: Colors.white,
                               )
                             else
                               SvgPicture.asset(
@@ -111,7 +104,7 @@ class ProfileFamilySwitcher extends StatelessWidget {
                                 width: 13,
                                 height: 13,
                                 colorFilter: const ColorFilter.mode(
-                                  Color(0xFF433624),
+                                  AppColors.primary,
                                   BlendMode.srcIn,
                                 ),
                               ),
@@ -123,8 +116,8 @@ class ProfileFamilySwitcher extends StatelessWidget {
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.2,
                                 color: isPro
-                                    ? const Color(0xFFFFE0A3)
-                                    : const Color(0xFF433624),
+                                    ? Colors.white
+                                    : AppColors.primary,
                               ),
                             ),
                             const SizedBox(width: 4),
@@ -132,8 +125,8 @@ class ProfileFamilySwitcher extends StatelessWidget {
                               Icons.chevron_right,
                               size: 14,
                               color: isPro
-                                  ? const Color(0xFFFFE0A3)
-                                  : const Color(0xFF433624),
+                                  ? Colors.white
+                                  : AppColors.primary,
                             ),
                           ],
                         ),
@@ -186,7 +179,7 @@ class _FamilyChipItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: isSelected ? const Color(0xFFF2EADA) : AppColors.surfaceCream,
+      color: isSelected ? AppColors.iceAccentCream : AppColors.surfaceLight,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -197,19 +190,10 @@ class _FamilyChipItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
-                  ? AppColors.iceAccentCream
-                  : AppColors.iceCardBorder.withValues(alpha: 0.70),
+                  ? AppColors.primary.withValues(alpha: 0.45)
+                  : AppColors.iceCardBorder,
               width: 1,
             ),
-            boxShadow: isSelected
-                ? const [
-                    BoxShadow(
-                      color: Color(0x0D000000),
-                      blurRadius: 4,
-                      offset: Offset(0, 1),
-                    ),
-                  ]
-                : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -224,7 +208,7 @@ class _FamilyChipItem extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: isSelected
-                            ? const Color(0xFF5C6254)
+                            ? AppColors.primary
                             : Colors.transparent,
                         width: 1.5,
                       ),
@@ -246,7 +230,7 @@ class _FamilyChipItem extends StatelessWidget {
                         width: 15,
                         height: 15,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF5C6254),
+                          color: AppColors.primary,
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: AppColors.surfaceLight,
@@ -289,7 +273,7 @@ class _FamilyChipItem extends StatelessWidget {
                       fontSize: 10,
                       fontWeight: FontWeight.w500,
                       color: isSelected
-                          ? AppColors.iceTextBrownDark
+                          ? AppColors.primary
                           : AppColors.iceTextMuted,
                       height: 1.15,
                     ),
@@ -312,7 +296,7 @@ class _AddMemberChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0x99DCE9FF),
+      color: AppColors.iceAccentCream,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -322,7 +306,7 @@ class _AddMemberChip extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: const Color(0xFFE5DFD4),
+              color: AppColors.iceBorderCream,
             ),
           ),
           child: Row(
@@ -332,7 +316,7 @@ class _AddMemberChip extends StatelessWidget {
                 width: 30,
                 height: 30,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceLight.withValues(alpha: 0.70),
+                  color: AppColors.surfaceLight,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
@@ -341,7 +325,7 @@ class _AddMemberChip extends StatelessWidget {
                     width: 14,
                     height: 14,
                     colorFilter: const ColorFilter.mode(
-                      Color(0xFF5C6254),
+                      AppColors.primary,
                       BlendMode.srcIn,
                     ),
                   ),
@@ -353,7 +337,7 @@ class _AddMemberChip extends StatelessWidget {
                 style: AppTypography.labelSemiBold.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF5C6254),
+                  color: AppColors.primary,
                 ),
               ),
             ],

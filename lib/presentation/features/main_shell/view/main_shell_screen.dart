@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/user_session_manager.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../common_widgets/layout/app_layout.dart';
 import '../../../common_widgets/senior_40plus/senior_ui_kit.dart';
 import '../../assistant/view/medical_assistant_sheet.dart';
@@ -48,7 +49,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final assistantBottomOffset =
-        _selectedIndex == 1 ? bottomPadding + 150 : bottomPadding + 92;
+        _selectedIndex == 1 ? bottomPadding + 150 : bottomPadding + 90;
 
     return Scaffold(
       extendBody: true,
@@ -94,25 +95,21 @@ class _FloatingAssistantButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         child: Container(
           constraints: const BoxConstraints(minHeight: 46),
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFF2C2418),
-                Color(0xFF4E5547),
+                AppColors.iceBannerStart,
+                AppColors.iceBannerEnd,
               ],
             ),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: const Color(0xFFD8B278),
-              width: 1.1,
-            ),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x331E241B),
-                blurRadius: 12,
+                color: Color(0x331E56A0),
+                blurRadius: 14,
                 offset: Offset(0, 4),
               ),
             ],
@@ -121,18 +118,17 @@ class _FloatingAssistantButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.chat_bubble_outline_rounded,
-                color: Color(0xFFFFE0A3),
-                size: 19,
+                Icons.support_agent_rounded,
+                color: Colors.white,
+                size: 20,
               ),
               SizedBox(width: 7),
               Text(
                 'Trợ lý Y tế',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 14,
+                  fontSize: 14.5,
                   fontWeight: FontWeight.w600,
-                  letterSpacing: 0.1,
                 ),
               ),
             ],

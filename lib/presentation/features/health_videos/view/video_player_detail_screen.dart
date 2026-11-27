@@ -131,7 +131,7 @@ class _VideoPlayerDetailScreenState extends State<VideoPlayerDetailScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: Container(
-              color: const Color(0xFF1A221E),
+              color: const Color(0xFF0F172A),
               child: Column(
                 children: [
                   SizedBox(
@@ -154,8 +154,8 @@ class _VideoPlayerDetailScreenState extends State<VideoPlayerDetailScreen> {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Color(0x55000000),
-                                Color(0xCC0D1411),
+                                Color(0x550F172A),
+                                Color(0xCC0F172A),
                               ],
                             ),
                           ),

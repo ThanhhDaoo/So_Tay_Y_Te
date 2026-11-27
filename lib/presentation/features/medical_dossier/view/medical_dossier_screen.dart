@@ -244,12 +244,12 @@ class _MedicalDossierScreenState extends State<MedicalDossierScreen> {
                 SeniorSectionBlock(
                   title: '1. Tổng quan sức khỏe',
                   subtitle: 'Hồ sơ: ${activeProfile.fullName}',
-                  icon: Icons.analytics_rounded,
-                  iconColor: const Color(0xFF00685F),
+                  icon: Icons.analytics_outlined,
+                  iconColor: AppColors.primary,
                   trailing: SeniorLabeledIconButton(
-                    icon: Icons.picture_as_pdf_rounded,
+                    icon: Icons.picture_as_pdf_outlined,
                     label: 'Xuất PDF',
-                    color: const Color(0xFF00685F),
+                    color: AppColors.primary,
                     onTap: () =>
                         Navigator.pushNamed(context, AppRoutes.vitalReports),
                   ),

@@ -64,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ..showSnackBar(
           SnackBar(
             content: Text(msg, style: const TextStyle(fontSize: 15.5)),
-            backgroundColor: AppColors.iceOlive,
+            backgroundColor: AppColors.primary,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -111,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.iceBackground,
+        backgroundColor: AppColors.surfaceLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: const Text(
           'Thêm Việc Cần Làm',
@@ -130,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: const TextStyle(fontSize: 16.5),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: AppColors.iceBackground,
                 labelText: 'Tên công việc (VD: Đo đường huyết)',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -143,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: const TextStyle(fontSize: 16.5),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: AppColors.iceBackground,
                 labelText: 'Giờ nhắc (VD: 09:00)',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -162,11 +162,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.icePrimaryCall,
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               minimumSize: const Size(104, 48),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(11),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
             onPressed: () {
@@ -199,15 +199,15 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundColor: AppColors.iceBackground,
           extendBodyBehindAppBar: true,
           appBar: const MedVaultGlassAppBar(
-            title: 'Trang Chủ Sức Khỏe',
+            title: 'Sổ Tay Y Tế',
           ),
           body: RefreshIndicator(
-            color: AppColors.iceOlive,
+            color: AppColors.primary,
             onRefresh: _viewModel.loadDashboard,
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 AppLayoutTokens.screenPadding,
-                topPad + 78,
+                topPad + 76,
                 AppLayoutTokens.screenPadding,
                 bottomPad + 132,
               ),
@@ -267,13 +267,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 // KHỐI 4: Tổng quan sức khỏe chung
                 _buildHealthOverviewBlock(state.healthOverview),
 
-                // KHỐI 5: Lưới Tiện ích sức khỏe (Big Action Cards đồng bộ tông Olive-Cream)
+                // KHỐI 5: Lưới Tiện ích sức khỏe (Big Action Cards)
                 SeniorSectionBlock(
-                  title: 'Danh mục chuyên sâu',
-                  subtitle: 'Chạm vào từng mục để tra cứu và theo dõi',
-                  icon: Icons.auto_awesome_mosaic_outlined,
-                  iconAsset: 'assets/icons/ic_doctor_bag.svg',
-                  iconColor: AppColors.iceOlive,
+                  title: 'Tiện ích chăm sóc sức khỏe',
+                  subtitle: 'Chạm vào từng mục để mở trang chuyên biệt',
+                  icon: Icons.grid_view_rounded,
+                  iconColor: AppColors.primary,
                   bottomSpacing: 0,
                   child: Column(
                     children: [
@@ -287,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 subtitle: 'Tiền sử, lưu ý đặc biệt & đợt khám',
                                 icon: Icons.assignment_outlined,
                                 svgAsset: 'assets/icons/ic_timeline_history.svg',
-                                accentColor: AppColors.iceOliveDark,
+                                accentColor: AppColors.primary,
                                 onTap: () {
                                   if (widget.onSelectMainTab != null) {
                                     widget.onSelectMainTab!(1);
@@ -327,7 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 title: 'Video sức khỏe',
                                 subtitle: 'Bài tập dưỡng sinh, khớp gối & thở',
                                 icon: Icons.play_circle_outline_rounded,
-                                accentColor: AppColors.textWarmBrown,
+                                accentColor: const Color(0xFF2563EB),
                                 onTap: () => Navigator.pushNamed(
                                   context,
                                   AppRoutes.healthVideos,
@@ -340,7 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 title: 'Dinh dưỡng & Thực phẩm chức năng',
                                 subtitle: 'Thực đơn nên ăn, nên kiêng & thuốc bổ',
                                 icon: Icons.spa_outlined,
-                                accentColor: AppColors.iceOlive,
+                                accentColor: const Color(0xFF0891B2),
                                 onTap: () => Navigator.pushNamed(
                                   context,
                                   AppRoutes.nutritionSupplements,
@@ -364,9 +363,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHealthOverviewBlock(HomeHealthOverviewSummary summary) {
     return SeniorSectionBlock(
       title: 'Tổng quan sức khỏe',
-      subtitle: 'Hồ sơ sinh trắc & bệnh lý đang theo dõi',
+      subtitle: 'Thông số cơ thể & bệnh lý đang theo dõi',
       iconAsset: 'assets/icons/ic_vitals_pulse.svg',
-      iconColor: AppColors.iceOlive,
+      iconColor: AppColors.primary,
       trailing: SeniorLabeledIconButton(
         icon: Icons.insights_rounded,
         label: 'Biểu đồ',
@@ -383,18 +382,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppColors.iceMetricBox,
+                      color: AppColors.iceBackground,
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.iceCardBorder),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'NHÓM MÁU',
+                          'Nhóm máu',
                           style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w500,
                             color: AppColors.iceTextMuted,
                           ),
                         ),
@@ -416,18 +415,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppColors.iceMetricBox,
+                      color: AppColors.iceBackground,
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.iceCardBorder),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'THỂ TRẠNG',
+                          'Thể trạng',
                           style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w500,
                             color: AppColors.iceTextMuted,
                           ),
                         ),
@@ -479,7 +478,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 15,
                     height: 15,
                     colorFilter: const ColorFilter.mode(
-                      AppColors.iceCriticalBadge,
+                      AppColors.iceDangerText,
                       BlendMode.srcIn,
                     ),
                   ),
@@ -489,7 +488,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'Luôn thông báo tiền sử dị ứng cho bác sĩ trước khi nhận đơn.',
                       style: TextStyle(
                         fontSize: 13.5,
-                        color: AppColors.iceCriticalBadge,
+                        color: AppColors.iceDangerText,
                       ),
                     ),
                   ),
