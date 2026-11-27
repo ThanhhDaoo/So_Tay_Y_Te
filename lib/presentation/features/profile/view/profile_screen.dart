@@ -342,30 +342,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const SizedBox(height: AppLayoutTokens.cardGap),
                           SizedBox(
                             width: double.infinity,
-                            height: 54,
+                            height: 50,
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
+                                backgroundColor: AppColors.surfaceLight,
                                 foregroundColor: AppColors.iceTextNavy,
                                 side: const BorderSide(
-                                  color: AppColors.primary,
-                                  width: 1.5,
+                                  color: AppColors.iceBorderCream,
+                                  width: 1.2,
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
                               onPressed: () => Navigator.of(context)
                                   .pushNamed(AppRoutes.securitySettings),
                               icon: const Icon(
                                 Icons.security_rounded,
-                                size: 28,
+                                size: 20,
                                 color: AppColors.primary,
                               ),
                               label: const Text(
                                 'Cài đặt Bảo mật, Khóa PIN & Sao lưu',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: 16.5,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
                                 ),
                               ),
                             ),

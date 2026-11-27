@@ -95,11 +95,11 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           ),
           body: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(
+            padding: EdgeInsets.only(
               left: AppLayoutTokens.screenPadding,
               right: AppLayoutTokens.screenPadding,
               top: 16,
-              bottom: 112,
+              bottom: widget.showBottomNav ? 112 : 40,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

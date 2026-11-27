@@ -48,6 +48,31 @@ class IceHeader extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (!readOnlyLockMode && Navigator.of(context).canPop()) ...[
+                      Material(
+                        color: AppColors.iceBackground,
+                        borderRadius: BorderRadius.circular(10),
+                        child: InkWell(
+                          onTap: () => Navigator.of(context).pop(),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.iceCardBorder),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.arrow_back_rounded,
+                              size: 19,
+                              color: AppColors.iceTextNavy,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                    ],
                     Image.asset(
                       'assets/images/img_sotayyte_logo.png',
                       width: 32,

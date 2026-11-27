@@ -101,7 +101,7 @@ class AppRoutes {
       case securitySettings:
       case AppRoutes.settings:
         return CupertinoPageRoute(
-          builder: (_) => const SecuritySettingsScreen(showBottomNav: true),
+          builder: (_) => const SecuritySettingsScreen(showBottomNav: false),
         );
       case mainShell:
         final initialIndex = settings.arguments as int? ?? 0;
@@ -116,7 +116,9 @@ class AppRoutes {
           builder: (_) => RecordDetailScreen(recordId: recordId ?? ''),
         );
       case documents:
-        return CupertinoPageRoute(builder: (_) => const DocumentsScreen());
+        return CupertinoPageRoute(
+          builder: (_) => const DocumentsScreen(showBottomNav: false),
+        );
       case paywall:
         return CupertinoPageRoute(builder: (_) => const PaywallScreen());
       case vitalReports:

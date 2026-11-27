@@ -68,11 +68,11 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FF),
+      backgroundColor: AppColors.iceBackground,
       extendBody: true,
       bottomNavigationBar: widget.showBottomNav
           ? IceBottomNavBar(
-              selectedIndex: 4,
+              selectedIndex: 1,
               onSelectTab: _onSelectBottomTab,
             )
           : null,
@@ -93,7 +93,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                   AppLayoutTokens.screenPadding,
                   16,
                   AppLayoutTokens.screenPadding,
-                  110 + bottomPadding,
+                  (widget.showBottomNav ? 104 : 36) + bottomPadding,
                 ),
                 sliver: SliverList.list(
                   children: [
