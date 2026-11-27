@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../core/theme/app_colors.dart';
 
-/// Tiêu đề gom nhóm thông tin (Section Header) tạo điểm neo thị giác rõ ràng.
+/// Tiêu đề gom nhóm thông tin (Section Header) gọn sắc, cân đối.
 class SectionHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -20,7 +20,7 @@ class SectionHeader extends StatelessWidget {
     this.subtitle,
     this.icon,
     this.iconAsset,
-    this.iconSize = 20.0,
+    this.iconSize = 18.0,
     this.iconColor,
     this.titleColor = AppColors.iceTextNavy,
     this.trailing,
@@ -35,15 +35,16 @@ class SectionHeader extends StatelessWidget {
         iconAsset!,
         width: iconSize,
         height: iconSize,
-        colorFilter: iconColor != null
-            ? ColorFilter.mode(iconColor!, BlendMode.srcIn)
-            : null,
+        colorFilter: ColorFilter.mode(
+          iconColor ?? AppColors.primary,
+          BlendMode.srcIn,
+        ),
       );
     } else if (icon != null) {
       leadingIcon = Icon(
         icon,
-        size: iconSize + 2,
-        color: iconColor ?? AppColors.iceOlive,
+        size: iconSize + 1,
+        color: iconColor ?? AppColors.primary,
       );
     }
 
@@ -61,35 +62,35 @@ class SectionHeader extends StatelessWidget {
                   children: [
                     if (leadingIcon != null) ...[
                       leadingIcon,
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 7),
                     ],
                     Flexible(
                       child: Text(
                         title,
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 18.5,
+                          fontSize: 16.5,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: -0.3,
+                          letterSpacing: -0.2,
                           color: titleColor,
-                          height: 1.28,
+                          height: 1.25,
                         ),
                       ),
                     ),
                   ],
                 ),
                 if (subtitle != null && subtitle!.isNotEmpty) ...[
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle!,
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 14.5,
+                      fontSize: 13,
                       fontWeight: FontWeight.w400,
                       color: AppColors.iceTextMuted,
-                      height: 1.35,
+                      height: 1.32,
                     ),
                   ),
                 ],
@@ -97,7 +98,7 @@ class SectionHeader extends StatelessWidget {
             ),
           ),
           if (trailing != null) ...[
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             trailing!,
           ],
         ],

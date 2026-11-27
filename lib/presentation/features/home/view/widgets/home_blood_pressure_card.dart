@@ -3,9 +3,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../domain/entities/daily_vital_log.dart';
 import '../../../../common_widgets/senior_40plus/senior_ui_kit.dart';
 
-/// Khối Huyết áp hằng ngày (Ưu tiên số 1):
-/// Thẻ nền trắng tinh khiết, so sánh cạnh nhau "Hôm qua" và "Hôm nay",
-/// chữ số 30px rõ nét kèm 2 nút lớn "Cập nhật huyết áp" và "Chụp ảnh máy đo (Scan)".
+/// Khối Huyết áp hằng ngày (Ưu tiên số 1) cân đối 2 cột "Hôm qua" vs "Hôm nay", không tràn chữ.
 class HomeBloodPressureCard extends StatelessWidget {
   final YesterdayTodayBpComparison comparison;
   final VoidCallback onUpdateManual;
@@ -46,7 +44,7 @@ class HomeBloodPressureCard extends StatelessWidget {
       iconAsset: 'assets/icons/ic_blood_pressure.svg',
       iconColor: AppColors.primary,
       child: SeniorCard(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -66,7 +64,7 @@ class HomeBloodPressureCard extends StatelessWidget {
                   Container(
                     width: 1,
                     margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
+                      horizontal: 12,
                       vertical: 2,
                     ),
                     color: AppColors.divider,
@@ -83,43 +81,43 @@ class HomeBloodPressureCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: AppColors.iceBackground,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: AppColors.iceCardBorder),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Padding(
-                    padding: EdgeInsets.only(top: 2),
+                    padding: EdgeInsets.only(top: 1.5),
                     child: Icon(
                       Icons.info_outline_rounded,
-                      size: 18,
+                      size: 16,
                       color: AppColors.primary,
                     ),
                   ),
-                  const SizedBox(width: 9),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       comparison.comparisonSummaryVi,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w400,
                         color: AppColors.iceTextSlate,
-                        height: 1.4,
+                        height: 1.38,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
             SeniorActionButton(
               label: 'Cập nhật huyết áp',
@@ -127,7 +125,7 @@ class HomeBloodPressureCard extends StatelessWidget {
               variant: SeniorButtonVariant.primary,
               onPressed: onUpdateManual,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             SeniorActionButton(
               label: 'Chụp ảnh máy đo (Scan)',
               icon: Icons.document_scanner_outlined,
@@ -172,14 +170,14 @@ class _BpCleanMetricColumn extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: isToday ? FontWeight.w600 : FontWeight.w500,
                   color: isToday ? AppColors.primary : AppColors.iceTextMuted,
                 ),
               ),
             ),
             if (isToday) ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Container(
                 width: 6,
                 height: 6,
@@ -191,7 +189,7 @@ class _BpCleanMetricColumn extends StatelessWidget {
             ],
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         if (log != null) ...[
           FittedBox(
             fit: BoxFit.scaleDown,
@@ -203,9 +201,9 @@ class _BpCleanMetricColumn extends StatelessWidget {
                 Text(
                   log!.formattedBp,
                   style: TextStyle(
-                    fontSize: 29,
+                    fontSize: 23,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: -0.6,
+                    letterSpacing: -0.4,
                     fontFeatures: const [FontFeature.tabularFigures()],
                     color: isToday
                         ? AppColors.iceTextNavy
@@ -217,7 +215,7 @@ class _BpCleanMetricColumn extends StatelessWidget {
                 const Text(
                   'mmHg',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w500,
                     color: AppColors.iceTextMuted,
                   ),
@@ -225,20 +223,22 @@ class _BpCleanMetricColumn extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           if (log!.heartRate != null && log!.heartRate! > 0)
             Text(
-              'Nhịp tim: ${log!.heartRate} l/phút',
+              'Nhịp tim: ${log!.heartRate} l/p',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w500,
                 fontFeatures: [FontFeature.tabularFigures()],
                 color: AppColors.iceTextMuted,
               ),
             ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
             decoration: BoxDecoration(
               color: bg,
               borderRadius: BorderRadius.circular(999),
@@ -248,7 +248,7 @@ class _BpCleanMetricColumn extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: fg,
               ),
@@ -258,14 +258,14 @@ class _BpCleanMetricColumn extends StatelessWidget {
           const Text(
             '-- / --',
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 22,
               fontWeight: FontWeight.w600,
               color: AppColors.dotMuted,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
             decoration: BoxDecoration(
               color: AppColors.timelineInputBg,
               borderRadius: BorderRadius.circular(999),
@@ -275,7 +275,7 @@ class _BpCleanMetricColumn extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
                 color: AppColors.iceTextMuted,
               ),

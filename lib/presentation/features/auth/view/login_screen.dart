@@ -585,7 +585,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Text(
                         'Đăng Nhập Ngay',
                         style: AppTypography.labelSemiBold.copyWith(
-                          color: AppColors.primaryPeach,
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -593,6 +593,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         'assets/icons/ic_arrow_right.svg',
                         width: 12,
                         height: 12,
+                        colorFilter: const ColorFilter.mode(
+                          Colors.white,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ],
                   ],
@@ -614,14 +618,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildSignUpRedirect() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 6,
+      runSpacing: 4,
       children: [
         Text(
           'Chưa có tài khoản Sổ Tay Y Tế?',
           style: AppTypography.body,
         ),
-        const SizedBox(width: 6),
         GestureDetector(
           onTap: () => Navigator.pushNamed(context, AppRoutes.register),
           child: Text(

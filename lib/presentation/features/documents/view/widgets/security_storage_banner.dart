@@ -24,8 +24,8 @@ class SecurityStorageBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return CleanCard(
       onTap: () => _showStorageDetailSheet(context),
-      backgroundColor: const Color(0xFFF9F7F2),
-      borderColor: const Color(0xFFEAE5DB),
+      backgroundColor: const Color(0xFFF8FAFC),
+      borderColor: const Color(0xFFEAECF0),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
@@ -34,7 +34,7 @@ class SecurityStorageBanner extends StatelessWidget {
             width: 15,
             height: 18,
             colorFilter: const ColorFilter.mode(
-              Color(0xFF00685F),
+              Color(0xFF0E9F6E),
               BlendMode.srcIn,
             ),
           ),
@@ -63,7 +63,7 @@ class SecurityStorageBanner extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF00685F),
+                color: Color(0xFF0E9F6E),
               ),
             ),
           ),
@@ -110,7 +110,7 @@ class SecurityStorageBanner extends StatelessWidget {
               title: 'Kho Tài Liệu Mã Hóa E2EE',
               subtitle: 'Chuẩn bảo mật 256-bit AES cục bộ',
               icon: Icons.enhanced_encryption_outlined,
-              iconColor: const Color(0xFF00685F),
+              iconColor: const Color(0xFF0E9F6E),
               trailing: IconButton(
                 onPressed: () => Navigator.pop(ctx),
                 icon: const Icon(
@@ -131,7 +131,7 @@ class SecurityStorageBanner extends StatelessWidget {
                   KeyValueRow(
                     label: 'Dung lượng đang dùng',
                     value: '$usedStorageMb MB',
-                    valueColor: const Color(0xFF00685F),
+                    valueColor: const Color(0xFF0E9F6E),
                   ),
                   KeyValueRow(
                     label: 'Dung lượng nén tiết kiệm (WebP)',
@@ -149,7 +149,7 @@ class SecurityStorageBanner extends StatelessWidget {
                       minHeight: 7,
                       backgroundColor: const Color(0xFFE5EEFF),
                       valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color(0xFF00685F),
+                        Color(0xFF0E9F6E),
                       ),
                     ),
                   ),

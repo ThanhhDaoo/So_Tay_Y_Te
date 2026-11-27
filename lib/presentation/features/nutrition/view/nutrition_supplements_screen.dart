@@ -428,20 +428,20 @@ class _NutritionSupplementsScreenState
           ),
           body: Column(
             children: [
-              SizedBox(height: topPad + 72),
-              // Segmented Control 2 Tab sang trọng đồng bộ VitalReportsScreen
+              SizedBox(height: topPad + 62),
+              // Segmented Control 2 Tab cân đối
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppLayoutTokens.screenPadding,
                   4,
                   AppLayoutTokens.screenPadding,
-                  12,
+                  10,
                 ),
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: AppColors.iceSecondaryCard,
-                    borderRadius: BorderRadius.circular(14),
+                    color: AppColors.timelineInputBg,
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.iceCardBorder),
                   ),
                   child: Row(
@@ -493,7 +493,7 @@ class _NutritionSupplementsScreenState
       ),
       children: [
         SizedBox(
-          height: 48,
+          height: 38,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: NutritionViewModel.healthTags.length,
@@ -503,16 +503,21 @@ class _NutritionSupplementsScreenState
               final selected = tag == _viewModel.selectedHealthTag;
               return ChoiceChip(
                 selected: selected,
+                showCheckmark: false,
                 selectedColor: AppColors.primary,
                 backgroundColor: Colors.white,
+                side: BorderSide(
+                  color:
+                      selected ? AppColors.primary : AppColors.iceCardBorder,
+                ),
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
                 onSelected: (_) => _viewModel.selectHealthTag(tag),
                 label: Text(
                   tag,
                   style: TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
                     color: selected ? Colors.white : AppColors.iceTextNavy,
                   ),
                 ),
@@ -634,16 +639,16 @@ class _BigTabButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(11),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 50),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          constraints: const BoxConstraints(minHeight: 42),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(11),
+            borderRadius: BorderRadius.circular(10),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: AppColors.iceTextNavy.withValues(alpha: 0.06),
+                      color: AppColors.iceTextNavy.withValues(alpha: 0.05),
                       blurRadius: 6,
-                      offset: const Offset(0, 2),
+                      offset: const Offset(0, 1),
                     ),
                   ]
                 : null,
@@ -653,23 +658,23 @@ class _BigTabButton extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                size: 19,
+                size: 16,
                 color: isSelected
-                    ? AppColors.iceOliveDark
+                    ? AppColors.primary
                     : AppColors.iceTextMuted,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Flexible(
                 child: Text(
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 14.5,
+                    fontSize: 13,
                     fontWeight:
                         isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected
-                        ? AppColors.iceTextNavy
+                        ? AppColors.primary
                         : AppColors.iceTextMuted,
                   ),
                 ),

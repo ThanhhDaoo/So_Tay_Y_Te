@@ -200,9 +200,9 @@ class _BloodPressureScanScreenState extends State<BloodPressureScanScreen> {
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           AppLayoutTokens.screenPadding,
-          topPad + 76,
+          topPad + 66,
           AppLayoutTokens.screenPadding,
-          bottomPad + 40,
+          bottomPad + 36,
         ),
         children: [
           if (_isScanning)

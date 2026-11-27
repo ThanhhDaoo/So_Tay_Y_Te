@@ -67,7 +67,7 @@ class _YearlyPlanCard extends StatelessWidget {
                 border: Border.all(
                   color: isSelected
                       ? AppColors.iceAccentCream
-                      : const Color(0xFFECE7DF),
+                      : const Color(0xFFEAECF0),
                   width: isSelected ? 2 : 1,
                 ),
                 boxShadow: const [
@@ -85,7 +85,7 @@ class _YearlyPlanCard extends StatelessWidget {
                     height: 22,
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? const Color(0xFF4E5547)
+                          ? const Color(0xFF1E56A0)
                           : const Color(0xFFD3E4FE),
                       shape: BoxShape.circle,
                     ),
@@ -97,7 +97,7 @@ class _YearlyPlanCard extends StatelessWidget {
                         width: 10,
                         height: 8,
                         colorFilter: ColorFilter.mode(
-                          isSelected ? Colors.white : const Color(0xFF3D4947),
+                          isSelected ? Colors.white : const Color(0xFF475467),
                           BlendMode.srcIn,
                         ),
                       ),
@@ -126,10 +126,10 @@ class _YearlyPlanCard extends StatelessWidget {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF6EFE5),
+                                color: const Color(0xFFEEF4FF),
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
-                                  color: const Color(0xFFE8D2B5),
+                                  color: const Color(0xFFDCE8FF),
                                 ),
                               ),
                               child: Text(
@@ -138,7 +138,7 @@ class _YearlyPlanCard extends StatelessWidget {
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.44,
-                                  color: const Color(0xFF4E5547),
+                                  color: const Color(0xFF1E56A0),
                                 ),
                               ),
                             ),
@@ -149,7 +149,7 @@ class _YearlyPlanCard extends StatelessWidget {
                           'Chỉ khoảng ~33.000 đ/tháng',
                           style: AppTypography.body.copyWith(
                             fontSize: 12,
-                            color: const Color(0xFF3D4947),
+                            color: const Color(0xFF475467),
                           ),
                         ),
                       ],
@@ -164,7 +164,7 @@ class _YearlyPlanCard extends StatelessWidget {
                         style: AppTypography.heading3.copyWith(
                           fontSize: 19,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF4E5547),
+                          color: const Color(0xFF1E56A0),
                         ),
                       ),
                       const SizedBox(height: 1),
@@ -174,7 +174,7 @@ class _YearlyPlanCard extends StatelessWidget {
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           decoration: TextDecoration.lineThrough,
-                          color: const Color(0xFF6D7A77),
+                          color: const Color(0xFF667085),
                         ),
                       ),
                     ],
@@ -207,7 +207,7 @@ class _YearlyPlanCard extends StatelessWidget {
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.4,
-                color: const Color(0xFF3A2F20),
+                color: const Color(0xFF163E75),
               ),
             ),
           ),
@@ -232,7 +232,7 @@ class _SimplePlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = backgroundColor ?? const Color(0xFFFBF9F4);
+    final bg = backgroundColor ?? const Color(0xFFF8FAFC);
 
     return Material(
       color: bg,
@@ -246,8 +246,8 @@ class _SimplePlanCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
-                  ? const Color(0xFF4E5547)
-                  : const Color(0xFFE8D2B5),
+                  ? const Color(0xFF1E56A0)
+                  : const Color(0xFFDCE8FF),
               width: isSelected ? 1.5 : 1,
             ),
             boxShadow: const [
@@ -265,7 +265,7 @@ class _SimplePlanCard extends StatelessWidget {
                 height: 22,
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? const Color(0xFF4E5547)
+                      ? const Color(0xFF1E56A0)
                       : const Color(0xFFD3E4FE),
                   shape: BoxShape.circle,
                 ),
@@ -277,7 +277,7 @@ class _SimplePlanCard extends StatelessWidget {
                     width: 10,
                     height: 8,
                     colorFilter: ColorFilter.mode(
-                      isSelected ? Colors.white : const Color(0xFF3D4947),
+                      isSelected ? Colors.white : const Color(0xFF475467),
                       BlendMode.srcIn,
                     ),
                   ),
@@ -307,7 +307,7 @@ class _SimplePlanCard extends StatelessWidget {
                               vertical: 1.5,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF4E5547),
+                              color: const Color(0xFF1E56A0),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -326,7 +326,7 @@ class _SimplePlanCard extends StatelessWidget {
                       plan.subtext,
                       style: AppTypography.body.copyWith(
                         fontSize: 12,
-                        color: const Color(0xFF3D4947),
+                        color: const Color(0xFF475467),
                       ),
                     ),
                   ],
@@ -352,7 +352,7 @@ class _SimplePlanCard extends StatelessWidget {
                       style: AppTypography.caption.copyWith(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF3D4947),
+                        color: const Color(0xFF475467),
                       ),
                     ),
                   ],

@@ -364,8 +364,8 @@ class _VideoPlayerDetailScreenState extends State<VideoPlayerDetailScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 5,
+                    horizontal: 10,
+                    vertical: 4,
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryPeach,
@@ -374,77 +374,77 @@ class _VideoPlayerDetailScreenState extends State<VideoPlayerDetailScreen> {
                   child: Text(
                     '${v.category} • Thời lượng: ${v.durationLabel}',
                     style: const TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.accent,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
                     ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  v.title,
-                  style: const TextStyle(
-                    fontSize: 21,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.iceTextNavy,
-                    height: 1.3,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
+                  v.title,
+                  style: const TextStyle(
+                    fontSize: 17.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.iceTextNavy,
+                    height: 1.28,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
                   'Hướng dẫn: ${v.instructorName}',
                   style: const TextStyle(
-                    fontSize: 16.5,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.primary,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Text(
                   v.description,
                   style: const TextStyle(
-                    fontSize: 16.5,
+                    fontSize: 14.5,
                     color: AppColors.iceTextSlate,
-                    height: 1.45,
+                    height: 1.42,
                   ),
                 ),
                 if (v.keySteps.isNotEmpty) ...[
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
                   const Divider(height: 1),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   const Text(
                     'Hướng dẫn từng bước dễ tập theo:',
                     style: TextStyle(
-                      fontSize: 18.5,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.iceTextNavy,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   for (int i = 0; i < v.keySteps.length; i++) ...[
                     Container(
                       width: double.infinity,
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(14),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: i == _activeStepIndex
                             ? SeniorTokens.callActionGreenSoft
                             : AppColors.surfaceCream,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: i == _activeStepIndex
                               ? SeniorTokens.callActionGreen
                               : AppColors.iceCardBorder,
-                          width: i == _activeStepIndex ? 1.8 : 1.0,
+                          width: i == _activeStepIndex ? 1.5 : 1.0,
                         ),
                       ),
                       child: Text(
                         v.keySteps[i],
                         style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.iceTextNavy,
-                          height: 1.4,
+                          height: 1.38,
                         ),
                       ),
                     ),

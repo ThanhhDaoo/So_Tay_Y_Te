@@ -1,41 +1,41 @@
 import 'package:flutter/material.dart';
 
-/// Chuẩn khoảng cách (8pt Grid) và kích thước khung dùng chung toàn ứng dụng Sổ Tay Y Tế.
+/// Chuẩn khoảng cách cân đối cho màn hình di động (375pt - 430pt), tránh bó hẹp nội dung 2 cột.
 class AppLayoutTokens {
   AppLayoutTokens._();
 
-  /// Lề ngang cố định và đồng nhất hai bên màn hình (20px).
-  static const double screenPadding = 20.0;
+  /// Lề ngang chuẩn di động (16px) giúp thẻ rộng rãi, không bị xuống hàng sớm.
+  static const double screenPadding = 16.0;
 
-  /// Khoảng cách tối thiểu giữa các cụm chức năng / Section (24px).
-  static const double sectionGap = 24.0;
+  /// Khoảng cách giữa các cụm chức năng / Section (22px).
+  static const double sectionGap = 22.0;
 
-  /// Khoảng cách giữa tiêu đề SectionHeader và nội dung bên dưới (14px).
-  static const double sectionHeaderGap = 14.0;
+  /// Khoảng cách giữa tiêu đề SectionHeader và nội dung bên dưới (12px).
+  static const double sectionHeaderGap = 12.0;
 
-  /// Padding tiêu chuẩn bên trong mỗi Card / Container chuẩn 40+ (20px).
-  static const double cardPadding = 20.0;
+  /// Padding tiêu chuẩn bên trong mỗi Card (16px).
+  static const double cardPadding = 16.0;
 
-  /// Padding rộng cho thẻ định danh / Hero Card (20px).
-  static const double heroCardPadding = 20.0;
+  /// Padding cho thẻ định danh / Hero Card (16px).
+  static const double heroCardPadding = 16.0;
 
-  /// Khoảng cách giữa các Card trong cùng một danh sách hoặc lưới Bento (16px).
-  static const double cardGap = 16.0;
+  /// Khoảng cách giữa các Card trong danh sách hoặc lưới 2 cột (12px).
+  static const double cardGap = 12.0;
 
-  /// Khoảng cách giữa các dòng chữ / thành phần bên trong 1 Card (12px).
-  static const double itemGap = 12.0;
+  /// Khoảng cách giữa các dòng bên trong 1 Card (10px).
+  static const double itemGap = 10.0;
 
-  /// Chiều cao tối thiểu của nút bấm cho người lớn tuổi 40+ (54px >= 52px).
-  static const double minButtonHeight = 54.0;
+  /// Chiều cao nút chuẩn dễ bấm (>= 52px).
+  static const double minButtonHeight = 52.0;
 
-  /// Kích thước icon trực quan chuẩn 40+ (30px trong dải 28px - 32px).
-  static const double seniorIconSize = 30.0;
+  /// Kích thước icon trực quan (24px).
+  static const double seniorIconSize = 24.0;
 
-  /// Khoảng cách chuẩn giữa các ô nhập liệu trong Form (16px).
-  static const double formFieldGap = 16.0;
+  /// Khoảng cách chuẩn giữa các ô nhập liệu trong Form (14px).
+  static const double formFieldGap = 14.0;
 
-  /// Độ bo góc chuẩn cho Card chính (16px).
-  static const double cardRadius = 16.0;
+  /// Độ bo góc chuẩn cho Card chính (14px).
+  static const double cardRadius = 14.0;
 
   /// Độ bo góc cho thành phần phụ / chip / ô con (10px).
   static const double innerRadius = 10.0;

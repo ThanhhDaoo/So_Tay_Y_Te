@@ -63,7 +63,7 @@ class CloudSyncCard extends StatelessWidget {
                   child: const Icon(
                     Icons.storage_rounded,
                     size: 19,
-                    color: Color(0xFF00796B),
+                    color: Color(0xFF0E9F6E),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -88,7 +88,7 @@ class CloudSyncCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF6D7A77),
+                          color: Color(0xFF667085),
                         ),
                       ),
                     ],
@@ -117,7 +117,7 @@ class CloudSyncCard extends StatelessWidget {
                         'Tự cập nhật khi có kết nối mạng',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF6D7A77),
+                          color: Color(0xFF667085),
                         ),
                       ),
                     ],

@@ -150,7 +150,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF3D4947),
+                          color: Color(0xFF475467),
                         ),
                       ),
                       child: _buildDocumentsList(state),
@@ -173,7 +173,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   Widget _buildDocumentsList(DocumentsState state) {
     if (state.totalDocCount == 0) {
       return CleanCard(
-        borderColor: const Color(0xFFE5DFD4),
+        borderColor: const Color(0xFFEAECF0),
         padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
         child: Column(
           children: [
@@ -226,7 +226,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 
     if (filteredDocs.isEmpty) {
       return CleanCard(
-        borderColor: const Color(0xFFE5DFD4),
+        borderColor: const Color(0xFFEAECF0),
         padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
         child: Column(
           children: [
@@ -338,7 +338,7 @@ class _DynamicDocumentCard extends StatelessWidget {
     final isLocalFile = !doc.imagePath.startsWith('assets/');
     return CleanCard(
       onTap: onTap,
-      borderColor: const Color(0xFFE5DFD4),
+      borderColor: const Color(0xFFEAECF0),
       padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       child: Row(
         children: [

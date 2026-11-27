@@ -20,7 +20,7 @@ class TrustAssurancesRow extends StatelessWidget {
               width: 16,
               height: 16,
               colorFilter: const ColorFilter.mode(
-                Color(0xFF4E5547),
+                Color(0xFF1E56A0),
                 BlendMode.srcIn,
               ),
             ),
@@ -30,7 +30,7 @@ class TrustAssurancesRow extends StatelessWidget {
               style: AppTypography.caption.copyWith(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF3D4947),
+                color: const Color(0xFF475467),
               ),
             ),
           ],
@@ -43,7 +43,7 @@ class TrustAssurancesRow extends StatelessWidget {
               width: 13,
               height: 13,
               colorFilter: const ColorFilter.mode(
-                Color(0xFF4E5547),
+                Color(0xFF1E56A0),
                 BlendMode.srcIn,
               ),
             ),
@@ -53,7 +53,7 @@ class TrustAssurancesRow extends StatelessWidget {
               style: AppTypography.caption.copyWith(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF3D4947),
+                color: const Color(0xFF475467),
               ),
             ),
           ],

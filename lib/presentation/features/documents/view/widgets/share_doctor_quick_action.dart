@@ -16,9 +16,9 @@ class ShareDoctorQuickAction extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9F7F2),
+        color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFECE7DD)),
+        border: Border.all(color: const Color(0xFFEAECF0)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0D000000),
@@ -42,7 +42,7 @@ class ShareDoctorQuickAction extends StatelessWidget {
                 width: 16,
                 height: 16,
                 colorFilter: const ColorFilter.mode(
-                  Color(0xFF006F67),
+                  Color(0xFF0E9F6E),
                   BlendMode.srcIn,
                 ),
               ),
@@ -70,7 +70,7 @@ class ShareDoctorQuickAction extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.body.copyWith(
                     fontSize: 11.5,
-                    color: const Color(0xFF3D4947),
+                    color: const Color(0xFF475467),
                   ),
                 ),
               ],
@@ -78,7 +78,7 @@ class ShareDoctorQuickAction extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Material(
-            color: const Color(0xFF4E5547),
+            color: const Color(0xFF1E56A0),
             borderRadius: BorderRadius.circular(8),
             child: InkWell(
               onTap: onCreateQr,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 
-/// Dòng hiển thị cặp Nhãn (nhỏ, mảnh) – Giá trị (đậm, rõ) không cần khung viền hay Divider.
+/// Dòng hiển thị cặp Nhãn – Giá trị cân đối 2 cột, chống tràn viền & ép chữ xuống nhiều dòng.
 class KeyValueRow extends StatelessWidget {
   final String label;
   final String? value;
@@ -22,7 +22,7 @@ class KeyValueRow extends StatelessWidget {
     this.labelColor = AppColors.iceTextMuted,
     this.valueColor = AppColors.iceTextNavy,
     this.valueWeight = FontWeight.w600,
-    this.padding = const EdgeInsets.symmetric(vertical: 4),
+    this.padding = const EdgeInsets.symmetric(vertical: 5),
     this.maxLines = 2,
   });
 
@@ -44,17 +44,23 @@ class KeyValueRow extends StatelessWidget {
             ),
             const SizedBox(width: 6),
           ],
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w400,
-              color: labelColor,
-              height: 1.35,
+          Flexible(
+            flex: 5,
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w400,
+                color: labelColor,
+                height: 1.35,
+              ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
+            flex: 6,
             child: Align(
               alignment: Alignment.centerRight,
               child: valueWidget ??
@@ -64,7 +70,7 @@ class KeyValueRow extends StatelessWidget {
                     maxLines: maxLines,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 13.5,
+                      fontSize: 14,
                       fontWeight: valueWeight,
                       color: valueColor,
                       height: 1.35,

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
 import '../../../../common_widgets/layout/app_layout.dart';
 
-/// Thẻ Quét Toa Thuốc Thông Minh rút gọn mô tả rườm rà, tập trung vào 2 hành động chụp/chọn ảnh.
+/// Thẻ Quét Toa Thuốc Thông Minh đồng bộ tông Xanh Y Khoa hiện đại.
 class AiOcrScannerCard extends StatelessWidget {
   const AiOcrScannerCard({
     super.key,
@@ -23,16 +24,16 @@ class AiOcrScannerCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF545B4D),
-            Color(0xFF434B3E),
+            AppColors.iceBannerStart,
+            AppColors.iceBannerEnd,
           ],
         ),
         borderRadius: BorderRadius.circular(AppLayoutTokens.cardRadius),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x18000000),
-            blurRadius: 10,
-            offset: Offset(0, 3),
+            color: Color(0x1E1E56A0),
+            blurRadius: 12,
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -48,10 +49,9 @@ class AiOcrScannerCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.heading2.copyWith(
-                    fontSize: 17.5,
+                    fontSize: 16.5,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
-                    letterSpacing: -0.3,
                   ),
                 ),
               ),
@@ -97,9 +97,9 @@ class AiOcrScannerCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: 13,
               height: 1.35,
-              color: Color(0xE6F4FFFC),
+              color: Color(0xFFEAF2FF),
             ),
           ),
           const SizedBox(height: 14),
@@ -107,7 +107,7 @@ class AiOcrScannerCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Material(
-                  color: const Color(0xFFF9F7F2),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
                   child: InkWell(
                     onTap: onScanCamera,
@@ -123,7 +123,7 @@ class AiOcrScannerCard extends StatelessWidget {
                             width: 15,
                             height: 14,
                             colorFilter: const ColorFilter.mode(
-                              Color(0xFF4E5547),
+                              AppColors.primary,
                               BlendMode.srcIn,
                             ),
                           ),
@@ -131,11 +131,12 @@ class AiOcrScannerCard extends StatelessWidget {
                           const Flexible(
                             child: Text(
                               'Chụp Toa Ngay',
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 12.5,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF4E5547),
+                                color: AppColors.primary,
                               ),
                             ),
                           ),
@@ -145,10 +146,10 @@ class AiOcrScannerCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: AppLayoutTokens.cardGap),
+              const SizedBox(width: 10),
               Expanded(
                 child: Material(
-                  color: const Color(0xCC4E5547),
+                  color: Colors.white.withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(10),
                   child: InkWell(
                     onTap: onSelectFromAlbum,
@@ -158,7 +159,7 @@ class AiOcrScannerCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.25),
+                          color: Colors.white.withValues(alpha: 0.35),
                         ),
                       ),
                       alignment: Alignment.center,
@@ -178,9 +179,10 @@ class AiOcrScannerCard extends StatelessWidget {
                           const Flexible(
                             child: Text(
                               'Chọn Từ Album',
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 12.5,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
                               ),

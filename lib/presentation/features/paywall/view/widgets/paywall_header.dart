@@ -32,10 +32,10 @@ class PaywallHeader extends StatelessWidget {
             12,
           ),
           decoration: BoxDecoration(
-            color: const Color(0xD9FBF9F4),
+            color: const Color(0xF5FFFFFF),
             border: const Border(
               bottom: BorderSide(
-                color: Color(0xFFECE7DF),
+                color: Color(0xFFEAECF0),
                 width: 1,
               ),
             ),

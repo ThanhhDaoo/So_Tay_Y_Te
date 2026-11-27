@@ -135,8 +135,8 @@ class _SoTayYTeAppState extends State<SoTayYTeApp> with WidgetsBindingObserver {
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      darkTheme: AppTheme.lightTheme,
+      themeMode: ThemeMode.light,
       locale: const Locale('vi', 'VN'),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -153,9 +153,16 @@ class _SoTayYTeAppState extends State<SoTayYTeApp> with WidgetsBindingObserver {
       ],
       onGenerateRoute: AppRoutes.onGenerateRoute,
       builder: (context, child) {
-        return Stack(
-          children: [
-            ?child,
+        final mq = MediaQuery.of(context);
+        final clampedScaler = mq.textScaler.clamp(
+          minScaleFactor: 0.92,
+          maxScaleFactor: 1.05,
+        );
+        return MediaQuery(
+          data: mq.copyWith(textScaler: clampedScaler),
+          child: Stack(
+            children: [
+              ?child,
             if (_isMultitaskObscured)
               Positioned.fill(
                 child: BackdropFilter(
@@ -196,7 +203,8 @@ class _SoTayYTeAppState extends State<SoTayYTeApp> with WidgetsBindingObserver {
                   ),
                 ),
               ),
-          ],
+            ],
+          ),
         );
       },
     );

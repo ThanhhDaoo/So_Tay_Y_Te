@@ -18,9 +18,9 @@ class DocumentEndoscopyCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9F7F2),
+        color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFECE7DD)),
+        border: Border.all(color: const Color(0xFFEAECF0)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0D000000),
@@ -48,7 +48,7 @@ class DocumentEndoscopyCard extends StatelessWidget {
                     width: 22,
                     height: 22,
                     colorFilter: const ColorFilter.mode(
-                      Color(0xFF00685F),
+                      Color(0xFF0E9F6E),
                       BlendMode.srcIn,
                     ),
                   ),
@@ -73,7 +73,7 @@ class DocumentEndoscopyCard extends StatelessWidget {
                       'Bệnh viện Đại học Y Dược TP.HCM',
                       style: AppTypography.body.copyWith(
                         fontSize: 12,
-                        color: const Color(0xFF3D4947),
+                        color: const Color(0xFF475467),
                       ),
                     ),
                   ],
@@ -89,7 +89,7 @@ class DocumentEndoscopyCard extends StatelessWidget {
                     width: 4,
                     height: 14,
                     colorFilter: const ColorFilter.mode(
-                      Color(0xFF3D4947),
+                      Color(0xFF475467),
                       BlendMode.srcIn,
                     ),
                   ),
@@ -138,7 +138,7 @@ class DocumentEndoscopyCard extends StatelessWidget {
                               width: 9,
                               height: 12,
                               colorFilter: const ColorFilter.mode(
-                                Color(0xFF00685F),
+                                Color(0xFF0E9F6E),
                                 BlendMode.srcIn,
                               ),
                             ),
@@ -148,7 +148,7 @@ class DocumentEndoscopyCard extends StatelessWidget {
                               style: AppTypography.caption.copyWith(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF00685F),
+                                color: const Color(0xFF0E9F6E),
                               ),
                             ),
                           ],
@@ -238,7 +238,7 @@ class DocumentEndoscopyCard extends StatelessWidget {
                       style: AppTypography.caption.copyWith(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF3D4947),
+                        color: const Color(0xFF475467),
                       ),
                     ),
                   ),
@@ -256,7 +256,7 @@ class DocumentEndoscopyCard extends StatelessWidget {
                       style: AppTypography.caption.copyWith(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF006F67),
+                        color: const Color(0xFF0E9F6E),
                       ),
                     ),
                   ),
@@ -278,7 +278,7 @@ class DocumentEndoscopyCard extends StatelessWidget {
                         style: AppTypography.labelSemiBold.copyWith(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF00685F),
+                          color: const Color(0xFF0E9F6E),
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -287,7 +287,7 @@ class DocumentEndoscopyCard extends StatelessWidget {
                         width: 6,
                         height: 9,
                         colorFilter: const ColorFilter.mode(
-                          Color(0xFF00685F),
+                          Color(0xFF0E9F6E),
                           BlendMode.srcIn,
                         ),
                       ),

@@ -24,7 +24,7 @@ class VaultBrandHero extends StatelessWidget {
                     width: 52,
                     height: 52,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF008378).withValues(alpha: 0.16),
+                      color: const Color(0xFF0E9F6E).withValues(alpha: 0.16),
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
@@ -37,14 +37,14 @@ class VaultBrandHero extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Color(0xFF4E5547),
-                        Color(0xFF717669),
+                        Color(0xFF1E56A0),
+                        Color(0xFF667085),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0x404E5547),
+                        color: Color(0x261E56A0),
                         blurRadius: 16,
                         offset: Offset(0, 6),
                       ),
@@ -70,9 +70,9 @@ class VaultBrandHero extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
           decoration: BoxDecoration(
-            color: const Color(0xFFF6EFE5),
+            color: const Color(0xFFEEF4FF),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: const Color(0xFFE8D2B5)),
+            border: Border.all(color: const Color(0xFFDCE8FF)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -82,7 +82,7 @@ class VaultBrandHero extends StatelessWidget {
                 width: 10,
                 height: 13,
                 colorFilter: const ColorFilter.mode(
-                  Color(0xFF4E5547),
+                  Color(0xFF1E56A0),
                   BlendMode.srcIn,
                 ),
               ),
@@ -93,7 +93,7 @@ class VaultBrandHero extends StatelessWidget {
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
-                  color: const Color(0xFF4E5547),
+                  color: const Color(0xFF1E56A0),
                 ),
               ),
             ],
@@ -119,7 +119,7 @@ class VaultBrandHero extends StatelessWidget {
             style: AppTypography.body.copyWith(
               fontSize: 13.5,
               height: 1.4,
-              color: const Color(0xFF3D4947),
+              color: const Color(0xFF475467),
             ),
           ),
         ),

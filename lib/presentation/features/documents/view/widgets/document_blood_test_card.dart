@@ -18,9 +18,9 @@ class DocumentBloodTestCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9F7F2),
+        color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFECE7DD)),
+        border: Border.all(color: const Color(0xFFEAECF0)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0D000000),
@@ -48,7 +48,7 @@ class DocumentBloodTestCard extends StatelessWidget {
                     width: 24,
                     height: 18,
                     colorFilter: const ColorFilter.mode(
-                      Color(0xFF00685F),
+                      Color(0xFF0E9F6E),
                       BlendMode.srcIn,
                     ),
                   ),
@@ -73,7 +73,7 @@ class DocumentBloodTestCard extends StatelessWidget {
                       'Bệnh viện Chợ Rẫy • Khoa Sinh Hóa',
                       style: AppTypography.body.copyWith(
                         fontSize: 12,
-                        color: const Color(0xFF3D4947),
+                        color: const Color(0xFF475467),
                       ),
                     ),
                   ],
@@ -89,7 +89,7 @@ class DocumentBloodTestCard extends StatelessWidget {
                     width: 4,
                     height: 14,
                     colorFilter: const ColorFilter.mode(
-                      Color(0xFF3D4947),
+                      Color(0xFF475467),
                       BlendMode.srcIn,
                     ),
                   ),
@@ -138,7 +138,7 @@ class DocumentBloodTestCard extends StatelessWidget {
                               width: 9,
                               height: 12,
                               colorFilter: const ColorFilter.mode(
-                                Color(0xFF00685F),
+                                Color(0xFF0E9F6E),
                                 BlendMode.srcIn,
                               ),
                             ),
@@ -148,7 +148,7 @@ class DocumentBloodTestCard extends StatelessWidget {
                               style: AppTypography.caption.copyWith(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF00685F),
+                                color: const Color(0xFF0E9F6E),
                               ),
                             ),
                           ],
@@ -169,7 +169,7 @@ class DocumentBloodTestCard extends StatelessWidget {
                           style: AppTypography.caption.copyWith(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF3D4947),
+                            color: const Color(0xFF475467),
                           ),
                         ),
                       ),
@@ -223,7 +223,7 @@ class DocumentBloodTestCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0x1A00685F),
+                  color: const Color(0x1A0E9F6E),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
@@ -234,7 +234,7 @@ class DocumentBloodTestCard extends StatelessWidget {
                       width: 11,
                       height: 11,
                       colorFilter: const ColorFilter.mode(
-                        Color(0xFF00685F),
+                        Color(0xFF0E9F6E),
                         BlendMode.srcIn,
                       ),
                     ),
@@ -244,7 +244,7 @@ class DocumentBloodTestCard extends StatelessWidget {
                       style: AppTypography.caption.copyWith(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF00685F),
+                        color: const Color(0xFF0E9F6E),
                       ),
                     ),
                   ],
@@ -266,7 +266,7 @@ class DocumentBloodTestCard extends StatelessWidget {
                         style: AppTypography.labelSemiBold.copyWith(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF00685F),
+                          color: const Color(0xFF0E9F6E),
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -275,7 +275,7 @@ class DocumentBloodTestCard extends StatelessWidget {
                         width: 6,
                         height: 9,
                         colorFilter: const ColorFilter.mode(
-                          Color(0xFF00685F),
+                          Color(0xFF0E9F6E),
                           BlendMode.srcIn,
                         ),
                       ),

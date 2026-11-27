@@ -261,7 +261,7 @@ class _AiOcrScannerModalState extends State<AiOcrScannerModal> with SingleTicker
     return Container(
       height: MediaQuery.of(context).size.height * 0.84,
       decoration: const BoxDecoration(
-        color: Color(0xFF1A1F1E),
+        color: Color(0xFF1E293B),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -315,7 +315,7 @@ class _AiOcrScannerModalState extends State<AiOcrScannerModal> with SingleTicker
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F1413),
+                      color: const Color(0xFF0F172A),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: const Color(0xFF5CE1E6).withValues(alpha: 0.5), width: 1.5),
                     ),

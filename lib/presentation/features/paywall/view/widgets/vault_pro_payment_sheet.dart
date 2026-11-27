@@ -363,10 +363,10 @@ class _VaultProPaymentSheetState extends State<VaultProPaymentSheet> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: _processingStage == 3
                     ? const Color(0xFF2E7D32)
-                    : const Color(0xFF0F1413),
+                    : const Color(0xFF0F172A),
                 disabledBackgroundColor: _processingStage == 3
                     ? const Color(0xFF2E7D32)
-                    : const Color(0xFF2A312E),
+                    : const Color(0xFF1E293B),
                 foregroundColor: Colors.white,
                 disabledForegroundColor: Colors.white,
                 minimumSize: const Size.fromHeight(50),
@@ -506,7 +506,7 @@ class _VaultProPaymentSheetState extends State<VaultProPaymentSheet> {
         ),
         child: const Row(
           children: [
-            Icon(Icons.verified_user_outlined, size: 18, color: Color(0xFF4E5547)),
+            Icon(Icons.verified_user_outlined, size: 18, color: Color(0xFF1E56A0)),
             SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -528,7 +528,7 @@ class _VaultProPaymentSheetState extends State<VaultProPaymentSheet> {
       ),
       child: const Row(
         children: [
-          Icon(Icons.face_retouching_natural, size: 18, color: Color(0xFF4E5547)),
+          Icon(Icons.face_retouching_natural, size: 18, color: Color(0xFF1E56A0)),
           SizedBox(width: 8),
           Expanded(
             child: Text(

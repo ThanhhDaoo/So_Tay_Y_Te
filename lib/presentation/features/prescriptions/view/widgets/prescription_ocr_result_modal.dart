@@ -411,7 +411,7 @@ class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal>
                                   _result!.rawText.trim().isEmpty
                                       ? 'Không nhận diện được chữ trên ảnh đã chọn. Hãy chụp thẳng góc, đủ sáng vào tờ đơn thuốc hoặc bấm "+ Thêm thuốc".'
                                       : 'Đã đọc được văn bản trên ảnh nhưng chưa thấy dòng thuốc chuẩn hàm lượng (mg/ml/viên). Bạn có thể xem văn bản gốc bên dưới hoặc bấm "+ Thêm thuốc".',
-                                  style: const TextStyle(fontSize: 12, color: Color(0xFF795548), height: 1.35),
+                                  style: const TextStyle(fontSize: 12, color: Color(0xFFB45309), height: 1.35),
                                 ),
                               )
                             else

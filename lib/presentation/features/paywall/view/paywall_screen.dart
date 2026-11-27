@@ -133,7 +133,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF9F4),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: ListenableBuilder(
         listenable: _viewModel,
         builder: (context, _) {
@@ -286,12 +286,12 @@ class _PaywallScreenState extends State<PaywallScreen> {
                                   icon: const Icon(
                                     Icons.restore_rounded,
                                     size: 16,
-                                    color: Color(0xFF4E5547),
+                                    color: Color(0xFF1E56A0),
                                   ),
                                   label: const Text(
                                     'Khôi phục giao dịch mua trước đây',
                                     style: TextStyle(
-                                      color: Color(0xFF4E5547),
+                                      color: Color(0xFF1E56A0),
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                     ),

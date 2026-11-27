@@ -50,16 +50,16 @@ class VaultProActiveDashboard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFF2C2418),
-                Color(0xFF433624),
-                Color(0xFF5C4930),
+                Color(0xFF163E75),
+                Color(0xFF1E56A0),
+                Color(0xFF1E56A0),
               ],
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: const Color(0xFFD8B278), width: 1.2),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x332C2418),
+                color: Color(0x1F1E56A0),
                 blurRadius: 20,
                 offset: Offset(0, 10),
               ),
@@ -78,9 +78,9 @@ class VaultProActiveDashboard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0x26FFE0A3),
+                        color: const Color(0x33FFFFFF),
                         borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: const Color(0xFFFFE0A3)),
+                        border: Border.all(color: const Color(0xFFFFFFFF)),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
@@ -88,7 +88,7 @@ class VaultProActiveDashboard extends StatelessWidget {
                           Icon(
                             Icons.verified_rounded,
                             size: 14,
-                            color: Color(0xFFFFE0A3),
+                            color: Color(0xFFFFFFFF),
                           ),
                           SizedBox(width: 5),
                           Flexible(
@@ -96,7 +96,7 @@ class VaultProActiveDashboard extends StatelessWidget {
                               'VAULT PRO • ĐANG HOẠT ĐỘNG',
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Color(0xFFFFE0A3),
+                                color: Color(0xFFFFFFFF),
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.5,
@@ -156,7 +156,7 @@ class VaultProActiveDashboard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: Color(0xFFFFE0A3),
+                            color: Color(0xFFFFFFFF),
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                           ),
@@ -176,7 +176,7 @@ class VaultProActiveDashboard extends StatelessWidget {
                       expiryText: expiryText,
                     ),
                     style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFFFFE0A3),
+                      foregroundColor: const Color(0xFFFFFFFF),
                       backgroundColor: Colors.black.withValues(alpha: 0.22),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -211,7 +211,7 @@ class VaultProActiveDashboard extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFECE7DF)),
+            border: Border.all(color: const Color(0xFFEAECF0)),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x0A000000),
@@ -317,16 +317,16 @@ class VaultProActiveDashboard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFF6EFE5),
+            color: const Color(0xFFEEF4FF),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE8D2B5)),
+            border: Border.all(color: const Color(0xFFDCE8FF)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Row(
                 children: [
-                  Icon(Icons.science_outlined, size: 18, color: Color(0xFF433624)),
+                  Icon(Icons.science_outlined, size: 18, color: Color(0xFF1E56A0)),
                   SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -335,7 +335,7 @@ class VaultProActiveDashboard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF332717),
+                        color: Color(0xFF101828),
                       ),
                     ),
                   ),
@@ -363,7 +363,7 @@ class VaultProActiveDashboard extends StatelessWidget {
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF433624),
+                        foregroundColor: const Color(0xFF1E56A0),
                         side: const BorderSide(color: Color(0xFFC7A87E)),
                         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                         shape: RoundedRectangleBorder(

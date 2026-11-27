@@ -47,32 +47,32 @@ class TimelineRecordCard extends StatelessWidget {
               _buildDateAndStatusRow(),
               const SizedBox(height: 10),
 
-              // Điểm 2: Tiêu đề đợt khám (chữ đậm nổi bật) + Cơ sở khám mảnh gọn 1 dòng
+              // Điểm 2: Tiêu đề đợt khám cân đối + Cơ sở khám gọn gàng
               Text(
                 record.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.iceTextNavy,
-                  height: 1.3,
+                  height: 1.28,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 5),
               _buildFacilityLine(),
 
               if (record.diagnosis != null &&
                   record.diagnosis!.title.trim().isNotEmpty &&
                   record.diagnosis!.title.trim() != record.title.trim()) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   record.diagnosis!.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                     color: AppColors.iceTextSlate,
                     height: 1.35,
                   ),
@@ -142,9 +142,8 @@ class TimelineRecordCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 14.5,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
               color: record.statusStyle == TimelineStatusStyle.highlightCream
                   ? AppColors.timelineOlive
                   : AppColors.timelineTextWarm,
@@ -153,7 +152,7 @@ class TimelineRecordCard extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
           decoration: BoxDecoration(
             color: badgeBg,
             borderRadius: BorderRadius.circular(999),
@@ -161,8 +160,8 @@ class TimelineRecordCard extends StatelessWidget {
           child: Text(
             record.statusLabel,
             style: TextStyle(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
               color: badgeText,
             ),
           ),
@@ -181,19 +180,23 @@ class TimelineRecordCard extends StatelessWidget {
       children: [
         SvgPicture.asset(
           record.facilityIconAsset,
-          width: 18,
-          height: 18,
+          width: 15,
+          height: 15,
+          colorFilter: const ColorFilter.mode(
+            AppColors.iceTextMuted,
+            BlendMode.srcIn,
+          ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         Expanded(
           child: Text(
             displayText,
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 15.5,
-              fontWeight: FontWeight.w500,
-              color: AppColors.iceTextSlate,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w400,
+              color: AppColors.iceTextMuted,
             ),
           ),
         ),

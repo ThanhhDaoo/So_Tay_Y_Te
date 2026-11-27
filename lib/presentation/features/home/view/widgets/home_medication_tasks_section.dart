@@ -4,8 +4,7 @@ import '../../../../../domain/entities/daily_health_task.dart';
 import '../../../../../domain/entities/medication_popup_reminder.dart';
 import '../../../../common_widgets/senior_40plus/senior_ui_kit.dart';
 
-/// Khối Tiến độ thuốc & Việc cần làm hằng ngày:
-/// Thẻ trắng viền xám mảnh #EAECF0, vòng tròn tiến độ rõ nét và danh sách việc cần làm kèm nhãn trạng thái.
+/// Khối Tiến độ thuốc & Việc cần làm hằng ngày gọn gàng, tỷ lệ chữ hài hòa.
 class HomeMedicationTasksSection extends StatelessWidget {
   final TodayMedicationProgress medicationProgress;
   final List<DailyHealthTask> tasks;
@@ -39,24 +38,24 @@ class HomeMedicationTasksSection extends StatelessWidget {
       child: Column(
         children: [
           SeniorCard(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     SizedBox(
-                      width: 70,
-                      height: 70,
+                      width: 58,
+                      height: 58,
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
                           SizedBox(
-                            width: 70,
-                            height: 70,
+                            width: 58,
+                            height: 58,
                             child: CircularProgressIndicator(
                               value: medicationProgress.ratio,
-                              strokeWidth: 6.5,
+                              strokeWidth: 5.5,
                               backgroundColor: AppColors.iceAccentCream,
                               color: medicationProgress.ratio >= 1.0
                                   ? AppColors.reportTeal
@@ -67,7 +66,7 @@ class HomeMedicationTasksSection extends StatelessWidget {
                           Text(
                             '${medicationProgress.percent}%',
                             style: const TextStyle(
-                              fontSize: 16.5,
+                              fontSize: 14,
                               fontWeight: FontWeight.w700,
                               fontFeatures: [FontFeature.tabularFigures()],
                               color: AppColors.iceTextNavy,
@@ -76,38 +75,44 @@ class HomeMedicationTasksSection extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
                             'Tiến độ uống thuốc hôm nay',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 12.5,
                               fontWeight: FontWeight.w500,
                               color: AppColors.iceTextMuted,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 3),
                           Text(
                             'Đã uống ${medicationProgress.fractionLabel}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 26,
+                              fontSize: 20,
                               fontWeight: FontWeight.w700,
-                              letterSpacing: -0.5,
+                              letterSpacing: -0.3,
                               fontFeatures: [FontFeature.tabularFigures()],
                               color: AppColors.iceTextNavy,
-                              height: 1.15,
+                              height: 1.18,
                             ),
                           ),
-                          const SizedBox(height: 5),
+                          const SizedBox(height: 3),
                           Text(
                             nextSlot != null
                                 ? 'Cữ kế tiếp: ${nextSlot.slotTitle} • ${nextSlot.timeLabel}'
                                 : 'Đã hoàn thành đủ các cữ thuốc trong ngày',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 14.5,
+                              fontSize: 13,
                               fontWeight: FontWeight.w500,
                               color: nextSlot != null
                                   ? AppColors.primary
@@ -119,10 +124,10 @@ class HomeMedicationTasksSection extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 SeniorActionButton(
                   label: nextSlot != null
-                      ? 'Mở nhắc uống thuốc (${nextSlot.slotTitle})'
+                      ? 'Nhắc uống thuốc (${nextSlot.slotTitle})'
                       : 'Xem lại đơn thuốc hôm nay',
                   icon: Icons.notifications_none_rounded,
                   variant: nextSlot != null
@@ -133,11 +138,11 @@ class HomeMedicationTasksSection extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           if (tasks.isNotEmpty)
             SeniorCard(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(vertical: 4),
               child: Column(
                 children: [
                   for (int i = 0; i < tasks.length; i++) ...[
@@ -147,7 +152,7 @@ class HomeMedicationTasksSection extends StatelessWidget {
                     ),
                     if (i < tasks.length - 1)
                       const Padding(
-                        padding: EdgeInsets.only(left: 60, right: 18),
+                        padding: EdgeInsets.only(left: 52, right: 14),
                         child: Divider(height: 1, color: AppColors.divider),
                       ),
                   ],
@@ -176,62 +181,63 @@ class _CleanChecklistRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 160),
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: done ? AppColors.reportTeal : Colors.transparent,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: done
-                        ? AppColors.reportTeal
-                        : AppColors.checkboxBorder,
-                    width: 1.8,
-                  ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: done ? AppColors.reportTeal : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: done
+                      ? AppColors.reportTeal
+                      : AppColors.checkboxBorder,
+                  width: 1.6,
                 ),
-                alignment: Alignment.center,
-                child: done
-                    ? const Icon(
-                        Icons.check_rounded,
-                        size: 17,
-                        color: Colors.white,
-                      )
-                    : null,
               ),
+              alignment: Alignment.center,
+              child: done
+                  ? const Icon(
+                      Icons.check_rounded,
+                      size: 15,
+                      color: Colors.white,
+                    )
+                  : null,
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     task.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 16.5,
+                      fontSize: 14.5,
                       fontWeight: FontWeight.w600,
                       color: done
                           ? AppColors.iceTextMuted
                           : AppColors.iceTextNavy,
                       decoration: done ? TextDecoration.lineThrough : null,
-                      height: 1.3,
+                      height: 1.28,
                     ),
                   ),
                   if (task.subtitle != null && task.subtitle!.isNotEmpty) ...[
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     Text(
                       task.subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 14.5,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w400,
                         color: AppColors.iceTextMuted,
-                        height: 1.35,
+                        height: 1.3,
                       ),
                     ),
                   ],
@@ -240,7 +246,7 @@ class _CleanChecklistRow extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
               decoration: BoxDecoration(
                 color: done
                     ? AppColors.reportTealSoft
@@ -254,7 +260,7 @@ class _CleanChecklistRow extends StatelessWidget {
                         ? task.timeLabel!
                         : 'Chờ làm'),
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                   fontFeatures: const [FontFeature.tabularFigures()],
                   color: done ? AppColors.reportTeal : AppColors.primary,

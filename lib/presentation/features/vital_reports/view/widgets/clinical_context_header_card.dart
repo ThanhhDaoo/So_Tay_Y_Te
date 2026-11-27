@@ -45,7 +45,7 @@ class ClinicalContextHeaderCard extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: const BoxDecoration(
-                        color: Color(0x73E8D2B5),
+                        color: Color(0x66DCE8FF),
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
@@ -215,7 +215,7 @@ class ClinicalContextHeaderCard extends StatelessWidget {
                 width: 18,
                 height: 18,
                 colorFilter: ColorFilter.mode(
-                  isSelected ? Colors.white : const Color(0xFF73786D),
+                  isSelected ? Colors.white : const Color(0xFF667085),
                   BlendMode.srcIn,
                 ),
               ),
@@ -225,7 +225,7 @@ class ClinicalContextHeaderCard extends StatelessWidget {
                 style: AppTypography.caption.copyWith(
                   fontSize: 10.5,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? Colors.white : const Color(0xFF73786D),
+                  color: isSelected ? Colors.white : const Color(0xFF667085),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

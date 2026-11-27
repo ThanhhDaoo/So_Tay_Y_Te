@@ -91,7 +91,7 @@ class VitalReportActionButtons extends StatelessWidget {
                   onPressed: isBusy ? null : onPrintAirPrint,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.reportCream,
-                    foregroundColor: const Color(0xFF433624),
+                    foregroundColor: const Color(0xFF1E56A0),
                     disabledBackgroundColor: AppColors.reportCream.withValues(alpha: 0.6),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -105,7 +105,7 @@ class VitalReportActionButtons extends StatelessWidget {
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF433624)),
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E56A0)),
                           ),
                         )
                       : Row(
@@ -116,7 +116,7 @@ class VitalReportActionButtons extends StatelessWidget {
                               width: 18,
                               height: 18,
                               colorFilter: const ColorFilter.mode(
-                                Color(0xFF433624),
+                                Color(0xFF1E56A0),
                                 BlendMode.srcIn,
                               ),
                             ),
@@ -127,7 +127,7 @@ class VitalReportActionButtons extends StatelessWidget {
                                 style: AppTypography.labelSemiBold.copyWith(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF433624),
+                                  color: const Color(0xFF1E56A0),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -146,7 +146,7 @@ class VitalReportActionButtons extends StatelessWidget {
                   onPressed: isBusy ? null : onSendDoctor,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.reportCream,
-                    foregroundColor: const Color(0xFF433624),
+                    foregroundColor: const Color(0xFF1E56A0),
                     disabledBackgroundColor: AppColors.reportCream.withValues(alpha: 0.6),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -160,7 +160,7 @@ class VitalReportActionButtons extends StatelessWidget {
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF433624)),
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E56A0)),
                           ),
                         )
                       : Row(
@@ -171,7 +171,7 @@ class VitalReportActionButtons extends StatelessWidget {
                               width: 18,
                               height: 18,
                               colorFilter: const ColorFilter.mode(
-                                Color(0xFF433624),
+                                Color(0xFF1E56A0),
                                 BlendMode.srcIn,
                               ),
                             ),
@@ -182,7 +182,7 @@ class VitalReportActionButtons extends StatelessWidget {
                                 style: AppTypography.labelSemiBold.copyWith(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF433624),
+                                  color: const Color(0xFF1E56A0),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,

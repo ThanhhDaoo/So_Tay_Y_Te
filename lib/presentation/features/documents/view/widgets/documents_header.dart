@@ -27,7 +27,7 @@ class DocumentsHeader extends StatelessWidget {
             color: const Color(0xCCF8F9FF),
             border: const Border(
               bottom: BorderSide(
-                color: Color(0x66E5DFD4),
+                color: Color(0xFFEAECF0),
                 width: 1,
               ),
             ),
@@ -59,7 +59,7 @@ class DocumentsHeader extends StatelessWidget {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: const Color(0xFFE5DFD4),
+                                color: const Color(0xFFEAECF0),
                               ),
                             ),
                             child: const Center(
@@ -90,7 +90,7 @@ class DocumentsHeader extends StatelessWidget {
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.55,
-                          color: const Color(0xFF00685F),
+                          color: const Color(0xFF0E9F6E),
                           height: 1.0,
                         ),
                       ),
@@ -147,7 +147,7 @@ class DocumentsHeader extends StatelessWidget {
                           width: 9,
                           height: 6,
                           colorFilter: const ColorFilter.mode(
-                            Color(0xFF3D4947),
+                            Color(0xFF475467),
                             BlendMode.srcIn,
                           ),
                         ),

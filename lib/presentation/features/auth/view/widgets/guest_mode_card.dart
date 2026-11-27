@@ -26,7 +26,7 @@ class GuestModeCard extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: const Color(0x80F6DFC2),
+              color: const Color(0xFFEEF4FF),
               borderRadius: BorderRadius.circular(AppLayoutTokens.innerRadius),
             ),
             child: Center(

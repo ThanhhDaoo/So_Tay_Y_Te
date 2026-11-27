@@ -68,8 +68,8 @@ class _AuthAmbientBackgroundState extends State<AuthAmbientBackground>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFFE8D2B5).withValues(alpha: 0.25),
-                      const Color(0xFFE8D2B5).withValues(alpha: 0.0),
+                      const Color(0xFFDCE8FF).withValues(alpha: 0.25),
+                      const Color(0xFFDCE8FF).withValues(alpha: 0.0),
                     ],
                   ),
                 ),
@@ -86,8 +86,8 @@ class _AuthAmbientBackgroundState extends State<AuthAmbientBackground>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF00685F).withValues(alpha: 0.08),
-                      const Color(0xFF00685F).withValues(alpha: 0.0),
+                      const Color(0xFF0E9F6E).withValues(alpha: 0.08),
+                      const Color(0xFF0E9F6E).withValues(alpha: 0.0),
                     ],
                   ),
                 ),

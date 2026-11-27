@@ -211,7 +211,7 @@ class _ImmunizationTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: item.isCompleted
                   ? AppColors.iceAccentCream
-                  : const Color(0xFFDDD9D0),
+                  : const Color(0xFFEAECF0),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(

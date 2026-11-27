@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/services/user_session_manager.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_typography.dart';
 
-/// Banner nâng cấp hoặc hiển thị trạng thái Vault Pro trên màn hình Hồ sơ y tế cá nhân.
+/// Banner nâng cấp hoặc hiển thị trạng thái Vault Pro đồng bộ tông Xanh Y Khoa hiện đại.
 class ProfileVaultProBanner extends StatelessWidget {
   const ProfileVaultProBanner({
     super.key,
@@ -27,15 +28,14 @@ class ProfileVaultProBanner extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF2C2418),
-                  Color(0xFF4A3B28),
+                  AppColors.iceBannerStart,
+                  AppColors.iceBannerEnd,
                 ],
               ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFD8B278), width: 1.2),
+              borderRadius: BorderRadius.circular(14),
               boxShadow: const [
                 BoxShadow(
-                  color: Color(0x222C2418),
+                  color: Color(0x221E56A0),
                   blurRadius: 10,
                   offset: Offset(0, 4),
                 ),
@@ -45,19 +45,17 @@ class ProfileVaultProBanner extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFE5B45B), Color(0xFFB57C2F)],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(11),
                   ),
                   child: const Center(
                     child: Icon(
                       Icons.verified_rounded,
                       color: Colors.white,
-                      size: 24,
+                      size: 22,
                     ),
                   ),
                 ),
@@ -86,16 +84,15 @@ class ProfileVaultProBanner extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0x26FFE0A3),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: const Color(0xFFFFE0A3)),
                             ),
                             child: const Text(
                               'VIP',
                               style: TextStyle(
-                                color: Color(0xFFFFE0A3),
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
@@ -107,9 +104,9 @@ class ProfileVaultProBanner extends StatelessWidget {
                             ? '$planTitle • Đã mở khóa toàn bộ 5 đặc quyền y tế.'
                             : 'Đã mở khóa đồng bộ đám mây & đa hồ sơ gia đình.',
                         style: AppTypography.caption.copyWith(
-                          fontSize: 11.5,
-                          color: const Color(0xFFE6D5B8),
-                          height: 1.25,
+                          fontSize: 12,
+                          color: const Color(0xFFEAF2FF),
+                          height: 1.3,
                         ),
                       ),
                     ],
@@ -117,13 +114,13 @@ class ProfileVaultProBanner extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Material(
-                  color: const Color(0xFFFFE0A3),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(999),
                   child: InkWell(
                     onTap: onTap,
                     borderRadius: BorderRadius.circular(999),
                     child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -131,15 +128,15 @@ class ProfileVaultProBanner extends StatelessWidget {
                             'Xem Pro',
                             style: TextStyle(
                               fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF2C2418),
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
                             ),
                           ),
                           SizedBox(width: 2),
                           Icon(
                             Icons.chevron_right,
                             size: 15,
-                            color: Color(0xFF2C2418),
+                            color: AppColors.primary,
                           ),
                         ],
                       ),
@@ -153,48 +150,27 @@ class ProfileVaultProBanner extends StatelessWidget {
 
         return Container(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFFFAF5ED),
-                Color(0xFFF3ECE0),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE8D2B5), width: 1.2),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0F000000),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
+            color: AppColors.iceAccentCream,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.iceBorderCream),
           ),
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFFD89D4B), Color(0xFFB57C2F)],
+                    colors: [AppColors.iceBannerStart, AppColors.iceBannerEnd],
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x26B57C2F),
-                      blurRadius: 6,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(11),
                 ),
                 child: Center(
                   child: SvgPicture.asset(
                     'assets/icons/ic_prof_vault_pro.svg',
-                    width: 22,
-                    height: 22,
+                    width: 20,
+                    height: 20,
                     colorFilter: const ColorFilter.mode(
                       Colors.white,
                       BlendMode.srcIn,
@@ -212,9 +188,9 @@ class ProfileVaultProBanner extends StatelessWidget {
                         Text(
                           'Gói Vault Pro',
                           style: AppTypography.heading3.copyWith(
-                            fontSize: 15,
+                            fontSize: 14.5,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF332717),
+                            color: AppColors.iceTextNavy,
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -224,16 +200,15 @@ class ProfileVaultProBanner extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF433624),
+                            color: AppColors.primary,
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: const Text(
                             'PRO',
                             style: TextStyle(
-                              color: Color(0xFFFFE0A3),
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.5,
+                              color: Colors.white,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
@@ -243,9 +218,9 @@ class ProfileVaultProBanner extends StatelessWidget {
                     Text(
                       'Sao lưu đám mây 2 chiều & đa hồ sơ gia đình không giới hạn.',
                       style: AppTypography.caption.copyWith(
-                        fontSize: 11.5,
-                        color: const Color(0xFF6B5840),
-                        height: 1.25,
+                        fontSize: 12,
+                        color: AppColors.iceTextSlate,
+                        height: 1.3,
                       ),
                     ),
                   ],
@@ -253,13 +228,13 @@ class ProfileVaultProBanner extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Material(
-                color: const Color(0xFF433624),
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(999),
                 child: InkWell(
                   onTap: onTap,
                   borderRadius: BorderRadius.circular(999),
                   child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

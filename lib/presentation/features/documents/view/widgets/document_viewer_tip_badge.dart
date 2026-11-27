@@ -34,7 +34,7 @@ class DocumentViewerTipBadge extends StatelessWidget {
             width: 17,
             height: 17,
             colorFilter: const ColorFilter.mode(
-              Color(0xFF00685F),
+              Color(0xFF0E9F6E),
               BlendMode.srcIn,
             ),
           ),
@@ -53,7 +53,7 @@ class DocumentViewerTipBadge extends StatelessWidget {
                     text: 'Pinch-to-zoom vô cực',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF00685F),
+                      color: Color(0xFF0E9F6E),
                     ),
                   ),
                   TextSpan(text: ' & '),
@@ -61,7 +61,7 @@ class DocumentViewerTipBadge extends StatelessWidget {
                     text: 'PDF đa trang',
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF00685F),
+                      color: Color(0xFF0E9F6E),
                     ),
                   ),
                 ],
@@ -78,7 +78,7 @@ class DocumentViewerTipBadge extends StatelessWidget {
                 width: 14,
                 height: 14,
                 colorFilter: const ColorFilter.mode(
-                  Color(0xFF3D4947),
+                  Color(0xFF475467),
                   BlendMode.srcIn,
                 ),
               ),

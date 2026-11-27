@@ -78,7 +78,7 @@ class ProfileHeader extends StatelessWidget {
                 ],
               ),
               Material(
-                color: isViewingFamilyMember ? const Color(0xFFFBF4EB) : AppColors.surfaceCream,
+                color: isViewingFamilyMember ? const Color(0xFFEEF4FF) : AppColors.surfaceCream,
                 borderRadius: BorderRadius.circular(12),
                 child: InkWell(
                   onTap: onProfileTap,
@@ -92,8 +92,8 @@ class ProfileHeader extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isViewingFamilyMember
-                            ? const Color(0xFFD6A770)
-                            : const Color(0x99E5DFD4),
+                            ? const Color(0xFFD6E4FF)
+                            : const Color(0xFFEAECF0),
                       ),
                     ),
                     child: isViewingFamilyMember
@@ -103,7 +103,7 @@ class ProfileHeader extends StatelessWidget {
                               const Icon(
                                 Icons.arrow_back_rounded,
                                 size: 14,
-                                color: Color(0xFF9C5A14),
+                                color: Color(0xFF1E56A0),
                               ),
                               const SizedBox(width: 4),
                               ConstrainedBox(
@@ -115,7 +115,7 @@ class ProfileHeader extends StatelessWidget {
                                   style: const TextStyle(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF9C5A14),
+                                    color: Color(0xFF1E56A0),
                                   ),
                                 ),
                               ),
@@ -125,7 +125,7 @@ class ProfileHeader extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF9C5A14),
+                                  color: Color(0xFF1E56A0),
                                 ),
                               ),
                             ],

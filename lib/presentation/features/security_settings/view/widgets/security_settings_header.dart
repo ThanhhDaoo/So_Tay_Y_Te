@@ -28,7 +28,7 @@ class SecuritySettingsHeader extends StatelessWidget implements PreferredSizeWid
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFFBF9F4).withValues(alpha: 0.88),
+            color: const Color(0xFFF8FAFC).withValues(alpha: 0.88),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x0A000000),

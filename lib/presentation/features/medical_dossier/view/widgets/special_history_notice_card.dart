@@ -127,7 +127,7 @@ class SpecialHistoryNoticeCard extends StatelessWidget {
               left: BorderSide(color: AppColors.iceCriticalBadge, width: 4.5),
             ),
           ),
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -135,42 +135,42 @@ class SpecialHistoryNoticeCard extends StatelessWidget {
                 children: [
                   SvgPicture.asset(
                     'assets/icons/ic_prof_allergy_alert.svg',
-                    width: 20,
-                    height: 20,
+                    width: 17,
+                    height: 17,
                     colorFilter: const ColorFilter.mode(
                       AppColors.iceCriticalBadge,
                       BlendMode.srcIn,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 7),
                   const Expanded(
                     child: Text(
                       'LƯU Ý ĐẶC BIỆT KHI KHÁM BỆNH',
                       style: TextStyle(
-                        fontSize: 13.5,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0.45,
+                        letterSpacing: 0.35,
                         color: AppColors.iceCriticalBadge,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppColors.iceAllergyBg,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   _effectiveDisplayNote(),
                   style: const TextStyle(
-                    fontSize: 16.5,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w400,
                     color: AppColors.iceTextNavy,
-                    height: 1.45,
+                    height: 1.42,
                   ),
                 ),
               ),

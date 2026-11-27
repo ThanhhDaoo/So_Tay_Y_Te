@@ -69,13 +69,13 @@ class _HealthVideosScreenState extends State<HealthVideosScreen> {
           body: ListView(
             padding: EdgeInsets.fromLTRB(
               AppLayoutTokens.screenPadding,
-              topPad + 76,
+              topPad + 66,
               AppLayoutTokens.screenPadding,
               bottomPad + 36,
             ),
             children: [
               SizedBox(
-                height: 44,
+                height: 38,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: HealthVideosViewModel.categories.length,
@@ -86,22 +86,22 @@ class _HealthVideosScreenState extends State<HealthVideosScreen> {
                     return ChoiceChip(
                       selected: selected,
                       showCheckmark: false,
-                      selectedColor: AppColors.icePrimaryCall,
+                      selectedColor: AppColors.primary,
                       backgroundColor: Colors.white,
                       side: BorderSide(
                         color: selected
-                            ? AppColors.icePrimaryCall
+                            ? AppColors.primary
                             : AppColors.iceCardBorder,
                       ),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 13,
-                        vertical: 8,
+                        horizontal: 11,
+                        vertical: 6,
                       ),
                       onSelected: (_) => _viewModel.selectCategory(cat),
                       label: Text(
                         cat,
                         style: TextStyle(
-                          fontSize: 14.5,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.w600,
                           color:
                               selected ? Colors.white : AppColors.iceTextNavy,
@@ -268,35 +268,35 @@ class _HealthVideoEditorialCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Text(
             video.title,
             style: const TextStyle(
-              fontSize: 18.5,
+              fontSize: 16,
               fontWeight: FontWeight.w700,
-              letterSpacing: -0.25,
+              letterSpacing: -0.15,
               color: AppColors.iceTextNavy,
-              height: 1.3,
+              height: 1.28,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             video.instructorName,
             style: const TextStyle(
-              fontSize: 14.5,
+              fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: AppColors.textWarmBrown,
+              color: AppColors.primary,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 5),
           Text(
             video.description,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 15.5,
+              fontSize: 14,
               color: AppColors.iceTextSlate,
-              height: 1.4,
+              height: 1.38,
             ),
           ),
           const SizedBox(height: 14),

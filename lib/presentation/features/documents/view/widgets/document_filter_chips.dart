@@ -30,7 +30,7 @@ class DocumentFilterChips extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.55,
-                color: const Color(0xFF3D4947),
+                color: const Color(0xFF475467),
               ),
             ),
             InkWell(
@@ -46,7 +46,7 @@ class DocumentFilterChips extends StatelessWidget {
                       width: 12,
                       height: 12,
                       colorFilter: const ColorFilter.mode(
-                        Color(0xFF00685F),
+                        Color(0xFF0E9F6E),
                         BlendMode.srcIn,
                       ),
                     ),
@@ -57,7 +57,7 @@ class DocumentFilterChips extends StatelessWidget {
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.44,
-                        color: const Color(0xFF00685F),
+                        color: const Color(0xFF0E9F6E),
                       ),
                     ),
                   ],
@@ -95,7 +95,7 @@ class DocumentFilterChips extends StatelessWidget {
                       border: Border.all(
                         color: isSelected
                             ? AppColors.iceAccentCream
-                            : const Color(0xFFEAE5DB),
+                            : const Color(0xFFEAECF0),
                       ),
                     ),
                     child: Row(
@@ -111,7 +111,7 @@ class DocumentFilterChips extends StatelessWidget {
                                 ? FontWeight.w700
                                 : FontWeight.w500,
                             color: isSelected
-                                ? const Color(0xFF251A08)
+                                ? const Color(0xFF101828)
                                 : AppColors.iceTextNavy,
                           ),
                         ),
@@ -131,7 +131,7 @@ class DocumentFilterChips extends StatelessWidget {
                               style: AppTypography.caption.copyWith(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
-                                color: const Color(0xFF3D4947),
+                                color: const Color(0xFF475467),
                               ),
                             ),
                           ),

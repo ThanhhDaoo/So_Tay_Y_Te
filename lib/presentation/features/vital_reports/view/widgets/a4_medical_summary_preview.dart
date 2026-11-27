@@ -188,7 +188,7 @@ class A4MedicalSummaryPreview extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: state.hasSevereAllergy
                         ? AppColors.reportAllergyBannerBg
-                        : const Color(0xFFF0F4EC),
+                        : const Color(0xFFEEF4FF),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -457,7 +457,7 @@ class _FullA4SheetDocument extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: state.hasSevereAllergy
                           ? AppColors.reportAllergyBannerBg
-                          : const Color(0xFFF0F4EC),
+                          : const Color(0xFFEEF4FF),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(

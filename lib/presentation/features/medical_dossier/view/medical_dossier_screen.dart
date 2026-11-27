@@ -216,9 +216,9 @@ class _MedicalDossierScreenState extends State<MedicalDossierScreen> {
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 AppLayoutTokens.screenPadding,
-                topPad + 78,
+                topPad + 66,
                 AppLayoutTokens.screenPadding,
-                bottomPad + 140,
+                bottomPad + 132,
               ),
               children: [
                 // Chuyển đổi nhanh thành viên gia đình nếu có nhiều hồ sơ
@@ -308,17 +308,21 @@ class _MedicalDossierScreenState extends State<MedicalDossierScreen> {
                         const SizedBox(height: 14),
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.surfaceCream,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.iceCardBorder),
                           ),
                           child: Text(
-                            'Chiều cao: ${activeProfile.heightText}  •  Cân nặng: ${activeProfile.weightText}  •  Tổng số bệnh án đã lưu: ${tState.records.length} hồ sơ',
+                            'Chiều cao: ${activeProfile.heightText}  •  Cân nặng: ${activeProfile.weightText}  •  Đã lưu: ${tState.records.length} hồ sơ',
                             style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.iceTextNavy,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.iceTextSlate,
                               height: 1.35,
                             ),
                           ),
@@ -435,44 +439,44 @@ class _MedicalDossierScreenState extends State<MedicalDossierScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Ô tìm kiếm bệnh án chữ lớn
+                      // Ô tìm kiếm bệnh án cân đối
                       TextField(
                         controller: _timelineVm.searchController,
                         onChanged: _timelineVm.updateSearchQuery,
-                        style: const TextStyle(fontSize: 17),
+                        style: const TextStyle(fontSize: 14.5),
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: Colors.white,
                           prefixIcon: const Icon(
                             Icons.search_rounded,
-                            size: 28,
+                            size: 22,
                             color: AppColors.primary,
                           ),
                           hintText: 'Tìm theo tên bệnh, bệnh viện, bác sĩ...',
-                          hintStyle: const TextStyle(fontSize: 16),
+                          hintStyle: const TextStyle(fontSize: 14),
                           contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 15,
+                            horizontal: 14,
+                            vertical: 12,
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(
                               color: AppColors.iceCardBorder,
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(
                               color: AppColors.iceCardBorder,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
 
-                      // Hàng bộ lọc lớn dễ chạm
+                      // Hàng bộ lọc gọn gàng, không nhảy chữ
                       SizedBox(
-                        height: 48,
+                        height: 40,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: tState.filters.length,
@@ -482,18 +486,24 @@ class _MedicalDossierScreenState extends State<MedicalDossierScreen> {
                             final selected = f.id == tState.selectedFilterId;
                             return ChoiceChip(
                               selected: selected,
+                              showCheckmark: false,
                               onSelected: (_) => _timelineVm.selectFilter(f.id),
                               selectedColor: AppColors.primary,
                               backgroundColor: Colors.white,
+                              side: BorderSide(
+                                color: selected
+                                    ? AppColors.primary
+                                    : AppColors.iceCardBorder,
+                              ),
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
+                                horizontal: 11,
+                                vertical: 6,
                               ),
                               label: Text(
                                 f.label,
                                 style: TextStyle(
-                                  fontSize: 15.5,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w600,
                                   color: selected
                                       ? Colors.white
                                       : AppColors.iceTextNavy,
@@ -650,10 +660,10 @@ class _VitalMetricBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surfaceCream,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.iceCardBorder),
       ),
       child: Column(
@@ -661,7 +671,7 @@ class _VitalMetricBox extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 22, color: accent),
+              Icon(icon, size: 18, color: accent),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -669,38 +679,38 @@ class _VitalMetricBox extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.iceTextSlate,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.iceTextMuted,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
               value,
               style: const TextStyle(
-                fontSize: 26,
+                fontSize: 21,
                 fontWeight: FontWeight.w700,
-                letterSpacing: -0.6,
+                letterSpacing: -0.4,
                 fontFeatures: [FontFeature.tabularFigures()],
                 color: AppColors.iceTextNavy,
                 height: 1.15,
               ),
             ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: 2),
           Text(
             unit,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 14.5,
-              fontWeight: FontWeight.w700,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
               color: accent,
             ),
           ),
@@ -732,27 +742,27 @@ class _HistoryGroupBlock extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 26, color: iconColor),
+            Icon(icon, size: 20, color: iconColor),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.iceTextNavy,
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         if (items.isEmpty)
           Text(
             emptyText,
             style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
               color: AppColors.iceTextSlate,
             ),
           )
@@ -764,21 +774,21 @@ class _HistoryGroupBlock extends StatelessWidget {
                 .map(
                   (text) => Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+                      horizontal: 10,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: iconColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      color: iconColor.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(999),
                       border: Border.all(
-                        color: iconColor.withValues(alpha: 0.35),
+                        color: iconColor.withValues(alpha: 0.25),
                       ),
                     ),
                     child: Text(
                       text,
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
                         color: iconColor,
                       ),
                     ),

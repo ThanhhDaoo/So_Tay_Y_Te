@@ -32,7 +32,7 @@ class _AccountLinkingCardState extends State<AccountLinkingCard> {
 
     return CleanCard(
       backgroundColor: Colors.white,
-      borderColor: const Color(0xFFECE7DF),
+      borderColor: const Color(0xFFEAECF0),
       padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,7 +46,7 @@ class _AccountLinkingCardState extends State<AccountLinkingCard> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF7F5EF),
+                    color: const Color(0xFFF8FAFC),
                     borderRadius:
                         BorderRadius.circular(AppLayoutTokens.innerRadius),
                   ),
@@ -56,7 +56,7 @@ class _AccountLinkingCardState extends State<AccountLinkingCard> {
                       width: 17,
                       height: 17,
                       colorFilter: const ColorFilter.mode(
-                        Color(0xFF4E5547),
+                        Color(0xFF1E56A0),
                         BlendMode.srcIn,
                       ),
                     ),
@@ -87,8 +87,8 @@ class _AccountLinkingCardState extends State<AccountLinkingCard> {
                         style: AppTypography.body.copyWith(
                           fontSize: 12,
                           color: hasLinked
-                              ? const Color(0xFF00685F)
-                              : const Color(0xFF3D4947),
+                              ? const Color(0xFF0E9F6E)
+                              : const Color(0xFF475467),
                         ),
                       ),
                     ],
@@ -99,7 +99,7 @@ class _AccountLinkingCardState extends State<AccountLinkingCard> {
                   _isExpanded
                       ? Icons.keyboard_arrow_up_rounded
                       : Icons.keyboard_arrow_down_rounded,
-                  color: const Color(0xFF4E5547),
+                  color: const Color(0xFF1E56A0),
                   size: 22,
                 ),
               ],
@@ -130,7 +130,7 @@ class _AccountLinkingCardState extends State<AccountLinkingCard> {
             ),
             const SizedBox(height: 10),
             Material(
-              color: const Color(0xFFF7F5EF),
+              color: const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(AppLayoutTokens.innerRadius),
               child: InkWell(
                 onTap: widget.onLinkPhone,
@@ -141,7 +141,7 @@ class _AccountLinkingCardState extends State<AccountLinkingCard> {
                   decoration: BoxDecoration(
                     borderRadius:
                         BorderRadius.circular(AppLayoutTokens.innerRadius),
-                    border: Border.all(color: const Color(0xFFE5E0D6)),
+                    border: Border.all(color: const Color(0xFFEAECF0)),
                   ),
                   alignment: Alignment.center,
                   child: Row(
@@ -152,7 +152,7 @@ class _AccountLinkingCardState extends State<AccountLinkingCard> {
                         width: 12,
                         height: 16,
                         colorFilter: const ColorFilter.mode(
-                          Color(0xFF4E5547),
+                          Color(0xFF1E56A0),
                           BlendMode.srcIn,
                         ),
                       ),
@@ -184,7 +184,7 @@ class _AccountLinkingCardState extends State<AccountLinkingCard> {
                   width: 11,
                   height: 13,
                   colorFilter: const ColorFilter.mode(
-                    Color(0xFF6D7A77),
+                    Color(0xFF667085),
                     BlendMode.srcIn,
                   ),
                 ),
@@ -196,7 +196,7 @@ class _AccountLinkingCardState extends State<AccountLinkingCard> {
                     style: AppTypography.caption.copyWith(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF6D7A77),
+                      color: const Color(0xFF667085),
                     ),
                   ),
                 ),
@@ -225,7 +225,7 @@ class _SocialLinkButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: isLinked ? const Color(0xFFE5EEFF) : const Color(0xFFF7F5EF),
+      color: isLinked ? const Color(0xFFE5EEFF) : const Color(0xFFF8FAFC),
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onTap,
@@ -236,8 +236,8 @@ class _SocialLinkButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isLinked
-                  ? const Color(0xFF00685F)
-                  : const Color(0xFFE5E0D6),
+                  ? const Color(0xFF0E9F6E)
+                  : const Color(0xFFEAECF0),
             ),
           ),
           alignment: Alignment.center,
@@ -256,7 +256,7 @@ class _SocialLinkButton extends StatelessWidget {
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: isLinked
-                      ? const Color(0xFF00685F)
+                      ? const Color(0xFF0E9F6E)
                       : AppColors.iceTextNavy,
                 ),
               ),

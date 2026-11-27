@@ -103,19 +103,21 @@ class MedicationReminderPopup extends StatelessWidget {
                       const SizedBox(height: 3),
                       Text(
                         'Nhắc Uống Thuốc • ${reminder.slotTitle}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 19,
+                          fontSize: 16.5,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: -0.25,
+                          letterSpacing: -0.2,
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Row(
                         children: [
                           const Icon(
                             Icons.schedule_rounded,
-                            size: 16,
+                            size: 14,
                             color: Color(0xFFDCE8FF),
                           ),
                           const SizedBox(width: 5),
@@ -125,7 +127,7 @@ class MedicationReminderPopup extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 14.5,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w500,
                                 color: Colors.white,
                               ),
@@ -253,29 +255,29 @@ class _MedCleanRow extends StatelessWidget {
                 Text(
                   medicine.name,
                   style: const TextStyle(
-                    fontSize: 17.5,
+                    fontSize: 15.5,
                     fontWeight: FontWeight.w700,
                     color: AppColors.iceTextNavy,
                     height: 1.25,
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 4),
                 Text(
                   'Liều dùng: ${medicine.dosage}',
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w600,
                     color: AppColors.reportTeal,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Text(
                   medicine.mealInstruction,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w400,
                     color: AppColors.iceTextSlate,
-                    height: 1.38,
+                    height: 1.35,
                   ),
                 ),
               ],

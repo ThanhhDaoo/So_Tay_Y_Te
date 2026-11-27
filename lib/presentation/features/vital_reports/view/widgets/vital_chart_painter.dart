@@ -57,7 +57,7 @@ class VitalChartPainter extends CustomPainter {
       y: y120,
       width: chartWidth,
       label: '120 Ngưỡng',
-      color: const Color(0xFF8C5C28),
+      color: const Color(0xFF2563EB),
       labelX: chartWidth + 6,
     );
 
@@ -66,7 +66,7 @@ class VitalChartPainter extends CustomPainter {
       y: y80,
       width: chartWidth,
       label: '80 Tâm trương',
-      color: const Color(0xFF515849),
+      color: const Color(0xFF163E75),
       labelX: chartWidth + 6,
     );
 
@@ -89,7 +89,7 @@ class VitalChartPainter extends CustomPainter {
     _drawSmoothCurve(
       canvas: canvas,
       offsets: systolicOffsets,
-      strokeColor: const Color(0xFF00685F),
+      strokeColor: const Color(0xFF0E9F6E),
       strokeWidth: 2.5,
     );
 
@@ -97,7 +97,7 @@ class VitalChartPainter extends CustomPainter {
     _drawSmoothCurve(
       canvas: canvas,
       offsets: diastolicOffsets,
-      strokeColor: const Color(0xFF545B4D),
+      strokeColor: const Color(0xFF1E56A0),
       strokeWidth: 2.0,
     );
 
@@ -115,7 +115,7 @@ class VitalChartPainter extends CustomPainter {
       canvas.drawCircle(
         sysCenter,
         isLast ? 4.0 : 3.0,
-        Paint()..color = const Color(0xFF00685F),
+        Paint()..color = const Color(0xFF0E9F6E),
       );
 
       // Diastolic dot
@@ -128,7 +128,7 @@ class VitalChartPainter extends CustomPainter {
       canvas.drawCircle(
         diaCenter,
         isLast ? 3.5 : 2.5,
-        Paint()..color = const Color(0xFF545B4D),
+        Paint()..color = const Color(0xFF1E56A0),
       );
 
       // Callout tooltip on the latest point
@@ -252,7 +252,7 @@ class VitalChartPainter extends CustomPainter {
     // Pill background
     canvas.drawRRect(
       badgeRect,
-      Paint()..color = const Color(0xFF545B4D),
+      Paint()..color = const Color(0xFF1E56A0),
     );
 
     // Text inside

@@ -126,19 +126,18 @@ class _MyDoctorsScreenState extends State<MyDoctorsScreen> {
           body: ListView(
             padding: EdgeInsets.fromLTRB(
               AppLayoutTokens.screenPadding,
-              topPad + 78,
+              topPad + 66,
               AppLayoutTokens.screenPadding,
-              bottomPad + 40,
+              bottomPad + 36,
             ),
             children: [
               SeniorActionButton(
                 label: 'Thêm bác sĩ đã khám',
                 icon: Icons.person_add_alt_1_outlined,
                 variant: SeniorButtonVariant.primary,
-                minHeight: 54,
                 onPressed: () => _openAddOrEdit(),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               if (_viewModel.isLoading)
                 const Padding(
@@ -282,29 +281,29 @@ class _DoctorEditorialCard extends StatelessWidget {
                     Text(
                       doctor.fullName,
                       style: const TextStyle(
-                        fontSize: 19,
+                        fontSize: 16.5,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: -0.3,
+                        letterSpacing: -0.2,
                         color: AppColors.iceTextNavy,
                         height: 1.25,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 3.5,
+                        horizontal: 8,
+                        vertical: 3,
                       ),
                       decoration: BoxDecoration(
                         color: AppColors.iceSecondaryCard,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         doctor.specialty,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.iceOliveDark,
+                          color: AppColors.primary,
                         ),
                       ),
                     ),

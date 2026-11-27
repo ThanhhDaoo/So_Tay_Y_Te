@@ -15,7 +15,7 @@ class GuestMigrationNoticeCard extends StatelessWidget {
         vertical: 12,
       ),
       decoration: BoxDecoration(
-        color: const Color(0x66F3DCBF),
+        color: const Color(0xFFEEF4FF),
         borderRadius: BorderRadius.circular(AppLayoutTokens.cardRadius),
       ),
       child: Row(

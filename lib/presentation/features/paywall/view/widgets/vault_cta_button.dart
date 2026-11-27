@@ -17,7 +17,7 @@ class VaultCtaButton extends StatelessWidget {
     return Column(
       children: [
         Material(
-          color: const Color(0xFF4E5547),
+          color: const Color(0xFF1E56A0),
           borderRadius: BorderRadius.circular(8),
           child: InkWell(
             onTap: isProcessing ? null : onStartTrial,
@@ -70,7 +70,7 @@ class VaultCtaButton extends StatelessWidget {
           textAlign: TextAlign.center,
           style: AppTypography.caption.copyWith(
             fontSize: 11,
-            color: const Color(0xFF3D4947),
+            color: const Color(0xFF475467),
             height: 1.35,
           ),
         ),

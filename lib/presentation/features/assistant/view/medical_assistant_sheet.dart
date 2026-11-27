@@ -255,7 +255,7 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
         height: sheetHeight,
         child: Container(
           decoration: const BoxDecoration(
-            color: Color(0xFFFBF9F4),
+            color: AppColors.iceBackground,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: ListenableBuilder(
@@ -278,7 +278,7 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                       borderRadius:
                           BorderRadius.vertical(top: Radius.circular(24)),
                       border: Border(
-                        bottom: BorderSide(color: Color(0xFFECE7DF)),
+                        bottom: BorderSide(color: AppColors.iceCardBorder),
                       ),
                     ),
                     child: Column(
@@ -299,7 +299,10 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                               height: 40,
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF4E5547), Color(0xFF2F362B)],
+                                  colors: [
+                                    AppColors.iceBannerStart,
+                                    AppColors.iceBannerEnd,
+                                  ],
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -474,16 +477,16 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                         return ActionChip(
                           visualDensity: VisualDensity.compact,
                           backgroundColor: Colors.white,
-                          side: const BorderSide(color: Color(0xFFDFD8CC)),
+                          side: const BorderSide(color: AppColors.iceCardBorder),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999),
                           ),
                           label: Text(
                             item.label,
                             style: const TextStyle(
-                              fontSize: 11.5,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF332717),
+                              color: AppColors.primary,
                             ),
                           ),
                           onPressed: state.isLoading
@@ -506,7 +509,7 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       border: Border(
-                        top: BorderSide(color: Color(0xFFECE7DF)),
+                        top: BorderSide(color: AppColors.iceCardBorder),
                       ),
                     ),
                     child: Row(
@@ -518,16 +521,16 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
                             minLines: 1,
                             maxLines: 3,
                             onSubmitted: (_) => _handleSend(),
-                            style: const TextStyle(fontSize: 13.5),
+                            style: const TextStyle(fontSize: 14),
                             decoration: InputDecoration(
                               hintText:
                                   'Hỏi bệnh án, đơn thuốc hoặc mô tả triệu chứng...',
                               hintStyle: const TextStyle(
-                                fontSize: 12.5,
+                                fontSize: 13,
                                 color: AppColors.iceTextMuted,
                               ),
                               filled: true,
-                              fillColor: const Color(0xFFF6F4EE),
+                              fillColor: AppColors.timelineInputBg,
                               isDense: true,
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 14,
@@ -604,7 +607,7 @@ class _MessageBubble extends StatelessWidget {
               vertical: 12,
             ),
             decoration: BoxDecoration(
-              color: isUser ? const Color(0xFF3E4638) : Colors.white,
+              color: isUser ? AppColors.primary : Colors.white,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
                 topRight: const Radius.circular(16),
@@ -613,10 +616,10 @@ class _MessageBubble extends StatelessWidget {
               ),
               border: isUser
                   ? null
-                  : Border.all(color: const Color(0xFFE8E2D7)),
+                  : Border.all(color: AppColors.iceCardBorder),
               boxShadow: const [
                 BoxShadow(
-                  color: Color(0x08000000),
+                  color: Color(0x06101828),
                   blurRadius: 6,
                   offset: Offset(0, 2),
                 ),
@@ -642,9 +645,9 @@ class _MessageBubble extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF3EFE6),
+                        color: AppColors.iceAccentCream,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFD8C8AE)),
+                        border: Border.all(color: AppColors.iceBorderCream),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -654,9 +657,9 @@ class _MessageBubble extends StatelessWidget {
                               message.suggestedRouteLabel!,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF433624),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
                               ),
                             ),
                           ),
@@ -664,7 +667,7 @@ class _MessageBubble extends StatelessWidget {
                           const Icon(
                             Icons.arrow_forward_rounded,
                             size: 13,
-                            color: Color(0xFF433624),
+                            color: AppColors.primary,
                           ),
                         ],
                       ),

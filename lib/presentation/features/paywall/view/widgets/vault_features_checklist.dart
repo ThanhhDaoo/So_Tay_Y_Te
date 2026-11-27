@@ -11,7 +11,7 @@ class VaultFeaturesChecklist extends StatelessWidget {
   Widget build(BuildContext context) {
     return CleanCard(
       backgroundColor: Colors.white,
-      borderColor: const Color(0xFFECE7DF),
+      borderColor: const Color(0xFFEAECF0),
       padding: const EdgeInsets.all(AppLayoutTokens.cardPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,7 +33,7 @@ class VaultFeaturesChecklist extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF6EFE5),
+                  color: const Color(0xFFEEF4FF),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -42,7 +42,7 @@ class VaultFeaturesChecklist extends StatelessWidget {
                     fontSize: 9.5,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.35,
-                    color: const Color(0xFF4E5547),
+                    color: const Color(0xFF1E56A0),
                   ),
                 ),
               ),
@@ -51,28 +51,28 @@ class VaultFeaturesChecklist extends StatelessWidget {
           const SizedBox(height: 14),
           const _FeatureItem(
             iconAsset: 'assets/icons/ic_vault_feat_family.svg',
-            iconBg: Color(0xFFF0F1ED),
+            iconBg: Color(0xFFF1F5F9),
             title: 'Đa hồ sơ gia đình không giới hạn',
             description: 'Lập hồ sơ riêng cho con nhỏ, bố mẹ & ông bà.',
           ),
           const SizedBox(height: AppLayoutTokens.cardGap),
           const _FeatureItem(
             iconAsset: 'assets/icons/ic_vault_feat_cloud.svg',
-            iconBg: Color(0xFFF0F1ED),
+            iconBg: Color(0xFFF1F5F9),
             title: 'Đồng bộ đám mây 2 chiều tự động',
             description: 'Mã hóa AES-256 đầu cuối, an toàn khi đổi máy.',
           ),
           const SizedBox(height: AppLayoutTokens.cardGap),
           const _FeatureItem(
             iconAsset: 'assets/icons/ic_vault_feat_ocr.svg',
-            iconBg: Color(0xFFF0F1ED),
+            iconBg: Color(0xFFF1F5F9),
             title: 'AI Medical OCR không giới hạn',
             description: 'Quét tự động đơn thuốc & xét nghiệm trong 3 giây.',
           ),
           const SizedBox(height: AppLayoutTokens.cardGap),
           const _FeatureItem(
             iconAsset: 'assets/icons/ic_vault_feat_pdf.svg',
-            iconBg: Color(0xFFF0F1ED),
+            iconBg: Color(0xFFF1F5F9),
             title: 'Xuất Bệnh án PDF A4 chuẩn y khoa',
             description: 'Bản tóm tắt lâm sàng trình bác sĩ & bảo hiểm.',
           ),
@@ -120,7 +120,7 @@ class _FeatureItem extends StatelessWidget {
               width: 17,
               height: 17,
               colorFilter: const ColorFilter.mode(
-                Color(0xFF4E5547),
+                Color(0xFF1E56A0),
                 BlendMode.srcIn,
               ),
             ),
@@ -148,7 +148,7 @@ class _FeatureItem extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: AppTypography.body.copyWith(
                   fontSize: 12,
-                  color: const Color(0xFF3D4947),
+                  color: const Color(0xFF475467),
                   height: 1.35,
                 ),
               ),

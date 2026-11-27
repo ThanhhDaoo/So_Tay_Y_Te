@@ -207,9 +207,9 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView(
               padding: EdgeInsets.fromLTRB(
                 AppLayoutTokens.screenPadding,
-                topPad + 76,
+                topPad + 66,
                 AppLayoutTokens.screenPadding,
-                bottomPad + 132,
+                bottomPad + 124,
               ),
               children: [
                 // KHỐI 1: Header thông tin bệnh nhân & thời gian thực
@@ -336,8 +336,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: SeniorBigGridCard(
-                                title: 'Dinh dưỡng & Thực phẩm chức năng',
-                                subtitle: 'Thực đơn nên ăn, nên kiêng & thuốc bổ',
+                                title: 'Dinh dưỡng & Thuốc bổ',
+                                subtitle: 'Thực đơn nên ăn, nên kiêng & TPCN',
                                 icon: Icons.spa_outlined,
                                 accentColor: const Color(0xFF0891B2),
                                 onTap: () => Navigator.pushNamed(
@@ -372,7 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: () => Navigator.pushNamed(context, AppRoutes.vitalReports),
       ),
       child: SeniorCard(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -380,10 +380,10 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: AppColors.iceBackground,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: AppColors.iceCardBorder),
                     ),
                     child: Column(
@@ -392,16 +392,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         const Text(
                           'Nhóm máu',
                           style: TextStyle(
-                            fontSize: 13.5,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w500,
                             color: AppColors.iceTextMuted,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           summary.bloodType,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 20,
+                            fontSize: 18,
                             fontWeight: FontWeight.w700,
                             color: AppColors.iceTextNavy,
                           ),
@@ -410,13 +412,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: AppColors.iceBackground,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: AppColors.iceCardBorder),
                     ),
                     child: Column(
@@ -425,18 +427,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         const Text(
                           'Thể trạng',
                           style: TextStyle(
-                            fontSize: 13.5,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w500,
                             color: AppColors.iceTextMuted,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           summary.bmiStatusText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 17,
+                            fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: AppColors.iceTextNavy,
                           ),

@@ -95,7 +95,7 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeColor = AppColors.iceOliveDark;
-    final inactiveColor = const Color(0xFF8A9491);
+    final inactiveColor = const Color(0xFF667085);
     final iconColor = isSelected ? AppColors.iceOlive : inactiveColor;
     final labelColor = isSelected ? activeColor : inactiveColor;
 
