@@ -3,15 +3,21 @@ import 'package:flutter/material.dart';
 import '../features/add_record/view/add_record_screen.dart';
 import '../features/auth/view/login_screen.dart';
 import '../features/auth/view/register_screen.dart';
+import '../features/doctors/view/my_doctors_screen.dart';
 import '../features/documents/view/documents_screen.dart';
 import '../features/emergency_card/view/emergency_card_screen.dart';
+import '../features/health_videos/view/health_videos_screen.dart';
 import '../features/main_shell/view/main_shell_screen.dart';
+import '../features/nutrition/view/nutrition_supplements_screen.dart';
 import '../features/paywall/view/paywall_screen.dart';
 import '../features/record_detail/view/record_detail_screen.dart';
 import '../features/security_settings/view/app_lock_screen.dart';
+import '../features/security_settings/view/security_settings_screen.dart';
 import '../features/vital_reports/view/vital_reports_screen.dart';
+import '../features/vitals_scan/view/blood_pressure_scan_screen.dart';
 
 class AppRoutes {
+  static const String home = '/home';
   static const String timeline = '/';
   static const String mainShell = '/main';
   static const String login = '/login';
@@ -28,6 +34,10 @@ class AppRoutes {
   static const String securitySettings = '/security-settings';
   static const String settings = '/settings';
   static const String appLock = '/app-lock';
+  static const String myDoctors = '/my-doctors';
+  static const String healthVideos = '/health-videos';
+  static const String nutritionSupplements = '/nutrition-supplements';
+  static const String scanBloodPressure = '/scan-blood-pressure';
 
   /// Cờ kiểm soát màn hình khóa đang hiển thị, tránh mở lặp khi nhận lifecycle events
   static bool isAppLockShowing = false;
@@ -64,26 +74,25 @@ class AppRoutes {
         );
       case register:
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
-      case timeline:
+      case home:
         return MaterialPageRoute(
           builder: (_) => const MainShellScreen(initialIndex: 0),
         );
-      case prescriptions:
+      case timeline:
         return MaterialPageRoute(
           builder: (_) => const MainShellScreen(initialIndex: 1),
         );
-      case emergencyCard:
-        final isLockedReadOnly = settings.arguments == true;
-        if (isLockedReadOnly) {
-          return MaterialPageRoute(
-            builder: (_) => const EmergencyCardScreen(
-              showBottomNav: false,
-              readOnlyLockMode: true,
-            ),
-          );
-        }
+      case prescriptions:
         return MaterialPageRoute(
           builder: (_) => const MainShellScreen(initialIndex: 2),
+        );
+      case emergencyCard:
+        final isLockedReadOnly = settings.arguments == true;
+        return MaterialPageRoute(
+          builder: (_) => EmergencyCardScreen(
+            showBottomNav: false,
+            readOnlyLockMode: isLockedReadOnly,
+          ),
         );
       case profile:
         return MaterialPageRoute(
@@ -91,11 +100,11 @@ class AppRoutes {
         );
       case securitySettings:
       case AppRoutes.settings:
-        return MaterialPageRoute(
-          builder: (_) => const MainShellScreen(initialIndex: 4),
+        return CupertinoPageRoute(
+          builder: (_) => const SecuritySettingsScreen(showBottomNav: true),
         );
       case mainShell:
-        final initialIndex = settings.arguments as int? ?? 2;
+        final initialIndex = settings.arguments as int? ?? 0;
         return MaterialPageRoute(
           builder: (_) => MainShellScreen(initialIndex: initialIndex),
         );
@@ -113,6 +122,18 @@ class AppRoutes {
       case vitalReports:
       case vitalReport:
         return CupertinoPageRoute(builder: (_) => const VitalReportsScreen());
+      case myDoctors:
+        return CupertinoPageRoute(builder: (_) => const MyDoctorsScreen());
+      case healthVideos:
+        return CupertinoPageRoute(builder: (_) => const HealthVideosScreen());
+      case nutritionSupplements:
+        return CupertinoPageRoute(
+          builder: (_) => const NutritionSupplementsScreen(),
+        );
+      case scanBloodPressure:
+        return CupertinoPageRoute(
+          builder: (_) => const BloodPressureScanScreen(),
+        );
       case appLock:
         final onUnlocked = settings.arguments as VoidCallback? ?? () {};
         return MaterialPageRoute(

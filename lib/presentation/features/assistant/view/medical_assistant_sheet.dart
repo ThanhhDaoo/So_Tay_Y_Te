@@ -115,14 +115,14 @@ class _MedicalAssistantSheetState extends State<MedicalAssistantSheet> {
     switch (route) {
       case AssistantQuickRoute.timeline:
         if (widget.onSwitchMainTab != null) {
-          widget.onSwitchMainTab!(0);
+          widget.onSwitchMainTab!(1);
         } else {
           Navigator.of(context).pushReplacementNamed(AppRoutes.timeline);
         }
         break;
       case AssistantQuickRoute.prescriptions:
         if (widget.onSwitchMainTab != null) {
-          widget.onSwitchMainTab!(1);
+          widget.onSwitchMainTab!(2);
         } else {
           Navigator.of(context).pushReplacementNamed(AppRoutes.prescriptions);
         }

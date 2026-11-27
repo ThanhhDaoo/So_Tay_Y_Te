@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/user_session_manager.dart';
 import '../../../common_widgets/layout/app_layout.dart';
+import '../../../common_widgets/senior_40plus/senior_ui_kit.dart';
 import '../../assistant/view/medical_assistant_sheet.dart';
-import '../../emergency_card/view/emergency_card_screen.dart';
-import '../../emergency_card/view/widgets/ice_bottom_nav_bar.dart';
+import '../../home/view/home_screen.dart';
+import '../../medical_dossier/view/medical_dossier_screen.dart';
 import '../../prescriptions/view/prescriptions_screen.dart';
 import '../../profile/view/profile_screen.dart';
-import '../../timeline/view/timeline_screen.dart';
-import '../../security_settings/view/security_settings_screen.dart';
 
-/// Màn hình khung chính giữ thanh điều hướng cố định, chuyển tab mượt bằng IndexedStack
-/// và tích hợp nút mở nhanh Trợ Lý Sổ Tay Y Tế (Chatbox).
+/// Màn hình khung chính chuẩn người lớn tuổi (40+):
+/// Tối đa 4 mục trên thanh Bottom Navigation chữ to, icon lớn (Trang chủ, Bệnh án, Thuốc uống, Tài khoản).
 class MainShellScreen extends StatefulWidget {
   final int initialIndex;
 
-  const MainShellScreen({super.key, this.initialIndex = 2});
+  const MainShellScreen({super.key, this.initialIndex = 0});
 
   @override
   State<MainShellScreen> createState() => _MainShellScreenState();
@@ -26,12 +25,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedIndex = widget.initialIndex;
+    _selectedIndex = widget.initialIndex.clamp(0, 3);
     AppSessionNotifier.instance.initFromSession();
   }
 
   void _onSelectTab(int index) {
-    if (index > 4) return;
+    if (index < 0 || index > 3) return;
     if (_selectedIndex == index) return;
     setState(() {
       _selectedIndex = index;
@@ -48,10 +47,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
   @override
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
-    // Trên tab 0 (Timeline) có sẵn nút FAB "+ Thêm bệnh án" ở bottomPadding + 76,
-    // nên nút Trợ lý tự nâng cao hơn để không bao giờ đè lên nút thêm bệnh án.
     final assistantBottomOffset =
-        _selectedIndex == 0 ? bottomPadding + 140 : bottomPadding + 82;
+        _selectedIndex == 1 ? bottomPadding + 150 : bottomPadding + 92;
 
     return Scaffold(
       extendBody: true,
@@ -60,14 +57,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
           IndexedStack(
             index: _selectedIndex,
             children: [
-              const TimelineScreen(showBottomNav: false),
+              HomeScreen(onSelectMainTab: _onSelectTab),
+              const MedicalDossierScreen(showBottomNav: false),
               const PrescriptionsScreen(showBottomNav: false),
-              const EmergencyCardScreen(showBottomNav: false),
               const ProfileScreen(showBottomNav: false),
-              SecuritySettingsScreen(
-                showBottomNav: false,
-                onSelectMainTab: _onSelectTab,
-              ),
             ],
           ),
           AnimatedPositioned(
@@ -79,7 +72,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: IceBottomNavBar(
+      bottomNavigationBar: SeniorBottomNavBar(
         selectedIndex: _selectedIndex,
         onSelectTab: _onSelectTab,
       ),
@@ -100,7 +93,8 @@ class _FloatingAssistantButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+          constraints: const BoxConstraints(minHeight: 52),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
@@ -113,12 +107,12 @@ class _FloatingAssistantButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: const Color(0xFFD8B278),
-              width: 1.1,
+              width: 1.3,
             ),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x331E241B),
-                blurRadius: 12,
+                color: Color(0x3D1E241B),
+                blurRadius: 14,
                 offset: Offset(0, 4),
               ),
             ],
@@ -127,17 +121,17 @@ class _FloatingAssistantButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.chat_bubble_outline_rounded,
+                Icons.support_agent_rounded,
                 color: Color(0xFFFFE0A3),
-                size: 17,
+                size: 26,
               ),
-              SizedBox(width: 6),
+              SizedBox(width: 8),
               Text(
-                'Trợ lý',
+                'Hỏi Trợ lý Y tế',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: 0.2,
                 ),
               ),

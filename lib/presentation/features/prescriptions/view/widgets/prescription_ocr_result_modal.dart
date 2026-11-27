@@ -252,12 +252,12 @@ class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal>
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             const Text(
               'Nhận diện tiếng Việt có dấu trên đơn thuốc bệnh viện, phòng khám & nhà thuốc, tự động bóc tách chẩn đoán, tên thuốc và liều uống.',
-              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondaryLight),
+              style: TextStyle(fontSize: 15.5, color: AppColors.textSecondaryLight, height: 1.35),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
 
             if (_isLoading) ...[
               const Center(
@@ -269,7 +269,7 @@ class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal>
                       SizedBox(height: 12),
                       Text(
                         'Đang phân tích hình ảnh và bóc tách đơn thuốc...',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                       ),
                     ],
                   ),
@@ -283,12 +283,13 @@ class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal>
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 54),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () => _pickAndProcess(ImageSource.camera),
-                      icon: const Icon(Icons.camera_alt_rounded, size: 18),
-                      label: const Text('Chụp Camera', style: TextStyle(fontWeight: FontWeight.bold)),
+                      icon: const Icon(Icons.camera_alt_rounded, size: 24),
+                      label: const Text('Chụp Camera', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -296,13 +297,14 @@ class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal>
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: AppColors.primary),
+                        side: const BorderSide(color: AppColors.primary, width: 1.5),
+                        minimumSize: const Size(0, 54),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () => _pickAndProcess(ImageSource.gallery),
-                      icon: const Icon(Icons.photo_library_rounded, size: 18),
-                      label: const Text('Chọn Ảnh', style: TextStyle(fontWeight: FontWeight.bold)),
+                      icon: const Icon(Icons.photo_library_rounded, size: 24),
+                      label: const Text('Chọn Ảnh', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -517,13 +519,14 @@ class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal>
                   OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary),
-                      padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      side: const BorderSide(color: AppColors.primary, width: 1.4),
+                      minimumSize: const Size(0, 52),
+                      padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () => setState(() => _result = null),
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: const Text('Quét lại', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5)),
+                    icon: const Icon(Icons.refresh_rounded, size: 22),
+                    label: const Text('Quét lại', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5)),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -531,8 +534,9 @@ class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal>
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 52),
                         padding: const EdgeInsets.symmetric(vertical: 13),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: (_result!.medicines.isEmpty && _result!.rawText.trim().isEmpty)
                           ? null
@@ -540,8 +544,8 @@ class _PrescriptionOcrResultModalState extends State<PrescriptionOcrResultModal>
                               widget.onApplyResult?.call(_result!);
                               Navigator.pop(context);
                             },
-                      icon: const Icon(Icons.check_circle_rounded, size: 18),
-                      label: const Text('Lưu Vào Lịch Uống Thuốc', style: TextStyle(fontWeight: FontWeight.bold)),
+                      icon: const Icon(Icons.check_circle_rounded, size: 22),
+                      label: const Text('Lưu Vào Lịch Uống Thuốc', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
